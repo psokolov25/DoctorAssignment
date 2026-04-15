@@ -1,0 +1,49 @@
+micronaut:
+  server:
+    port: 8085
+  http:
+    client:
+      read-timeout: 60000ms
+
+application:
+  orchestra:
+    url: http://192.168.0.77:8080
+    username: superadmin
+    password: ulan
+    common-rest-path: /rest
+    configuration-rest-path: /qsystem/rest/config
+    branches-for-cache: "6"
+  websocket:
+    enabled: true
+    topic: /topic/event
+    subscribed-events:
+      - SERVICE_POINT_OPEN
+      - SET_WORK_PROFILE
+    delay-before-reconnect-in-milliseconds: 10000
+  assignment:
+    enabled: true
+    unknown-doctor-queue-id: 98
+    max-visits-per-cycle: 50
+    polling-cron: "0 */5 * * * ?"
+    branch-lock-timeout-ms: 5000
+    dry-run: false
+    recheck-visit-before-transfer: true
+    allowed-branches: [6]
+    stale-cache-duration-seconds: 300
+    event-deduplication-ttl-seconds: 120
+    processed-visit-ttl-seconds: 900
+    service-priority-by-key: {}
+    # fromId в endpoint-е перевода визита — это логический номер Entry Point, а не queueId.
+    # Для каждого отделения можно задать свой идентификатор.
+    # default-source-entry-point-id: 1
+    source-entry-point-id-by-branch:
+      6: 1
+      7: 3
+      9: 5
+    experimental-endpoints:
+      enabled: true
+      queue-visits-path: "/rest/entrypoint/branches/{branchId}/queues/{queueId}/visits/full/"
+      visit-details-path: "/rest/entrypoint/branches/{branchId}/visits/{visitId}/"
+      visit-by-id-path: "/rest/entrypoint/branches/{branchId}/visits/{visitId}/"
+      assign-service-path: "/rest/entrypoint/branches/{branchId}/visits/{visitId}/services/{serviceId}/"
+      transfer-visit-path: "/rest/entrypoint/branches/{branchId}/queues/{queueId}/visits/"

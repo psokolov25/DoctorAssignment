@@ -10,8 +10,8 @@ import io.micronaut.http.HttpRequest;
 import io.micronaut.http.MediaType;
 import io.micronaut.http.MutableHttpRequest;
 import io.micronaut.http.client.HttpClient;
-import io.micronaut.http.client.exceptions.HttpClientResponseException;
 import io.micronaut.http.client.annotation.Client;
+import io.micronaut.http.client.exceptions.HttpClientResponseException;
 import jakarta.inject.Singleton;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,6 +21,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+/**
+ * Реализация {@link com.qsystems.meddoctorassignment.adapter.gateway.VisitWorkflowGateway},
+ * работающая через конфигурируемые REST endpoint-ы Orchestra.
+ *
+ * <p>Класс не делает предположений о приватных API Orchestra: все пути задаются в
+ * {@code application.assignment.experimental-endpoints}. Это позволяет адаптировать сервис
+ * под конкретную инсталляцию без переписывания доменной логики.</p>
+ */
 @Singleton
 public class ConfigurableVisitWorkflowGateway implements VisitWorkflowGateway {
 
@@ -42,9 +50,11 @@ public class ConfigurableVisitWorkflowGateway implements VisitWorkflowGateway {
     public List<VisitSummary> getWaitingVisits(int branchId, int queueId) {
         String path = assignmentProperties.getExperimentalEndpoints().getQueueVisitsPath();
         ensureConfigured(path, "queue-visits-path");
+
         Map<String, Object> variables = new HashMap<String, Object>();
         variables.put("branchId", branchId);
         variables.put("queueId", queueId);
+
         HttpRequest<Object> request = applyAuth(HttpRequest.GET(expand(path, variables)));
         return httpClient.toBlocking().retrieve(request, Argument.listOf(VisitSummary.class));
     }
@@ -53,9 +63,11 @@ public class ConfigurableVisitWorkflowGateway implements VisitWorkflowGateway {
     public VisitDetails getVisitDetails(int branchId, long visitId) {
         String path = assignmentProperties.getExperimentalEndpoints().getVisitDetailsPath();
         ensureConfigured(path, "visit-details-path");
+
         Map<String, Object> variables = new HashMap<String, Object>();
         variables.put("branchId", branchId);
         variables.put("visitId", visitId);
+
         HttpRequest<Object> request = applyAuth(HttpRequest.GET(expand(path, variables)));
         return httpClient.toBlocking().retrieve(request, VisitDetails.class);
     }
@@ -73,6 +85,8 @@ public class ConfigurableVisitWorkflowGateway implements VisitWorkflowGateway {
         String expandedPath = expand(path, variables);
         log.info("Assign service {} to visit {} in branch {} using PUT {}", serviceId, visitId, branchId, expandedPath);
 
+        // На части инсталляций Orchestra назначение услуги работает именно через PUT по URL ресурса,
+        // а дополнительные поля staffId/servicePointId либо игнорируются, либо приводят к ошибкам.
         MutableHttpRequest<String> request = applyAuth(HttpRequest.PUT(expandedPath, ""))
                 .contentType(MediaType.APPLICATION_JSON_TYPE)
                 .accept(MediaType.APPLICATION_JSON_TYPE);
@@ -114,6 +128,8 @@ public class ConfigurableVisitWorkflowGateway implements VisitWorkflowGateway {
         payload.put("fromId", sourceEntryPointId);
         payload.put("visitId", visitId);
 
+        // В этой интеграции поле fromId трактуется как entry point id исходного потока,
+        // а не как идентификатор очереди. Именно поэтому sourceEntryPoint задается отдельно в конфиге.
         String expandedPath = expand(path, variables);
         log.info("Transfer visit {} from queue {} to queue {} in branch {} using entryPointId={} and PUT {}",
                 visitId,
@@ -122,9 +138,11 @@ public class ConfigurableVisitWorkflowGateway implements VisitWorkflowGateway {
                 branchId,
                 sourceEntryPointId,
                 expandedPath);
+
         MutableHttpRequest<Map<String, Object>> request = applyAuth(HttpRequest.PUT(expandedPath, payload))
                 .contentType(MediaType.APPLICATION_JSON_TYPE)
                 .accept(MediaType.APPLICATION_JSON_TYPE);
+
         try {
             httpClient.toBlocking().exchange(request, Object.class);
         } catch (HttpClientResponseException exception) {
@@ -148,9 +166,11 @@ public class ConfigurableVisitWorkflowGateway implements VisitWorkflowGateway {
         if (path == null || path.trim().isEmpty()) {
             return Optional.empty();
         }
+
         Map<String, Object> variables = new HashMap<String, Object>();
         variables.put("branchId", branchId);
         variables.put("visitId", visitId);
+
         HttpRequest<Object> request = applyAuth(HttpRequest.GET(expand(path, variables)));
         VisitSummary summary = httpClient.toBlocking().retrieve(request, VisitSummary.class);
         return Optional.ofNullable(summary);

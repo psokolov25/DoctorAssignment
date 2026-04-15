@@ -2,6 +2,12 @@ package com.qsystems.meddoctorassignment.adapter.orchestra.dto;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
+/**
+ * DTO точки обслуживания Orchestra.
+ *
+ * <p>Содержит только те поля, которые реально используются сервисом для восстановления
+ * рабочего контекста врача и runtime-состояния service point.</p>
+ */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class ServicePointData {
 

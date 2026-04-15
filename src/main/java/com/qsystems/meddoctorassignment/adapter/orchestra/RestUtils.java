@@ -5,6 +5,9 @@ import io.micronaut.http.HttpResponse;
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Mono;
 
+/**
+ * Небольшой вспомогательный компонент для безопасного синхронного чтения реактивного ответа.
+ */
 @Context
 public class RestUtils {
 

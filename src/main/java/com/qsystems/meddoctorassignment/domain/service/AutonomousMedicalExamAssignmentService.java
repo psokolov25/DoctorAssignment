@@ -20,6 +20,12 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
+/**
+ * Центральный доменный оркестратор цикла автоматического назначения врача.
+ *
+ * <p>Класс ничего не знает о формате websocket, конкретных REST endpoint-ах или способе хранения
+ * кэша. Он опирается только на абстракции домена и координирует весь workflow обработки.</p>
+ */
 @Singleton
 public class AutonomousMedicalExamAssignmentService {
 
@@ -58,6 +64,22 @@ public class AutonomousMedicalExamAssignmentService {
         this.assignmentProperties = assignmentProperties;
     }
 
+    /**
+     * Запускает полный цикл назначения врача для одного события или polling-триггера.
+     *
+     * <p>Последовательность шагов:</p>
+     * <ol>
+     *     <li>проверка глобальных флагов и белого списка отделений;</li>
+     *     <li>обновление branch cache при необходимости;</li>
+     *     <li>получение branch-level lock;</li>
+     *     <li>вычисление доступных врачу услуг;</li>
+     *     <li>чтение визитов из очереди "врач не назначен";</li>
+     *     <li>поочередный анализ маршрута каждого визита;</li>
+     *     <li>назначение услуги и перевод визита.</li>
+     * </ol>
+     *
+     * @param doctorContext нормализованный контекст врача и service point
+     */
     public void process(DoctorContext doctorContext) {
         if (!assignmentProperties.isEnabled()) {
             return;
@@ -69,7 +91,10 @@ public class AutonomousMedicalExamAssignmentService {
 
         boolean lockAcquired = false;
         try {
+            // Перед принятием решения убеждаемся, что branch cache не устарел.
             cacheUpdateService.ensureFresh(doctorContext.getBranchId());
+
+            // Один branch обрабатываем только одним потоком, чтобы websocket и polling не конфликтовали.
             lockAcquired = branchLockManager.tryLock(doctorContext.getBranchId(), assignmentProperties.getBranchLockTimeoutMs());
             if (!lockAcquired) {
                 log.warn("Could not acquire lock for branch {}", doctorContext.getBranchId());
@@ -77,6 +102,8 @@ public class AutonomousMedicalExamAssignmentService {
             }
 
             BranchAssignmentCache branchCache = cacheContainer.getOrCreateBranchCache(doctorContext.getBranchId());
+
+            // Обновляем runtime-срез service point локально, даже если событие пришло раньше следующего cache refresh.
             branchCache.getServicePointRuntimeStateMap().put(
                     doctorContext.getServicePointId(),
                     new ServicePointRuntimeState(
@@ -116,6 +143,9 @@ public class AutonomousMedicalExamAssignmentService {
 
             for (int i = 0; i < limit; i++) {
                 VisitSummary visit = visits.get(i);
+
+                // Повторная обработка одного визита тем же врачом в коротком окне времени обычно означает
+                // дубль события или повторный запуск fallback-задачи. Пропускаем такой визит без ошибки.
                 if (processedVisitRegistry.alreadyProcessed(doctorContext.getBranchId(), visit.getId(), doctorContext.getStaffId(), processedTtl)) {
                     log.info("Visit {} already processed recently for doctor {}", visit.getId(), doctorContext.getStaffId());
                     continue;

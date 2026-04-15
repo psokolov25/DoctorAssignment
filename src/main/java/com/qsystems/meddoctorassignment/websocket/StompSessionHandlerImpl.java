@@ -12,6 +12,9 @@ import org.springframework.messaging.simp.stomp.StompSessionHandler;
 
 import java.lang.reflect.Type;
 
+/**
+ * STOMP session handler, подписывающийся на нужные события Orchestra и передающий payload дальше.
+ */
 @Context
 public class StompSessionHandlerImpl implements StompSessionHandler {
 
@@ -29,6 +32,7 @@ public class StompSessionHandlerImpl implements StompSessionHandler {
     @Override
     public void afterConnected(StompSession session, StompHeaders connectedHeaders) {
         for (String eventName : websocketProperties.getSubscribedEvents()) {
+            // Подписка строится шаблонно: базовый topic + имя события + wildcard по unit.
             String destination = websocketProperties.getTopic() + "/" + eventName + "/*";
             session.subscribe(destination, this);
             log.info("Subscribed to {}", destination);

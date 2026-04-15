@@ -17,6 +17,12 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+/**
+ * Пересобирает branch cache с нуля на основе актуальных метаданных Orchestra.
+ *
+ * <p>Обновление выполняется атомарно: сначала собирается новый экземпляр кэша, и только потом
+ * он подменяет старый в контейнере. Это позволяет избежать частично заполненного состояния.</p>
+ */
 @Singleton
 public class BranchCacheUpdater {
 
@@ -34,6 +40,14 @@ public class BranchCacheUpdater {
         this.assignmentProperties = assignmentProperties;
     }
 
+    /**
+     * Полностью обновляет кэш указанного отделения.
+     *
+     * <p>Метод делает несколько последовательных REST-запросов к Orchestra и строит карту связей
+     * между услугами, очередями, рабочими профилями и точками обслуживания.</p>
+     *
+     * @param branchId идентификатор отделения Orchestra
+     */
     public void updateBranchCache(int branchId) {
         long startedAt = System.currentTimeMillis();
         log.info("Start cache refresh for branch {}", branchId);
@@ -41,6 +55,7 @@ public class BranchCacheUpdater {
         try {
             BranchAssignmentCache refreshedCache = new BranchAssignmentCache(branchId);
 
+            // 1. Собираем услуги и одновременно строим обратные индексы service -> queue и queue -> services.
             List<ServiceData> services = metadataGateway.getServicesFromBranch(branchId);
             for (ServiceData service : services) {
                 refreshedCache.getServiceMap().put(service.getId(), service);
@@ -51,10 +66,12 @@ public class BranchCacheUpdater {
                 if (service.getExternalName() != null) {
                     refreshedCache.getServiceExternalKeyToId().put(service.getExternalName(), service.getId());
                 }
+
                 TinyQueue queue = metadataGateway.getQueueForServiceInBranch(branchId, service.getId());
                 if (queue != null) {
                     refreshedCache.getServiceIdToQueueId().put(service.getId(), queue.getId());
                     refreshedCache.getQueueMap().put(queue.getId(), queue);
+
                     Set<Integer> serviceIds = refreshedCache.getQueueIdToServiceIds().get(queue.getId());
                     if (serviceIds == null) {
                         serviceIds = Collections.synchronizedSet(new HashSet<Integer>());
@@ -64,6 +81,7 @@ public class BranchCacheUpdater {
                 }
             }
 
+            // 2. Для каждого рабочего профиля строим множество очередей, доступных сотруднику с таким профилем.
             List<WorkProfileData> workProfiles = metadataGateway.getWorkProfilesFromBranch(branchId);
             for (WorkProfileData workProfile : workProfiles) {
                 List<TinyQueue> queues = metadataGateway.getQueuesForWorkProfileInBranch(branchId, workProfile.getId());
@@ -75,6 +93,7 @@ public class BranchCacheUpdater {
                 refreshedCache.getWorkProfileToQueueIds().put(workProfile.getId(), queueIds);
             }
 
+            // 3. Сохраняем полный справочник очередей и пытаемся найти среди них очередь "врач не назначен".
             List<TinyQueue> allQueues = metadataGateway.getAllQueuesInBranch(branchId);
             for (TinyQueue queue : allQueues) {
                 refreshedCache.getQueueMap().put(queue.getId(), queue);
@@ -92,6 +111,7 @@ public class BranchCacheUpdater {
                         branchId);
             }
 
+            // 4. Прогреваем runtime-состояние service point-ов, чтобы event handler мог использовать его как fallback.
             List<ServicePointData> servicePoints = metadataGateway.getServicePointsFromBranch(branchId);
             for (ServicePointData servicePoint : servicePoints) {
                 ServicePointRuntimeState state = new ServicePointRuntimeState(

@@ -13,6 +13,9 @@ import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
 
+/**
+ * Обработчик входящих событий Orchestra, относящихся к началу работы врача.
+ */
 @Singleton
 public class DoctorAssignmentEventHandler {
 

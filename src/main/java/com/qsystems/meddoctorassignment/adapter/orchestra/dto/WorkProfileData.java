@@ -2,6 +2,9 @@ package com.qsystems.meddoctorassignment.adapter.orchestra.dto;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
+/**
+ * DTO рабочего профиля Orchestra.
+ */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class WorkProfileData {
 

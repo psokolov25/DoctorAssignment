@@ -18,6 +18,12 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+/**
+ * REST-реализация {@link com.qsystems.meddoctorassignment.adapter.gateway.OrchestraMetadataGateway}.
+ *
+ * <p>Слой инкапсулирует конкретные подтвержденные endpoint-ы Orchestra и возвращает доменно
+ * полезные коллекции, удобные для дальнейшего построения branch cache.</p>
+ */
 @Singleton
 public class OrchestraMetadataGatewayImpl implements OrchestraMetadataGateway {
 

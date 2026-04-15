@@ -6,6 +6,9 @@ import com.fasterxml.jackson.annotation.JsonSetter;
 
 import java.util.Map;
 
+/**
+ * Краткое представление визита, достаточное для первичной фильтрации и последующей обработки.
+ */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class VisitSummary {
 
@@ -58,6 +61,10 @@ public class VisitSummary {
         this.ticketNumber = ticketNumber;
     }
 
+    /**
+     * На части endpoint-ов Orchestra queue id приходит не отдельным полем, а внутри {@code parameterMap}.
+     * Этот setter позволяет мягко достроить модель без жесткой привязки к одному варианту ответа.
+     */
     @JsonSetter("parameterMap")
     public void setParameterMap(Map<String, Object> parameterMap) {
         if (this.queueId != null || parameterMap == null) {

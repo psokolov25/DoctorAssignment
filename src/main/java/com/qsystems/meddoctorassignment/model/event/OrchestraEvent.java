@@ -6,6 +6,9 @@ import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Нормализованное представление сырого события Orchestra.
+ */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class OrchestraEvent {
 

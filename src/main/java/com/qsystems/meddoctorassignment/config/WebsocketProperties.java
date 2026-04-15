@@ -5,6 +5,9 @@ import io.micronaut.context.annotation.ConfigurationProperties;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Настройки event-driven интеграции с SockJS/STOMP шиной Orchestra.
+ */
 @ConfigurationProperties("application.websocket")
 public class WebsocketProperties {
 

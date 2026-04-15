@@ -3,6 +3,9 @@ package com.qsystems.meddoctorassignment.domain.model;
 import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
+/**
+ * Непройденная услуга в маршруте визита.
+ */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class VisitUnservedService {
 

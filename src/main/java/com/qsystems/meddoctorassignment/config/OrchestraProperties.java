@@ -2,6 +2,9 @@ package com.qsystems.meddoctorassignment.config;
 
 import io.micronaut.context.annotation.ConfigurationProperties;
 
+/**
+ * Базовые параметры подключения к Orchestra.
+ */
 @ConfigurationProperties("application.orchestra")
 public class OrchestraProperties {
 

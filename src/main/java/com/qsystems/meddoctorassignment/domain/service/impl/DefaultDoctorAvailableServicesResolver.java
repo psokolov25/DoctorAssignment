@@ -9,6 +9,10 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
+/**
+ * Стандартная реализация вычисления доступных врачу услуг через связку
+ * {@code workProfile -> queues -> services}.
+ */
 @Singleton
 public class DefaultDoctorAvailableServicesResolver implements DoctorAvailableServicesResolver {
 

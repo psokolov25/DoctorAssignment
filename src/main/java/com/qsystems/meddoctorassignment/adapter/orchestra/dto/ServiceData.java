@@ -2,6 +2,9 @@ package com.qsystems.meddoctorassignment.adapter.orchestra.dto;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
+/**
+ * DTO услуги Orchestra, используемый при построении branch cache.
+ */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class ServiceData {
 

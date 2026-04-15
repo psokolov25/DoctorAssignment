@@ -3,6 +3,13 @@ package com.qsystems.meddoctorassignment.model.event;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+/**
+ * Нормализованный контекст врача, с которым дальше работает доменный слой.
+ *
+ * <p>Помимо самих значений хранит карту происхождения полей. Это полезно при поддержке и
+ * разборе инцидентов, когда нужно понять, из event payload или из fallback lookup было взято
+ * конкретное значение.</p>
+ */
 public class DoctorContext {
 
     private int branchId;
@@ -83,10 +90,16 @@ public class DoctorContext {
         return fieldSources;
     }
 
+    /**
+     * Запоминает, из какого источника было получено конкретное поле.
+     */
     public void recordSource(String field, String source) {
         fieldSources.put(field, source);
     }
 
+    /**
+     * Удобное текстовое представление карты источников для логов и инцидентов.
+     */
     public String describeSources() {
         return fieldSources.toString();
     }

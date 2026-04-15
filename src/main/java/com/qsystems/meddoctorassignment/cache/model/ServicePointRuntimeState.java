@@ -2,6 +2,11 @@ package com.qsystems.meddoctorassignment.cache.model;
 
 import java.time.Instant;
 
+/**
+ * Runtime-снимок состояния точки обслуживания.
+ *
+ * <p>Используется как локальный источник правды во время event-driven обработки и polling fallback.</p>
+ */
 public class ServicePointRuntimeState {
 
     private long servicePointId;

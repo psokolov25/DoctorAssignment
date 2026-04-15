@@ -13,6 +13,12 @@ import jakarta.inject.Singleton;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Периодическая подстраховочная задача, запускающая повторную обработку по runtime cache.
+ *
+ * <p>Нужна на случай, если websocket-событие было потеряно, пришло до прогрева кэша или было
+ * отклонено из-за временной сетевой проблемы.</p>
+ */
 @Singleton
 public class PollingReconciliationJob {
 

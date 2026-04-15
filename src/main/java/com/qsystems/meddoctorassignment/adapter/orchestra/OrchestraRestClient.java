@@ -15,6 +15,12 @@ import org.reactivestreams.Publisher;
 
 import java.util.Set;
 
+/**
+ * Декларативный Micronaut-клиент для подтвержденных REST endpoint-ов Orchestra.
+ *
+ * <p>Интерфейс оставлен реактивным, потому что повторяет стиль из исходного проекта
+ * {@code med-robot}; синхронное ожидание ответа вынесено в {@link RestUtils}.</p>
+ */
 @Client("${application.orchestra.url}")
 @Consumes(MediaType.APPLICATION_JSON)
 public interface OrchestraRestClient {

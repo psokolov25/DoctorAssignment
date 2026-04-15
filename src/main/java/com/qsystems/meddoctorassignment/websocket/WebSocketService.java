@@ -29,6 +29,12 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+/**
+ * Компонент подключения к SockJS/STOMP транспортному каналу Orchestra.
+ *
+ * <p>Поддерживает переподключение и heartbeat, но при любых ошибках транспортного уровня не
+ * останавливает сервис: в таком режиме продолжает работать polling fallback.</p>
+ */
 @Singleton
 public class WebSocketService implements ApplicationEventListener<StartupEvent> {
 
@@ -67,14 +73,20 @@ public class WebSocketService implements ApplicationEventListener<StartupEvent> 
         connect();
     }
 
+    /**
+     * Выполняет первичное подключение или переподключение к Orchestra websocket.
+     */
     private void connect() {
         try {
             WebSocketStompClient client = getOrCreateClient();
             WebSocketHttpHeaders webSocketHeaders = createWebSocketHeaders();
             StompHeaders stompHeaders = createStompHeaders();
             log.info("Connecting to Orchestra websocket {}", connectUrl);
+
             this.stompSession = client.connect(connectUrl, webSocketHeaders, stompHeaders, sessionHandler).get();
             reconnectScheduled.set(false);
+
+            // Heartbeat запускаем только один раз на жизненный цикл процесса.
             if (client.getTaskScheduler() != null && heartbeatScheduled.compareAndSet(false, true)) {
                 client.getTaskScheduler().scheduleWithFixedDelay(createHeartbeatTask(), 30000L);
             }
@@ -91,6 +103,9 @@ public class WebSocketService implements ApplicationEventListener<StartupEvent> 
         }
     }
 
+    /**
+     * Создает SockJS/STOMP клиент лениво, чтобы не поднимать транспорт до фактического старта приложения.
+     */
     private synchronized WebSocketStompClient getOrCreateClient() {
         if (this.stompClient == null) {
             List<Transport> transports = new ArrayList<Transport>();
@@ -153,6 +168,9 @@ public class WebSocketService implements ApplicationEventListener<StartupEvent> 
         };
     }
 
+    /**
+     * Планирует ровно одну отложенную попытку переподключения.
+     */
     private void reconnect() {
         if (!reconnectScheduled.compareAndSet(false, true)) {
             return;

@@ -1,5 +1,8 @@
 package com.qsystems.meddoctorassignment.domain.model;
 
+/**
+ * Результат выбора услуги, которую конкретный врач может взять в обработку для визита.
+ */
 public class SelectedDoctorService {
 
     private final int serviceId;

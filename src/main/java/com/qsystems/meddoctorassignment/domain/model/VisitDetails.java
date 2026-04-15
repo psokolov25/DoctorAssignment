@@ -8,6 +8,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Детализированное представление визита для анализа его текущего маршрута.
+ */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class VisitDetails {
 
@@ -50,6 +53,10 @@ public class VisitDetails {
         this.unservedServices = unservedServices;
     }
 
+    /**
+     * Аналогично {@link VisitSummary#setParameterMap(Map)} достраивает queue id из parameterMap,
+     * если Orchestra не вернула его отдельным полем верхнего уровня.
+     */
     @JsonSetter("parameterMap")
     public void setParameterMap(Map<String, Object> parameterMap) {
         if (this.queueId != null || parameterMap == null) {

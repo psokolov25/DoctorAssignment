@@ -5,6 +5,9 @@ import com.qsystems.meddoctorassignment.domain.model.VisitDetails;
 import com.qsystems.meddoctorassignment.domain.service.VisitRouteAnalyzer;
 import jakarta.inject.Singleton;
 
+/**
+ * Минимальная реализация анализатора маршрута визита, делегирующая чтение детального состояния gateway-слою.
+ */
 @Singleton
 public class DefaultVisitRouteAnalyzer implements VisitRouteAnalyzer {
 

@@ -12,6 +12,9 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Optional;
 
+/**
+ * Исполнитель доменного решения: назначает услугу визиту и переводит его в целевую очередь.
+ */
 @Singleton
 public class DefaultVisitAssignmentExecutor implements VisitAssignmentExecutor {
 
@@ -41,6 +44,7 @@ public class DefaultVisitAssignmentExecutor implements VisitAssignmentExecutor {
             return true;
         }
 
+        // Перед изменением визита еще раз убеждаемся, что он не ушел в другую очередь.
         if (assignmentProperties.isRecheckVisitBeforeTransfer()) {
             Optional<VisitSummary> actualVisit = visitWorkflowGateway.findVisit(doctorContext.getBranchId(), visitSummary.getId());
             if (actualVisit.isPresent() && actualVisit.get().getQueueId() != null && actualVisit.get().getQueueId().intValue() != unknownDoctorQueueId) {
@@ -62,6 +66,8 @@ public class DefaultVisitAssignmentExecutor implements VisitAssignmentExecutor {
                 unknownDoctorQueueId,
                 selectedDoctorService.getTargetQueueId());
 
+        // Post-check полезен для интеграционных сценариев, где Orchestra может принять запрос,
+        // но фактический переход визита не произойдет из-за внутренних ограничений платформы.
         Optional<VisitSummary> actualVisitAfterTransfer = visitWorkflowGateway.findVisit(doctorContext.getBranchId(), visitSummary.getId());
         if (actualVisitAfterTransfer.isPresent()
                 && actualVisitAfterTransfer.get().getQueueId() != null

@@ -9,6 +9,12 @@ import jakarta.inject.Singleton;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * Fallback-реализация поиска контекста точки обслуживания через справочники Orchestra.
+ *
+ * <p>Используется только тогда, когда event payload недостаточен или локальный runtime cache
+ * еще не успел обновиться.</p>
+ */
 @Singleton
 public class ServicePointContextGatewayImpl implements ServicePointContextGateway {
 

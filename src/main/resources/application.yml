@@ -1,49 +1,139 @@
 micronaut:
   server:
+    # Порт HTTP-сервера самого сервиса.
+    # На этом порту будут доступны management endpoint-ы Micronaut и возможные будущие REST endpoint-ы сервиса.
     port: 8085
   http:
     client:
+      # Таймаут чтения ответа от Orchestra.
+      # Имеет смысл увеличивать, если REST Orchestra отвечает медленно или находится за медленным reverse proxy.
       read-timeout: 60000ms
 
 application:
   orchestra:
+    # Базовый URL Orchestra без завершающего слэша.
+    # Используется и для REST, и для SockJS/STOMP-подключения к /qpevents/events.
     url: http://192.168.0.77:8080
+
+    # Сервисная учетная запись Orchestra.
+    # Для production рекомендуется вынести в переменные окружения / секреты.
     username: superadmin
     password: ulan
+
+    # Общий REST base path Orchestra.
+    # По умолчанию для подтвержденных endpoint-ов используется /rest.
     common-rest-path: /rest
+
+    # Base path configuration API Orchestra.
     configuration-rest-path: /qsystem/rest/config
+
+    # Какие отделения нужно прогревать и поддерживать в кэше.
+    # Возможные варианты:
+    #   "*"   -> все доступные отделения
+    #   "6"   -> одно отделение
+    #   "6,7" -> несколько отделений через запятую
     branches-for-cache: "6"
+
   websocket:
+    # Включает event-driven режим через SockJS/STOMP.
+    # Если false, сервис будет работать только через polling fallback.
     enabled: true
+
+    # Базовый STOMP topic, под которым Orchestra публикует события.
+    # Подписка формируется как <topic>/<eventName>/*.
     topic: /topic/event
+
+    # Список событий Orchestra, которые запускают цикл назначения.
+    # SERVICE_POINT_OPEN используется как сигнал начала работы врача.
+    # SET_WORK_PROFILE используется как дополнительный триггер повторной обработки.
     subscribed-events:
       - SERVICE_POINT_OPEN
       - SET_WORK_PROFILE
+
+    # Задержка перед попыткой переподключения websocket, если канал был потерян.
     delay-before-reconnect-in-milliseconds: 10000
+
   assignment:
+    # Глобальный флаг включения алгоритма назначения.
     enabled: true
+
+    # Идентификатор очереди "врач не назначен".
+    # Это queue id Orchestra, из которой сервис берет визиты для перераспределения.
     unknown-doctor-queue-id: 98
+
+    # Максимальное количество визитов, обрабатываемых за один цикл.
+    # Нужен как предохранитель от слишком длинной обработки одного события.
     max-visits-per-cycle: 50
+
+    # Cron для fallback polling.
+    # Даже при включенном websocket эта задача полезна как страховка от потерянных событий.
     polling-cron: "0 */5 * * * ?"
+
+    # Максимальное время ожидания branch-level lock.
+    # Если отделение уже обрабатывается другим потоком, текущий цикл будет пропущен.
     branch-lock-timeout-ms: 5000
+
+    # Режим без реальных изменений в Orchestra.
+    # При true сервис только пишет в лог, какие действия он бы выполнил.
     dry-run: false
+
+    # Перед переводом визита перечитать его и убедиться, что он все еще находится в очереди "врач не назначен".
     recheck-visit-before-transfer: true
+
+    # Белый список branch id, на которых разрешено реальное выполнение алгоритма.
+    # Пустой список означает "разрешены все".
     allowed-branches: [6]
+
+    # TTL branch cache в секундах.
+    # Если кэш старше этого значения, перед обработкой события он будет перестроен.
     stale-cache-duration-seconds: 300
+
+    # Окно дедупликации входящих событий Orchestra.
+    # Повтор с тем же вычисленным ключом внутри этого окна будет проигнорирован.
     event-deduplication-ttl-seconds: 120
+
+    # Окно защиты от повторной обработки одного и того же визита одним и тем же врачом.
     processed-visit-ttl-seconds: 900
+
+    # Опциональная карта приоритетов услуг.
+    # Ключом может быть serviceId, internalName или externalName услуги.
+    # Используется, когда routeOrder не задает однозначного выбора.
+    # Пример:
+    # service-priority-by-key:
+    #   "4": 10
+    #   "THERAPIST": 5
     service-priority-by-key: {}
-    # fromId в endpoint-е перевода визита — это логический номер Entry Point, а не queueId.
-    # Для каждого отделения можно задать свой идентификатор.
+
+    # Резервный source entry point id для отделений, у которых нет собственного значения.
+    # Нужен, если Orchestra в поле fromId endpoint-а перевода ожидает именно entry point id.
     # default-source-entry-point-id: 1
     source-entry-point-id-by-branch:
       6: 1
-      7: 3
-      9: 5
+
     experimental-endpoints:
+      # Флаг включения visit workflow adapter-а.
+      # Если false, любые попытки работать с визитами через ConfigurableVisitWorkflowGateway завершатся ошибкой конфигурации.
       enabled: true
+
+      # Endpoint чтения полного списка визитов очереди.
+      # Должен возвращать массив VisitSummary-совместимых объектов.
       queue-visits-path: "/rest/entrypoint/branches/{branchId}/queues/{queueId}/visits/full/"
+
+      # Endpoint чтения детального состояния визита.
+      # Используется для анализа маршрута и непройденных услуг.
       visit-details-path: "/rest/entrypoint/branches/{branchId}/visits/{visitId}/"
+
+      # Endpoint повторного чтения визита по id.
+      # Нужен для defensive recheck перед переводом и для post-check результата.
       visit-by-id-path: "/rest/entrypoint/branches/{branchId}/visits/{visitId}/"
+
+      # Endpoint назначения услуги визиту.
+      # На текущей проверенной интеграции вызывается как PUT по URL ресурса,
+      # без обязательного payload в теле запроса.
       assign-service-path: "/rest/entrypoint/branches/{branchId}/visits/{visitId}/services/{serviceId}/"
+
+      # Endpoint перевода визита в очередь.
+      # Важно: тело запроса содержит fromBranchId, fromId и visitId.
+      # fromId в текущей реализации — это source entry point id,
+      # который задается через default-source-entry-point-id или source-entry-point-id-by-branch.
       transfer-visit-path: "/rest/entrypoint/branches/{branchId}/queues/{queueId}/visits/"

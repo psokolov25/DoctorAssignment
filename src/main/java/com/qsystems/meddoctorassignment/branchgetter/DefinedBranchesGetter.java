@@ -7,6 +7,9 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
+/**
+ * Стратегия чтения фиксированного списка отделений из конфигурации.
+ */
 @Singleton
 public class DefinedBranchesGetter implements BranchGettingStrategy {
 

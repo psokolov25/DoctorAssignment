@@ -10,6 +10,9 @@ import jakarta.inject.Singleton;
 import java.util.Collections;
 import java.util.List;
 
+/**
+ * Реализация чтения визитов из очереди "врач не назначен" через {@link com.qsystems.meddoctorassignment.adapter.gateway.VisitWorkflowGateway}.
+ */
 @Singleton
 public class DefaultUnknownDoctorQueueVisitProvider implements UnknownDoctorQueueVisitProvider {
 

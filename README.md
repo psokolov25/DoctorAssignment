@@ -1,98 +1,114 @@
 # Med Doctor Assignment Service
 
-Служба реализует автоматическое назначение визитам из очереди **«врач не назначен»** услуги врача, который начал работу на service point, для сценария автономных медосмотров в QMatic Orchestra 6.
+Сервис автоматически назначает визитам из очереди **«врач не назначен»** врача, который только что занял рабочее место в QMatic Orchestra 6, и переводит такие визиты в очередь соответствующей услуги. Решение ориентировано на сценарий **автономных медосмотров**, где критично быстро раздать визиты по реальным врачам без ручного вмешательства оператора.
 
-## Что сделано
+## 1. Для чего нужен сервис
 
-Проект построен как отдельный Java 8 + Micronaut + Maven сервис и повторяет подтвержденные подходы из `med-robot`:
+Типовой поток работы выглядит так:
 
-- `OrchestraRestClient` как Micronaut `@Client`
-- `RestUtils.handleReactiveResponseWithBlock(...)`
-- `OrchestraDataCacheContainer`
-- `BranchCacheUpdater`
-- `OrchestraDataCacheUpdateService`
-- `WebSocketService`
-- `StompSessionHandlerImpl`
-- `WebsocketFrameHandler`
-- `OrchestraEvent`
-- `BranchGettingStrategy`, `AllBranchesGetter`, `DefinedBranchesGetter`
+1. Врач входит на service point.
+2. Orchestra публикует событие `SERVICE_POINT_OPEN` или `SET_WORK_PROFILE`.
+3. Сервис определяет branch, service point, врача и его work profile.
+4. По кэшу справочников определяет, какие услуги врач может обслуживать.
+5. Берет визиты из очереди «врач не назначен».
+6. Анализирует непройденные услуги визита.
+7. Выбирает лучшую услугу для этого врача.
+8. Назначает услугу визиту и переводит визит в очередь услуги.
 
-## Ключевая трактовка событий
+Сервис проектировался так, чтобы:
 
-В этом сервисе:
+- не зависеть от GUI Orchestra;
+- выдерживать повторные события и временные сетевые сбои;
+- продолжать работу даже при отказе websocket-канала за счет polling fallback;
+- не принимать решение на основе «живых» справочников при каждом событии, а работать через локальный branch cache.
 
-- `SERVICE_POINT_OPEN` считается событием логина сотрудника / начала работы врача.
-- Контекст врача (`branchId`, `servicePointId`, `staffId`, `workProfileId`) в первую очередь извлекается **прямо из payload `SERVICE_POINT_OPEN`**.
-- `SET_WORK_PROFILE` используется как дополнительный триггер повторной обработки.
-- Если часть данных в событии отсутствует, сервис добирает недостающий context через fallback lookup по service point / staff.
+## 2. Что входит в проект
 
-Эта логика основана на фактическом формате событий, встречающемся в приложенном `med-robot`: в логах присутствуют поля `branchId`, `userId`, `workProfileOrigId`, `workProfileName`, `servicePointName`, а `unitId` соответствует service point id.
+### 2.1. Технологический стек
 
-## Архитектура
+- Java 8
+- Micronaut 3.5.2
+- Maven
+- Micronaut HTTP Client / Netty server
+- Spring SockJS/STOMP client для подписки на события Orchestra
+- Jackson для сериализации JSON
 
-### 1. Adapter / client layer
+### 2.2. Структура пакетов
 
-Пакеты:
+```text
+src/main/java/com/qsystems/meddoctorassignment
+├── adapter
+│   ├── gateway            # абстракции интеграции
+│   ├── gateway/impl       # REST-реализации gateway-слоя
+│   ├── orchestra          # Micronaut client + вспомогательные утилиты
+│   └── orchestra/dto      # DTO Orchestra
+├── branchgetter           # стратегии выбора branch id для кэширования
+├── cache                  # контейнер кэшей и пересборка branch cache
+├── cache/model            # модели кэша
+├── cache/service          # сервис управления жизненным циклом кэша
+├── config                 # конфигурационные свойства
+├── domain/model           # доменные модели визита и выбора услуги
+├── domain/service         # доменные интерфейсы и оркестратор алгоритма
+├── domain/service/impl    # реализации доменных интерфейсов
+├── event                  # обработка входящих событий Orchestra
+├── model/event            # нормализованное представление входящих событий
+├── schedule               # polling fallback
+├── util                   # технические утилиты устойчивости
+└── websocket              # SockJS/STOMP клиент и разбор фреймов
+```
 
-- `adapter.orchestra.*`
-- `adapter.gateway.*`
+## 3. Архитектура решения
 
-Компоненты:
+### 3.1. Adapter layer
 
-- `OrchestraRestClient` — подтвержденные REST-вызовы Orchestra
-- `OrchestraMetadataGatewayImpl` — работа с branches / services / queues / work profiles / service points
-- `ServicePointContextGatewayImpl` — fallback lookup service point context
-- `ConfigurableVisitWorkflowGateway` — адаптер для операций над визитами через **конфигурируемые** endpoint-ы
+`OrchestraMetadataGateway` и `OrchestraMetadataGatewayImpl` отвечают за чтение справочных сущностей Orchestra:
 
-### 2. Cache layer
+- отделения;
+- услуги;
+- очереди;
+- рабочие профили;
+- точки обслуживания.
 
-Пакеты:
+`VisitWorkflowGateway` отделен от чтения справочников, потому что операции над визитами в Orchestra часто зависят от конкретной инсталляции и набора доступных endpoint-ов. Для этого в проекте есть `ConfigurableVisitWorkflowGateway`, который читает пути из `application.yml`.
 
-- `cache.*`
-- `cache.model.*`
+### 3.2. Cache layer
 
-Компоненты:
+`BranchAssignmentCache` — центральная модель, в которой для одного отделения собирается весь справочный срез, нужный алгоритму.
 
-- `OrchestraDataCacheContainer`
-- `BranchAssignmentCache`
-- `ServicePointRuntimeState`
-- `BranchCacheUpdater`
-- `OrchestraDataCacheUpdateService`
+Кэш содержит:
 
-Содержимое branch cache:
-
-- `workProfileId -> queueIds`
-- `serviceId -> simpleQueueId`
+- `serviceId -> ServiceData`
+- `serviceId -> queueId`
 - `queueId -> serviceIds`
-- `servicePointId -> current workProfileId / staffId / status`
-- `unknownDoctorQueueId` — ID очереди "врач не назначен", задается только числовым идентификатором
+- `workProfileId -> queueIds`
+- `servicePointId -> runtime state`
 - `serviceExternalKey -> serviceId`
+- `unknownDoctorQueueId`
+- `lastUpdated`
 
-### 3. Event layer
+`BranchCacheUpdater` строит новый экземпляр branch cache полностью, а затем `OrchestraDataCacheContainer` атомарно подменяет старый. Это важно для того, чтобы обработчик событий никогда не читал «полусобранный» кэш.
 
-Пакеты:
+### 3.3. Event-driven слой
 
-- `event.*`
-- `websocket.*`
-- `model.event.*`
+`WebSocketService` поднимает SockJS/STOMP подключение к Orchestra.
 
-Компоненты:
+`StompSessionHandlerImpl` подписывается на события:
 
-- `DoctorAssignmentEventHandler`
-- `WebsocketFrameHandler`
-- `StompSessionHandlerImpl`
-- `WebSocketService`
-- `EventDeduplicator`
+- `SERVICE_POINT_OPEN`
+- `SET_WORK_PROFILE`
 
-### 4. Domain layer
+`WebsocketFrameHandler` превращает сырой JSON в `OrchestraEvent`, а `DoctorAssignmentEventHandler`:
 
-Пакеты:
+1. определяет `TriggerSource`;
+2. отбрасывает дубликаты через `EventDeduplicator`;
+3. восстанавливает `DoctorContext`;
+4. запускает доменный цикл назначения.
 
-- `domain.service.*`
-- `domain.service.impl.*`
-- `domain.model.*`
+### 3.4. Domain layer
 
-Компоненты:
+`AutonomousMedicalExamAssignmentService` — главный оркестратор алгоритма.
+
+Он использует следующие расширяемые доменные абстракции:
 
 - `LoggedDoctorContextResolver`
 - `DoctorAvailableServicesResolver`
@@ -100,198 +116,342 @@
 - `VisitRouteAnalyzer`
 - `DoctorServiceMatcher`
 - `VisitAssignmentExecutor`
-- `AutonomousMedicalExamAssignmentService`
 
-### 5. Scheduling / resilience
+Благодаря этому бизнес-алгоритм можно дорабатывать локально, не переписывая websocket и кэширование.
 
-- `PollingReconciliationJob` — fallback polling
-- `BranchLockManager` — branch-level lock
-- `ProcessedVisitRegistry` — защита от повторной обработки визитов
+### 3.5. Resilience layer
 
-## Алгоритм
+Для устойчивой работы добавлены:
 
-1. Сервис получает `SERVICE_POINT_OPEN` или `SET_WORK_PROFILE`.
-2. Из события извлекается doctor context.
-3. При необходимости недостающие данные добираются из fallback adapter.
-4. Обеспечивается свежесть branch cache.
-5. Для текущего work profile строится список доступных врачу услуг.
-6. Находится очередь «врач не назначен».
-7. Получаются визиты, ожидающие в этой очереди.
-8. Для каждого визита читается маршрут / непройденные услуги.
-9. Выбирается подходящая врачу услуга:
-   - сначала по порядку в маршруте,
-   - затем по конфигурируемому приоритету,
-   - затем по минимальному `serviceId`.
-10. Выполняется назначение услуги и перевод визита в очередь услуги.
-11. Цикл ограничивается `max-visits-per-cycle`.
+- `BranchLockManager` — не допускает конкурентную обработку одного branch несколькими потоками;
+- `EventDeduplicator` — подавляет повторы событий Orchestra;
+- `ProcessedVisitRegistry` — предотвращает повторную обработку одного визита в коротком окне времени;
+- `PollingReconciliationJob` — периодический fallback, если событие было потеряно или пришло в неудачный момент.
 
-## Последовательность
+## 4. Алгоритм назначения
 
-```mermaid
-sequenceDiagram
-    participant WS as Orchestra WebSocket
-    participant EH as DoctorAssignmentEventHandler
-    participant RES as LoggedDoctorContextResolver
-    participant CACHE as OrchestraDataCacheUpdateService
-    participant DOM as AutonomousMedicalExamAssignmentService
-    participant VG as VisitWorkflowGateway
+### 4.1. Восстановление doctor context
 
-    WS->>EH: SERVICE_POINT_OPEN / SET_WORK_PROFILE
-    EH->>RES: resolve(event)
-    RES-->>EH: DoctorContext
-    EH->>DOM: process(context)
-    DOM->>CACHE: ensureFresh(branchId)
-    DOM->>VG: getWaitingVisits(unknownDoctorQueue)
-    loop each visit
-        DOM->>VG: getVisitDetails(visitId)
-        DOM->>VG: assignServiceToVisit(...)
-        DOM->>VG: transferVisitToQueue(...)
-    end
-```
+`DefaultLoggedDoctorContextResolver` сначала берет поля напрямую из event payload:
 
-## Подтвержденные endpoint-ы и факты
+- `branchId`
+- `servicePointId`
+- `staffId` или `userId`
+- `workProfileOrigId` или `workProfile`
+- `workProfileName`
+- `servicePointName`
+- `userName` / `user`
 
-### Подтверждено кодом `med-robot`
+Если часть полей отсутствует, включается fallback:
 
-Из исходного проекта подтверждены и переиспользованы следующие endpoint-ы:
+1. поиск по `servicePointId` в runtime cache branch;
+2. поиск через `ServicePointContextGateway`;
+3. поиск по `staffId` в runtime cache branch;
+4. поиск по `staffId` через Orchestra.
 
-- `${application.orchestra.configuration-rest-path}/branches`
-- `${application.orchestra.common-rest-path}/servicepoint/branches/{branchId}/services`
-- `${application.orchestra.common-rest-path}/entrypoint/branches/{branchId}/services/{serviceId}/queue`
-- `${application.orchestra.common-rest-path}/managementinformation/v2/branches/{branchId}/servicePoints`
-- `${application.orchestra.common-rest-path}/servicepoint/branches/{branchId}/workProfiles`
-- `${application.orchestra.common-rest-path}/servicepoint/branches/{branchId}/workProfiles/{workProfileId}/queues`
-- `${application.orchestra.common-rest-path}/servicepoint/branches/{branchId}/queues/`
+Если после этого ключевые поля не заполнены, обработка события завершается исключением — это правильное поведение, потому что сервис не должен делать догадки в критическом workflow.
 
-### Подтверждено открытыми материалами
+### 4.2. Определение доступных услуг врача
 
-- В Orchestra есть Central WebSocket Server Settings, включая heartbeat и параметры WebSocket / Secure WebSocket, что подтверждает корректность event-driven подписки.  
-- Queue IDs можно получать через `/qsystem/rest/servicepoint/branches/<branch ID>/queues/`.  
-- Web Service Point поддерживает multi-service сценарии и transfer в queue / staff pool / counter pool.  
-- В Data Connect `VisitTransactionOutcome` содержит `TRANSFER_TO_QUEUE`, `TRANSFER_TO_SERVICE_POINT`, `TRANSFER_TO_STAFF`.  
-- При добавлении услуги ее необходимо добавить в queuing profile или profiles, поэтому связь `workProfile -> queues -> services` должна учитываться в кэше.
+`DefaultDoctorAvailableServicesResolver` проходит по связке:
 
-### Что намеренно не зафиксировано как «точно известное»
+`workProfile -> queues -> services`
 
-Точные REST endpoint-ы для следующих операций **не подтверждены** ни кодом `med-robot`, ни приложенными открытыми материалами:
+Итогом является множество `serviceId`, которые допустимы для текущего врача в рамках его текущего рабочего профиля.
 
-- получить список визитов в очереди «врач не назначен»
-- прочитать маршрут визита / непройденные услуги
-- назначить визиту услугу врача
-- перевести визит в очередь услуги
+### 4.3. Выбор услуги визита
 
-Поэтому эти операции вынесены в `VisitWorkflowGateway`.
+`DefaultDoctorServiceMatcher` смотрит на `VisitDetails.unservedServices` и строит список кандидатов.
 
-## Production caveat по VisitWorkflowGateway
+Правила выбора:
 
-В проекте есть `ConfigurableVisitWorkflowGateway`. Он не «угадывает» приватные endpoint-ы Orchestra.
+1. сначала учитывается `routeOrder` — приоритет имеет услуга, которая раньше стоит в маршруте визита;
+2. если маршрут не задает явного преимущества, используется `service-priority-by-key` из конфигурации;
+3. если и этого нет, применяется детерминированный fallback по `serviceId`.
 
-Он работает только если явно задать:
+Такая схема дает одновременно:
 
-```yaml
-application:
-  assignment:
-    experimental-endpoints:
-      enabled: true
-      queue-visits-path: /your/path/for/queue/{queueId}/visits
-      visit-details-path: /your/path/for/visits/{visitId}
-      visit-by-id-path: /your/path/for/visits/{visitId}
-      assign-service-path: /your/path/for/visit/assign-service
-      transfer-visit-path: /your/path/for/visit/transfer
-```
+- предсказуемость;
+- возможность ручной подстройки приоритетов;
+- отсутствие случайного выбора.
 
-Для перевода визита в очередь в Orchestra важен еще один нюанс:
+### 4.4. Исполнение решения
 
-- поле `fromId` в теле запроса — это **логический номер Entry Point**, а не `queueId`;
-- поэтому для production нужно явно задать `application.assignment.source-entry-point-id-by-branch`;
-- при отсутствии настройки сервис теперь завершает операцию с понятной ошибкой конфигурации, а не с неочевидным `500` от Orchestra.
+`DefaultVisitAssignmentExecutor` делает три шага:
 
-Итог:
+1. optional recheck — все ли еще визит находится в очереди «врач не назначен»;
+2. вызов `assignServiceToVisit(...)`;
+3. вызов `transferVisitToQueue(...)`;
+4. optional post-check — действительно ли визит оказался в ожидаемой очереди.
 
-- domain workflow завершен;
-- event/caching/resilience завершены;
-- интеграционные тесты используют fake gateway;
-- production mapping для visit operations нужно сверить с реальной инсталляцией Orchestra 6.
+При `dry-run=true` сервис только пишет в лог, какие действия он бы выполнил.
 
-## Конфигурация
+## 5. Подтвержденные и неподтвержденные API
 
-```yaml
-application:
-  orchestra:
-    url: http://localhost:8080
-    username: orchestra-user
-    password: orchestra-password
-    common-rest-path: /rest
-    configuration-rest-path: /qsystem/rest/config
-    branches-for-cache: "*"
+### 5.1. Подтвержденные endpoint-ы
 
-  websocket:
-    topic: /topic/event
-    subscribed-events:
-      - SERVICE_POINT_OPEN
-      - SET_WORK_PROFILE
-    delay-before-reconnect-in-milliseconds: 10000
+В проекте как подтвержденные используются:
 
-  assignment:
-    enabled: true
-    unknown-doctor-queue-id: 0
-    max-visits-per-cycle: 50
-    polling-cron: "0 */5 * * * ?"
-    branch-lock-timeout-ms: 5000
-    dry-run: true
-    recheck-visit-before-transfer: true
-    allowed-branches: []
-    stale-cache-duration-seconds: 300
-    event-deduplication-ttl-seconds: 120
-    processed-visit-ttl-seconds: 900
-    service-priority-by-key: {}
-    # fromId при переводе визита = логический номер Entry Point
-    default-source-entry-point-id: 1
-    source-entry-point-id-by-branch:
-      6: 1
-```
+- `/qsystem/rest/config/branches`
+- `/rest/servicepoint/branches/{branchId}/services`
+- `/rest/entrypoint/branches/{branchId}/services/{serviceId}/queue`
+- `/rest/managementinformation/v2/branches/{branchId}/servicePoints`
+- `/rest/servicepoint/branches/{branchId}/workProfiles`
+- `/rest/servicepoint/branches/{branchId}/workProfiles/{workProfileId}/queues`
+- `/rest/servicepoint/branches/{branchId}/queues/`
 
-## Логирование
+### 5.2. Конфигурируемые visit endpoint-ы
 
-Сервис пишет:
+Пути для операций над визитами задаются в `application.assignment.experimental-endpoints`:
 
-- старт / конец цикла
-- trigger source
-- `branchId`, `servicePointId`, `staffId`, `workProfileId`
-- источники заполнения контекста: из события или fallback lookup
-- список доступных врачу услуг
-- количество визитов в очереди «врач не назначен»
-- результат по каждому визиту
-- ошибки websocket / REST / assignment
-- действия dry-run режима
+- `queue-visits-path`
+- `visit-details-path`
+- `visit-by-id-path`
+- `assign-service-path`
+- `transfer-visit-path`
 
-## Тесты
+Это сделано намеренно: код не должен «угадывать» приватные endpoint-ы Orchestra.
 
-Реализованы тесты на:
+## 6. Конфигурация
 
-- извлечение контекста из `SERVICE_POINT_OPEN`
-- fallback при частично заполненном payload
-- matching услуг врача с route order / priority / fallback
-- дедупликацию событий
-- branch locking
-- пустую очередь
-- отсутствие подходящих услуг
-- успешное назначение / перевод
-- повторную обработку
-- сценарий `SET_WORK_PROFILE`
-- частичную недоступность downstream операций
+Главный файл конфигурации — `src/main/resources/application.yml`.
 
-## Сборка
+### 6.1. Блок `application.orchestra`
+
+Используется для:
+
+- базового URL Orchestra;
+- логина и пароля;
+- base-path для REST;
+- выбора отделений, для которых нужно строить кэш.
+
+### 6.2. Блок `application.websocket`
+
+Управляет event-driven интеграцией:
+
+- включение / отключение websocket-подписки;
+- STOMP topic;
+- список событий;
+- задержка переподключения.
+
+### 6.3. Блок `application.assignment`
+
+Управляет самим алгоритмом:
+
+- включение сервиса;
+- queue id очереди «врач не назначен»;
+- ограничение визитов на цикл;
+- polling cron;
+- deduplication и processed TTL;
+- режим `dry-run`;
+- recheck перед переводом;
+- список разрешенных branch;
+- конфигурируемые приоритеты услуг;
+- пути для visit workflow endpoint-ов.
+
+## 7. Руководство для разработчиков
+
+### 7.1. Сценарий локального запуска
 
 ```bash
 mvn clean test
-mvn clean package
+mvn mn:run
 ```
 
-## Дальнейшие шаги в целевом контуре
+Либо собрать jar:
 
-1. Сверить реальные endpoint-ы visit operations.
-2. Уточнить body/response контракт для assign/transfer.
-3. Подключить production endpoint-ы в `application.assignment.experimental-endpoints`.
-4. Переключить `dry-run` в `false`.
-5. Провести end-to-end тест на тестовом branch.
+```bash
+mvn clean package
+java -jar target/med-doctor-assignment-service-*.jar
+```
+
+### 7.2. Что важно понимать при доработке
+
+1. **Не смешивать доменную логику и транспорт.**
+   Все нюансы websocket и REST должны оставаться в `websocket.*` и `adapter.*`.
+
+2. **Не читать справочники Orchestra на каждый event без необходимости.**
+   Для этого уже есть branch cache.
+
+3. **Не принимать решение без полного doctor context.**
+   Лучше завершить обработку ошибкой и записать понятный лог, чем назначить неверного врача.
+
+4. **Не убирать recheck/post-check без явной причины.**
+   Эти шаги защищают от гонок между несколькими источниками обработки.
+
+5. **Не встраивать hardcode приватных endpoint-ов Orchestra в доменный код.**
+   Все пути для визитов должны оставаться конфигурируемыми.
+
+### 7.3. Главные точки расширения
+
+- новая логика сопоставления услуг — `DoctorServiceMatcher`
+- новый способ вычисления доступных врачу услуг — `DoctorAvailableServicesResolver`
+- новая реализация workflow над визитом — `VisitWorkflowGateway`
+- дополнительные триггеры — `DoctorAssignmentEventHandler`
+- особая логика fallback lookup — `LoggedDoctorContextResolver`
+
+### 7.4. Что смотреть при ошибке `500` на assign-service
+
+Если в логах виден `500` на `POST /rest/entrypoint/.../visits/{visitId}/services/{serviceId}/`, нужно проверить:
+
+- соответствует ли endpoint конкретной инсталляции Orchestra;
+- допустима ли смена услуги для данного состояния визита;
+- не завершена ли текущая услуга визита;
+- не требуется ли иной payload для назначения услуги;
+- не ожидает ли Orchestra другой source id / entrypoint id / queue id;
+- не конфликтует ли смена услуги с текущей очередью визита;
+- не было ли race condition, из-за которого визит уже ушел из очереди «врач не назначен».
+
+## 8. Руководство для технической поддержки
+
+### 8.1. На что смотреть в логах
+
+Основные контрольные сообщения:
+
+- `Refresh caches for configured branches ...`
+- `Start cache refresh for branch ...`
+- `Finish cache refresh for branch ...`
+- `Connecting to Orchestra websocket ...`
+- `Subscribed to ...`
+- `Start assignment cycle ...`
+- `Doctor ... available services=...`
+- `Visits in unknown-doctor queue ... count=...`
+- `Visit ... matchFound=true ... success=...`
+- `Finish assignment cycle ... processed=...`
+
+### 8.2. Типовые симптомы и интерпретация
+
+**Симптом:** кэш не прогревается.  
+Проверить доступность REST endpoint-ов справочников и корректность `branches-for-cache`.
+
+**Симптом:** websocket не подключается.  
+Проверить `/qpevents/events/info`, логин/пароль, сетевую доступность, reverse proxy и heartbeat.
+
+**Симптом:** сервис видит врача, но не назначает визиты.  
+Проверить:
+
+- `unknown-doctor-queue-id`
+- `workProfile -> queues`
+- `queue -> services`
+- наличие непройденных услуг у визитов
+- совпадение service id/external key
+
+**Симптом:** сервис пытается назначить услугу, но получает `500`.  
+Проверить правильность visit endpoint-ов и допустимость операции на стороне Orchestra.
+
+### 8.3. Минимальный набор данных для разбора инцидента
+
+При эскалации разработчику нужно приложить:
+
+- branch id;
+- service point id;
+- staff id;
+- work profile id;
+- visit id;
+- полный URL проблемного endpoint-а;
+- тело запроса;
+- тело ответа Orchestra;
+- фрагмент лога от `Start assignment cycle` до ошибки.
+
+## 9. Руководство по внедрению
+
+Перед вводом в эксплуатацию нужно подтвердить:
+
+1. queue id очереди «врач не назначен» для каждого отделения;
+2. корректность mapping `service -> queue`;
+3. корректность mapping `workProfile -> queues`;
+4. факт публикации событий `SERVICE_POINT_OPEN` и `SET_WORK_PROFILE`;
+5. рабочие endpoint-ы для:
+   - чтения визитов очереди,
+   - чтения визита по id,
+   - чтения детального маршрута,
+   - назначения услуги,
+   - перевода визита;
+6. возможность авторизации под сервисной учетной записью.
+
+### 9.1. Рекомендуемый порядок внедрения
+
+1. Запустить сервис с `dry-run=true`.
+2. Проверить кэш и websocket.
+3. Проверить, что врачи распознаются корректно.
+4. Проверить, какие услуги выбираются для визитов.
+5. Согласовать реальные visit endpoint-ы.
+6. Включить `dry-run=false` сначала на тестовом отделении.
+7. После подтверждения корректности постепенно расширять список `allowed-branches`.
+
+## 10. Руководство для DevOps
+
+### 10.1. Сетевые зависимости
+
+Сервису нужен исходящий доступ:
+
+- к Orchestra REST API;
+- к `/qpevents/events`;
+- к `/qpevents/events/info`;
+- к XHR streaming / XHR send endpoint-ам SockJS.
+
+### 10.2. Runtime endpoint-ы самого сервиса
+
+Micronaut поднимает сервер на `micronaut.server.port`, по умолчанию в проекте — `8085`.
+
+Также доступны management endpoint-ы Micronaut, если они включены настройками/дефолтами окружения:
+
+- `/health`
+- `/info`
+- `/beans`
+- `/routes`
+- `/threaddump`
+- `/refresh`
+
+### 10.3. Что важно для эксплуатации
+
+- сервис не хранит состояние в БД;
+- кэш полностью в памяти процесса;
+- при рестарте кэш будет перестроен заново;
+- при недоступности websocket сервис продолжит работу через polling fallback;
+- при недоступности REST Orchestra сервис не сможет прогревать кэш и выполнять назначение.
+
+### 10.4. Логирование
+
+Для production желательно явно задать уровни логирования:
+
+- `INFO` — штатная эксплуатация;
+- `DEBUG` — диагностика интеграционных проблем и проблемных payload;
+- при необходимости отдельно поднять DEBUG для:
+  - `com.qsystems.meddoctorassignment`
+  - `io.micronaut.http.client`
+  - `org.springframework.web.socket`
+
+### 10.5. Рекомендации по конфигурированию
+
+- учетные данные Orchestra лучше подавать через переменные окружения или секреты, а не хранить в git;
+- список `allowed-branches` использовать как предохранитель при поэтапном rollout;
+- `dry-run=true` применять при первичной проверке конфигурации;
+- `stale-cache-duration-seconds` не делать слишком маленьким, иначе возрастет нагрузка на Orchestra;
+- `event-deduplication-ttl-seconds` и `processed-visit-ttl-seconds` подбирать под реальную частоту событий.
+
+## 11. Тесты
+
+В проекте есть модульные и интеграционные тесты для ключевых частей алгоритма:
+
+- дедупликация событий;
+- branch-level lock;
+- сопоставление услуг врачу;
+- восстановление doctor context;
+- JSON mapping визитов;
+- интеграционный сценарий `SET_WORK_PROFILE`.
+
+Тесты используют in-memory/fake gateway-реализации и подтверждают доменную логику независимо от реальной Orchestra.
+
+## 12. Краткий чек-лист перед production
+
+- [ ] Подтверждены branch id для rollout
+- [ ] Подтвержден `unknown-doctor-queue-id`
+- [ ] Подтверждены все visit endpoint-ы
+- [ ] Проверен websocket-доступ к `/qpevents/events`
+- [ ] Проверен прогрев branch cache
+- [ ] Проверен `dry-run` сценарий на тестовом отделении
+- [ ] Подтвержден корректный выбор услуг врачам
+- [ ] Подтвержден успешный перевод визита в реальную очередь
+- [ ] Настроены уровни логирования и сбор логов
+- [ ] Учетные данные Orchestra вынесены в безопасное хранилище

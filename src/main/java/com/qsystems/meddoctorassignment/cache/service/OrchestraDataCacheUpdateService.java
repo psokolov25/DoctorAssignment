@@ -17,6 +17,12 @@ import org.slf4j.LoggerFactory;
 import java.time.Duration;
 import java.util.Collection;
 
+/**
+ * Сервис управления жизненным циклом branch cache.
+ *
+ * <p>Отвечает за инициализацию кэшей на старте и за ленивое обновление при обработке событий,
+ * когда локальный снимок отделения считается устаревшим.</p>
+ */
 @Singleton
 public class OrchestraDataCacheUpdateService implements ApplicationEventListener<StartupEvent> {
 
@@ -48,6 +54,9 @@ public class OrchestraDataCacheUpdateService implements ApplicationEventListener
         refreshConfiguredBranches();
     }
 
+    /**
+     * Перестраивает кэши для всех branch id, выбранных стратегией из конфигурации.
+     */
     public void refreshConfiguredBranches() {
         Collection<Integer> branchIds = selectStrategy().getBranchIds();
         log.info("Refresh caches for configured branches {}", branchIds);
@@ -56,6 +65,9 @@ public class OrchestraDataCacheUpdateService implements ApplicationEventListener
         }
     }
 
+    /**
+     * Обновляет branch cache только если он старше заданного TTL.
+     */
     public void ensureFresh(int branchId) {
         BranchAssignmentCache cache = cacheContainer.getOrCreateBranchCache(branchId);
         Duration ttl = Duration.ofSeconds(assignmentProperties.getStaleCacheDurationSeconds());

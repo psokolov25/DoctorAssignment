@@ -9,6 +9,12 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
+/**
+ * Агрегированный кэш метаданных одного отделения.
+ *
+ * <p>Содержит справочную информацию, необходимую для быстрого принятия решения о том,
+ * может ли конкретный врач принять конкретную услугу и в какую очередь нужно перевести визит.</p>
+ */
 public class BranchAssignmentCache {
 
     private final int branchId;

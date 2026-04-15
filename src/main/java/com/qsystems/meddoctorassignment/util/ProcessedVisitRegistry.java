@@ -7,11 +7,17 @@ import java.time.Instant;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+/**
+ * Краткоживущий реестр недавно обработанных визитов.
+ */
 @Singleton
 public class ProcessedVisitRegistry {
 
     private final Map<String, Instant> processed = new ConcurrentHashMap<String, Instant>();
 
+    /**
+     * Возвращает {@code true}, если этот же врач уже обрабатывал этот же визит внутри заданного TTL.
+     */
     public boolean alreadyProcessed(int branchId, long visitId, int staffId, Duration ttl) {
         cleanup(ttl);
         String key = key(branchId, visitId, staffId);
@@ -19,6 +25,9 @@ public class ProcessedVisitRegistry {
         return instant != null && instant.plus(ttl).isAfter(Instant.now());
     }
 
+    /**
+     * Помечает визит как успешно обработанный конкретным врачом.
+     */
     public void markProcessed(int branchId, long visitId, int staffId) {
         processed.put(key(branchId, visitId, staffId), Instant.now());
     }

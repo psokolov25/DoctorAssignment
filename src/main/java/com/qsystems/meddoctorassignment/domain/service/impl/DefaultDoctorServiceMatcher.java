@@ -14,6 +14,12 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
+/**
+ * Стандартная стратегия сопоставления непройденных услуг визита с услугами врача.
+ *
+ * <p>Порядок выбора: сначала порядок в маршруте, затем явно заданный приоритет из конфигурации,
+ * затем детерминированный fallback по {@code serviceId}.</p>
+ */
 @Singleton
 public class DefaultDoctorServiceMatcher implements DoctorServiceMatcher {
 
@@ -33,10 +39,14 @@ public class DefaultDoctorServiceMatcher implements DoctorServiceMatcher {
             if (resolvedServiceId == null || !doctorAvailableServices.contains(resolvedServiceId)) {
                 continue;
             }
+
             Integer targetQueueId = branchCache.getServiceIdToQueueId().get(resolvedServiceId);
             if (targetQueueId == null) {
                 continue;
             }
+
+            // Для каждой непройденной услуги строим кандидат с достаточным набором метаданных,
+            // чтобы потом выполнить полностью детерминированную сортировку.
             int priority = resolvePriority(unservedService, resolvedServiceId.intValue());
             candidates.add(new Candidate(resolvedServiceId.intValue(), targetQueueId.intValue(), unservedService.getRouteOrder(), priority));
         }
@@ -45,6 +55,9 @@ public class DefaultDoctorServiceMatcher implements DoctorServiceMatcher {
             return Optional.empty();
         }
 
+        // Важный момент: сначала уважаем исходный медицинский/бизнес-маршрут визита,
+        // затем даем возможность локально переопределить приоритет конфигурацией,
+        // и только в самом конце используем serviceId как детерминированный fallback.
         candidates.sort(Comparator
                 .comparingInt((Candidate candidate) -> candidate.routeOrder != null ? candidate.routeOrder.intValue() : Integer.MAX_VALUE)
                 .thenComparingInt(candidate -> candidate.priority)

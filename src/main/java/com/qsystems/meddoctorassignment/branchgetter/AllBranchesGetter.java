@@ -7,6 +7,10 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
+/**
+ * Стратегия получения branch id для режима, когда нужно кэшировать все отделения,
+ * доступные через Orchestra configuration API.
+ */
 @Singleton
 public class AllBranchesGetter implements BranchGettingStrategy {
 

@@ -5,6 +5,9 @@ import com.qsystems.meddoctorassignment.event.DoctorAssignmentEventHandler;
 import com.qsystems.meddoctorassignment.model.event.OrchestraEvent;
 import io.micronaut.context.annotation.Context;
 
+/**
+ * Разбирает сырой websocket frame и передает его в доменный обработчик событий.
+ */
 @Context
 public class WebsocketFrameHandler {
 

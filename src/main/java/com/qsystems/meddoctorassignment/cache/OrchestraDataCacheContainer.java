@@ -6,6 +6,9 @@ import jakarta.inject.Singleton;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+/**
+ * Потокобезопасный контейнер branch cache по всем обслуживаемым отделениям.
+ */
 @Singleton
 public class OrchestraDataCacheContainer {
 
@@ -15,6 +18,9 @@ public class OrchestraDataCacheContainer {
         return branchCacheMap;
     }
 
+    /**
+     * Возвращает существующий branch cache или создает новый пустой экземпляр.
+     */
     public BranchAssignmentCache getOrCreateBranchCache(int branchId) {
         BranchAssignmentCache existing = branchCacheMap.get(branchId);
         if (existing != null) {
@@ -25,6 +31,9 @@ public class OrchestraDataCacheContainer {
         return previous != null ? previous : created;
     }
 
+    /**
+     * Атомарно подменяет кэш отделения полностью собранным новым экземпляром.
+     */
     public void replaceBranchCache(int branchId, BranchAssignmentCache cache) {
         branchCacheMap.put(branchId, cache);
     }

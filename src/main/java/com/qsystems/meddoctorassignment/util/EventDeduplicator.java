@@ -8,11 +8,20 @@ import java.time.Instant;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+/**
+ * Дедупликатор входящих событий Orchestra по окну времени.
+ */
 @Singleton
 public class EventDeduplicator {
 
     private final Map<String, Instant> seenEvents = new ConcurrentHashMap<String, Instant>();
 
+    /**
+     * Проверяет, было ли событие уже обработано в заданном окне времени.
+     *
+     * <p>Ключ строится из набора полей, которые обычно позволяют отличить реальный новый event
+     * от повтора доставки одного и того же сообщения.</p>
+     */
     public boolean isDuplicate(OrchestraEvent event, Duration ttl) {
         cleanup(ttl);
         String key = buildKey(event);
@@ -33,10 +42,10 @@ public class EventDeduplicator {
     private String buildKey(OrchestraEvent event) {
         Object staffTransactionId = event.getParameters().get("staffTransactionId");
         Object servicePointTransactionId = event.getParameters().get("servicePointTransactionId");
-        return String.valueOf(event.getEventName()) + "|" +
-                String.valueOf(event.getUnitId()) + "|" +
-                String.valueOf(event.getEventTime()) + "|" +
-                String.valueOf(staffTransactionId) + "|" +
-                String.valueOf(servicePointTransactionId);
+        return String.valueOf(event.getEventName()) + "|"
+                + String.valueOf(event.getUnitId()) + "|"
+                + String.valueOf(event.getEventTime()) + "|"
+                + String.valueOf(staffTransactionId) + "|"
+                + String.valueOf(servicePointTransactionId);
     }
 }

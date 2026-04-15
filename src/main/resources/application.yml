@@ -114,7 +114,8 @@ application:
     # source-entry-point-id-by-branch:
     #   6: 1
     #   7: 3
-    source-entry-point-id-by-branch: {}
+    source-entry-point-id-by-branch:
+      6: 1
 
     experimental-endpoints:
       # Флаг включения visit workflow adapter-а.

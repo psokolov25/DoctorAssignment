@@ -1,0 +1,23 @@
+@startuml
+skinparam shadowing false
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 180
+
+autonumber
+participant "StartupEvent / PollingReconciliationJob" as T
+participant "OrchestraDataCacheUpdateService" as U
+participant "BranchCacheUpdater" as B
+participant "OrchestraMetadataGateway" as G
+participant "OrchestraDataCacheContainer" as C
+
+T -> U : refreshConfiguredBranches()
+U -> B : refresh(branchId)
+B -> G : get services
+G --> B : services
+B -> G : get queues / workProfiles / servicePoints
+G --> B : metadata
+B -> B : build new BranchAssignmentCache
+B -> C : replace(branchId, cache)
+C --> B : cache activated atomically
+B --> U : refresh summary
+@enduml

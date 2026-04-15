@@ -59,6 +59,43 @@ src/main/java/com/qsystems/meddoctorassignment
 
 ## 3. Архитектура решения
 
+### 3.0. PlantUML-диаграммы проекта
+
+Ниже добавлены диаграммы в двух видах:
+
+- исходники PlantUML: `docs/plantuml/*.puml`;
+- заранее подготовленные SVG: `docs/diagrams/*.svg`.
+
+Это позволяет:
+
+- читать архитектуру прямо в `README.md` без внешних плагинов;
+- редактировать диаграммы как код;
+- использовать SVG в документации, wiki и при внедрении.
+
+#### Общая архитектура сервиса
+
+![Общая архитектура сервиса](docs/diagrams/architecture-overview.svg)
+
+Исходник: `docs/plantuml/architecture-overview.puml`
+
+#### Последовательность назначения визита врачу
+
+![Последовательность назначения визита врачу](docs/diagrams/assignment-sequence.svg)
+
+Исходник: `docs/plantuml/assignment-sequence.puml`
+
+#### Перестройка branch cache
+
+![Перестройка branch cache](docs/diagrams/cache-refresh-sequence.svg)
+
+Исходник: `docs/plantuml/cache-refresh-sequence.puml`
+
+#### Схема внедрения и эксплуатации
+
+![Схема внедрения и эксплуатации](docs/diagrams/deployment-view.svg)
+
+Исходник: `docs/plantuml/deployment-view.puml`
+
 ### 3.1. Adapter layer
 
 `OrchestraMetadataGateway` и `OrchestraMetadataGatewayImpl` отвечают за чтение справочных сущностей Orchestra:

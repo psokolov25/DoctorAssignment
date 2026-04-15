@@ -1,0 +1,30 @@
+@startuml
+skinparam shadowing false
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 180
+
+autonumber
+actor "Orchestra" as O
+participant "StompSessionHandlerImpl" as S
+participant "DoctorAssignmentEventHandler" as H
+participant "AutonomousMedicalExamAssignmentService" as A
+participant "OrchestraDataCacheContainer" as C
+participant "VisitWorkflowGateway" as W
+
+O -> S : SERVICE_POINT_OPEN / SET_WORK_PROFILE
+S -> H : handle(event)
+H -> H : deduplicate + resolve doctor context
+H -> A : process(context)
+A -> C : get branch cache
+C --> A : BranchAssignmentCache
+A -> W : get visits from unknown-doctor queue
+W --> A : visits
+loop по визитам
+  A -> W : get visit details
+  W --> A : route / unserved services
+  A -> A : match doctor service
+  A -> W : assign service to visit
+  A -> W : transfer visit to queue
+end
+A --> H : processed count
+@enduml

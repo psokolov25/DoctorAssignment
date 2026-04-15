@@ -107,8 +107,14 @@ application:
     # Резервный source entry point id для отделений, у которых нет собственного значения.
     # Нужен, если Orchestra в поле fromId endpoint-а перевода ожидает именно entry point id.
     # default-source-entry-point-id: 1
-    source-entry-point-id-by-branch:
-      6: 1
+
+    # Source entry point id по отделениям.
+    # Ключ — branch id, значение — соответствующий entry point id в конкретном отделении.
+    # Пример:
+    # source-entry-point-id-by-branch:
+    #   6: 1
+    #   7: 3
+    source-entry-point-id-by-branch: {}
 
     experimental-endpoints:
       # Флаг включения visit workflow adapter-а.

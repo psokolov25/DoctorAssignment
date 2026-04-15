@@ -1,0 +1,25 @@
+@startuml
+skinparam componentStyle rectangle
+skinparam shadowing false
+skinparam defaultTextAlignment center
+
+node "Windows / Linux host" {
+  node "JVM 8" {
+    component "med-doctor-assignment-service\nMicronaut + Netty" as App
+  }
+}
+
+cloud "QMatic Orchestra 6" {
+  component "REST API" as Rest
+  component "qpevents/events\nSockJS / STOMP" as Events
+}
+
+database "Логи / мониторинг" as Logs
+actor "DevOps / Поддержка" as Ops
+
+App --> Rest : metadata + visit workflow
+App --> Events : subscriptions / heartbeats
+App --> Logs : structured logs
+Ops --> App : config / restart / diagnostics
+Ops --> Logs : incident analysis
+@enduml

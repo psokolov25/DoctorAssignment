@@ -1,0 +1,32 @@
+@startuml
+skinparam componentStyle rectangle
+skinparam shadowing false
+skinparam defaultTextAlignment center
+skinparam wrapWidth 220
+skinparam maxMessageSize 180
+
+actor "Врач" as Doctor
+cloud "QMatic Orchestra 6" as Orchestra {
+  component "REST API" as Rest
+  component "SockJS / STOMP события" as Ws
+}
+
+package "med-doctor-assignment-service" {
+  component "WebSocketService\nStompSessionHandlerImpl" as Websocket
+  component "DoctorAssignmentEventHandler" as EventHandler
+  component "AutonomousMedicalExamAssignmentService" as Assignment
+  component "BranchCacheUpdater" as CacheUpdater
+  component "OrchestraDataCacheContainer" as CacheContainer
+  component "ConfigurableVisitWorkflowGateway" as Workflow
+}
+
+Doctor --> Orchestra
+Ws --> Websocket : SERVICE_POINT_OPEN / SET_WORK_PROFILE
+Websocket --> EventHandler : OrchestraEvent
+EventHandler --> Assignment : process(context)
+Assignment --> CacheContainer : branch cache
+Assignment --> Workflow : assign / transfer visit
+CacheUpdater --> Rest : read metadata
+CacheUpdater --> CacheContainer : replace branch cache
+Workflow --> Rest : visit workflow REST
+@enduml

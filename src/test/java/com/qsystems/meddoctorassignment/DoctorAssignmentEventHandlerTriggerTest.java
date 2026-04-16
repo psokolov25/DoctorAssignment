@@ -157,7 +157,8 @@ public class DoctorAssignmentEventHandlerTriggerTest {
                 new DefaultLoggedDoctorContextResolver(container, gateways),
                 serviceLogic,
                 assignmentProperties,
-                new UserSessionReadinessCoordinator(assignmentProperties)
+                new UserSessionReadinessCoordinator(assignmentProperties),
+                new com.qsystems.meddoctorassignment.event.WorkProfileExpansionTriggerEvaluator(container, new DefaultLoggedDoctorContextResolver(container, gateways), new DefaultDoctorAvailableServicesResolver())
         );
 
         void prepareBranchTopology() {

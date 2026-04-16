@@ -95,6 +95,10 @@ application:
     # По умолчанию выключено: этот сигнал используется как вторая половина корреляции посадки.
     set-work-profile-trigger-enabled: false
 
+    # Разрешает ли SET_WORK_PROFILE внутри уже активной сессии врача запускать повторный цикл,
+    # если новый рабочий профиль расширяет доступный набор услуг.
+    work-profile-expanded-trigger-enabled: true
+
     # Разрешает ли цепочке USER_SERVICE_POINT_SESSION_START -> SET_WORK_PROFILE запускать mutating workflow.
     # Это основной рекомендуемый trigger для реального назначения и перевода визитов.
     user-service-point-session-start-trigger-enabled: true

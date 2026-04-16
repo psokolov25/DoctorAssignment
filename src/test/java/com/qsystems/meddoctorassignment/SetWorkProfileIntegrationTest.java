@@ -108,7 +108,8 @@ public class SetWorkProfileIntegrationTest {
                 new DefaultLoggedDoctorContextResolver(container, gateways),
                 serviceLogic,
                 assignmentProperties,
-                new UserSessionReadinessCoordinator(assignmentProperties)
+                new UserSessionReadinessCoordinator(assignmentProperties),
+                new com.qsystems.meddoctorassignment.event.WorkProfileExpansionTriggerEvaluator(container, new DefaultLoggedDoctorContextResolver(container, gateways), new DefaultDoctorAvailableServicesResolver())
         );
 
         OrchestraEvent event = new OrchestraEvent();

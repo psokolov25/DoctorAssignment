@@ -22,7 +22,7 @@ import org.slf4j.LoggerFactory;
 public class RuntimeConfigurationLogger implements ApplicationEventListener<StartupEvent> {
 
     private static final Logger log = LoggerFactory.getLogger(RuntimeConfigurationLogger.class);
-    private static final String BUILD_MARKER = "2026-04-16-run1310-r8-assign-effective-success";
+    private static final String BUILD_MARKER = "2026-04-16-run1328-r9-profile-expansion";
 
     private final AssignmentProperties assignmentProperties;
     private final OrchestraSessionCookieStore orchestraSessionCookieStore;
@@ -44,7 +44,7 @@ public class RuntimeConfigurationLogger implements ApplicationEventListener<Star
 
     @Override
     public void onApplicationEvent(StartupEvent event) {
-        log.info("Runtime configuration marker={} gatewayClass={} gatewayCodeSource={} activationGatewayClass={} activationGatewayCodeSource={} activationEnabled={} activationMethod={} activationPath={} activationFailCycleOnError={} userServicePointSessionStartTriggerEnabled={} setWorkProfileTriggerEnabled={} servicePointOpenTriggerEnabled={} userSessionSettleWindowMs={} abortCycleOnForbiddenMutation={} treatInactiveUserStateAsFailure={} treatNoStartedServicePointSessionAsFailure={} replayMutationCookiesForPut={} replayReadCookiesForGet={} websocketSendCookiesInHandshake={}",
+        log.info("Runtime configuration marker={} gatewayClass={} gatewayCodeSource={} activationGatewayClass={} activationGatewayCodeSource={} activationEnabled={} activationMethod={} activationPath={} activationFailCycleOnError={} userServicePointSessionStartTriggerEnabled={} workProfileExpandedTriggerEnabled={} setWorkProfileTriggerEnabled={} servicePointOpenTriggerEnabled={} userSessionSettleWindowMs={} abortCycleOnForbiddenMutation={} treatInactiveUserStateAsFailure={} treatNoStartedServicePointSessionAsFailure={} replayMutationCookiesForPut={} replayReadCookiesForGet={} websocketSendCookiesInHandshake={}",
                 BUILD_MARKER,
                 visitWorkflowGateway.getClass().getName(),
                 resolveCodeSource(visitWorkflowGateway.getClass()),
@@ -55,6 +55,7 @@ public class RuntimeConfigurationLogger implements ApplicationEventListener<Star
                 assignmentProperties.getActivation() != null ? assignmentProperties.getActivation().getPath() : null,
                 assignmentProperties.getActivation() != null && assignmentProperties.getActivation().isFailCycleOnError(),
                 assignmentProperties.isUserServicePointSessionStartTriggerEnabled(),
+                assignmentProperties.isWorkProfileExpandedTriggerEnabled(),
                 assignmentProperties.isSetWorkProfileTriggerEnabled(),
                 assignmentProperties.isServicePointOpenTriggerEnabled(),
                 assignmentProperties.getUserSessionSettleWindowMs(),

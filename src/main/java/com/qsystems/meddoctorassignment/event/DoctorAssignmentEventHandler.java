@@ -27,17 +27,20 @@ public class DoctorAssignmentEventHandler {
     private final AutonomousMedicalExamAssignmentService assignmentService;
     private final AssignmentProperties assignmentProperties;
     private final UserSessionReadinessCoordinator userSessionReadinessCoordinator;
+    private final WorkProfileExpansionTriggerEvaluator workProfileExpansionTriggerEvaluator;
 
     public DoctorAssignmentEventHandler(EventDeduplicator eventDeduplicator,
                                         LoggedDoctorContextResolver loggedDoctorContextResolver,
                                         AutonomousMedicalExamAssignmentService assignmentService,
                                         AssignmentProperties assignmentProperties,
-                                        UserSessionReadinessCoordinator userSessionReadinessCoordinator) {
+                                        UserSessionReadinessCoordinator userSessionReadinessCoordinator,
+                                        WorkProfileExpansionTriggerEvaluator workProfileExpansionTriggerEvaluator) {
         this.eventDeduplicator = eventDeduplicator;
         this.loggedDoctorContextResolver = loggedDoctorContextResolver;
         this.assignmentService = assignmentService;
         this.assignmentProperties = assignmentProperties;
         this.userSessionReadinessCoordinator = userSessionReadinessCoordinator;
+        this.workProfileExpansionTriggerEvaluator = workProfileExpansionTriggerEvaluator;
     }
 
     public void handle(OrchestraEvent event) {
@@ -65,8 +68,19 @@ public class DoctorAssignmentEventHandler {
                 assignmentService.process(doctorContext);
                 return;
             }
+
+            WorkProfileExpansionTriggerEvaluator.EvaluationResult expansionResult = workProfileExpansionTriggerEvaluator.evaluate(event);
+            if (expansionResult.isTriggered()) {
+                if (!assignmentProperties.isTriggerEnabled(TriggerSource.WORK_PROFILE_EXPANDED)) {
+                    log.info("Skip expanded SET_WORK_PROFILE because trigger {} is disabled by configuration", TriggerSource.WORK_PROFILE_EXPANDED);
+                    return;
+                }
+                assignmentService.process(expansionResult.getDoctorContext());
+                return;
+            }
+
             if (!assignmentProperties.isTriggerEnabled(TriggerSource.SET_WORK_PROFILE)) {
-                log.info("Skip raw SET_WORK_PROFILE because no matching USER_SERVICE_POINT_SESSION_START was found and raw trigger is disabled");
+                log.info("Skip raw SET_WORK_PROFILE because no matching USER_SERVICE_POINT_SESSION_START was found and raw trigger is disabled (reason={})", expansionResult.getReason());
                 return;
             }
         }

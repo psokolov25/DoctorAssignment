@@ -71,6 +71,13 @@ public class AssignmentProperties {
      */
     private boolean userServicePointSessionStartTriggerEnabled = true;
 
+
+    /**
+     * Разрешает ли изменение рабочего профиля внутри уже активной пользовательской сессии
+     * запускать повторный assignment cycle, если новый профиль расширяет доступный набор услуг.
+     */
+    private boolean workProfileExpandedTriggerEnabled = true;
+
     /**
      * Окно ожидания финального SET_WORK_PROFILE после USER_SERVICE_POINT_SESSION_START.
      *
@@ -233,6 +240,14 @@ public class AssignmentProperties {
         this.userServicePointSessionStartTriggerEnabled = userServicePointSessionStartTriggerEnabled;
     }
 
+    public boolean isWorkProfileExpandedTriggerEnabled() {
+        return workProfileExpandedTriggerEnabled;
+    }
+
+    public void setWorkProfileExpandedTriggerEnabled(boolean workProfileExpandedTriggerEnabled) {
+        this.workProfileExpandedTriggerEnabled = workProfileExpandedTriggerEnabled;
+    }
+
     public long getUserSessionSettleWindowMs() {
         return userSessionSettleWindowMs;
     }
@@ -370,6 +385,8 @@ public class AssignmentProperties {
             case USER_SERVICE_POINT_SESSION_START:
             case USER_SESSION_READY:
                 return userServicePointSessionStartTriggerEnabled;
+            case WORK_PROFILE_EXPANDED:
+                return workProfileExpandedTriggerEnabled;
             case POLLING:
                 return true;
             default:

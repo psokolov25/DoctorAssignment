@@ -36,7 +36,10 @@ public class UserSessionReadinessCoordinator {
     }
 
     /**
-     * Регистрирует начало пользовательской service point session.
+     * Регистрирует начало пользовательской service point session и сохраняет ее как pending-state.
+     *
+     * <p>С этого шага сервис еще не запускает assignment cycle: до прихода связанного
+     * SET_WORK_PROFILE посадка считается не полностью стабилизированной.</p>
      */
     public void registerSessionStart(OrchestraEvent event) {
         String key = resolveCorrelationKey(event);
@@ -56,6 +59,10 @@ public class UserSessionReadinessCoordinator {
     /**
      * Пытается сопоставить SET_WORK_PROFILE с ранее сохраненным USER_SERVICE_POINT_SESSION_START.
      * При успехе возвращает описание готовой посадки и удаляет pending state.
+     *
+     * <p>Важно: итоговый профиль врача для доменного workflow берется из
+     * USER_SERVICE_POINT_SESSION_START, а SET_WORK_PROFILE здесь служит маркером завершения
+     * корреляции и дополнительным диагностическим срезом server-side контекста.</p>
      */
     public Optional<CompletedUserSession> completeIfReady(OrchestraEvent event) {
         String key = resolveCorrelationKey(event);
@@ -113,7 +120,10 @@ public class UserSessionReadinessCoordinator {
 
     /**
      * Завершенная посадка: событие старта сессии плюс сигнал стабилизации через SET_WORK_PROFILE.
-     * Доменный профиль и базовый контекст берутся из USER_SERVICE_POINT_SESSION_START.
+     *
+     * <p>Объект хранит оба взгляда на одну и ту же посадку: стартовый пользовательский контекст
+     * и последующий server-side settled-view. При этом downstream workflow должен использовать
+     * профиль из sessionStart, а settledView полезен для логов, корреляции и разборов инцидентов.</p>
      */
     public static final class CompletedUserSession {
         private final PendingUserSession sessionStart;

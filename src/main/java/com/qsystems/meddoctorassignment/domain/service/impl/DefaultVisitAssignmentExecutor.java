@@ -15,6 +15,11 @@ import java.util.Optional;
 
 /**
  * Исполнитель доменного решения: назначает услугу визиту и переводит его в целевую очередь.
+ *
+ * <p>Ключевая особенность текущей реализации — поддержка ветки {@code transfer-only}.
+ * Если визит уже стоит на той услуге, которую алгоритм выбрал для врача, сервис пропускает
+ * redundant assign и сразу делает перевод в очередь врача. Это резко уменьшает число лишних
+ * PUT-запросов и позволяет не ломать цикл на no-op assign.</p>
  */
 @Singleton
 public class DefaultVisitAssignmentExecutor implements VisitAssignmentExecutor {
@@ -30,6 +35,14 @@ public class DefaultVisitAssignmentExecutor implements VisitAssignmentExecutor {
         this.assignmentProperties = assignmentProperties;
     }
 
+    /**
+     * Выполняет одно доменное решение по конкретному визиту.
+     *
+     * <p>Метод сначала делает defensive recheck текущей очереди, затем выбирает между
+     * режимами {@code assign+transfer} и {@code transfer-only}, а после перевода может
+     * дополнительно перечитать визит и убедиться, что он действительно оказался в ожидаемой
+     * очереди.</p>
+     */
     @Override
     public boolean assign(DoctorContext doctorContext,
                           VisitSummary visitSummary,

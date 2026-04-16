@@ -18,6 +18,11 @@ import java.util.Set;
 /**
  * Определяет, нужно ли запускать повторный assignment cycle при смене рабочего профиля
  * внутри уже активной пользовательской сессии.
+ *
+ * <p>Trigger должен срабатывать не на любой SET_WORK_PROFILE, а только тогда, когда новый
+ * профиль реально расширил множество услуг, доступных врачу. Это позволяет автоматически
+ * дочищать очередь «врач не назначен» после расширения полномочий врача, не поднимая лишние
+ * циклы на профилях, которые ничего нового не добавили.</p>
  */
 @Singleton
 public class WorkProfileExpansionTriggerEvaluator {
@@ -36,6 +41,9 @@ public class WorkProfileExpansionTriggerEvaluator {
         this.doctorAvailableServicesResolver = doctorAvailableServicesResolver;
     }
 
+    /**
+     * Сравнивает старый и новый профиль активной сессии врача и решает, нужен ли повторный цикл.
+     */
     public EvaluationResult evaluate(OrchestraEvent event) {
         DoctorContext newContext;
         try {
@@ -117,6 +125,10 @@ public class WorkProfileExpansionTriggerEvaluator {
         return result != null ? result : Collections.<Integer>emptySet();
     }
 
+    /**
+     * Результат оценки смены профиля: либо trigger действительно должен запуститься,
+     * либо событие было признано недостаточным для повторного цикла и снабжено причиной.
+     */
     public static final class EvaluationResult {
         private final boolean triggered;
         private final DoctorContext doctorContext;

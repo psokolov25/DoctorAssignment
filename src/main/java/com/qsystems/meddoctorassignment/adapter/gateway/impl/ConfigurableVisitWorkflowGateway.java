@@ -30,7 +30,13 @@ import java.util.Optional;
  *
  * <p>Класс не делает предположений о приватных API Orchestra: все пути задаются в
  * {@code application.assignment.experimental-endpoints}. Это позволяет адаптировать сервис
- * под конкретную инсталляцию без переписывания доменной логики.</p>
+ * под конкретную инсталляцию без переписывания доменной логики.
+ *
+ * <p>Дополнительно класс инкапсулирует несколько подтвержденных практикой интеграционных
+ * нюансов: transfer-ответ Orchestra может быть штатным {@code 204 No Content}; поле
+ * {@code fromId} для transfer остается отдельным конфигурируемым entry point id; а ответ
+ * assign оценивается не только по {@code userState}, но и по фактическому состоянию
+ * {@code currentVisitService} в body ответа.</p>
  */
 @Singleton
 public class ConfigurableVisitWorkflowGateway implements VisitWorkflowGateway {
@@ -75,6 +81,14 @@ public class ConfigurableVisitWorkflowGateway implements VisitWorkflowGateway {
         return httpClient.toBlocking().retrieve(request, VisitDetails.class);
     }
 
+    /**
+     * Выполняет assign-service через конфигурируемый endpoint и интерпретирует ответ Orchestra
+     * в терминах доменного workflow, а не только HTTP-статуса.
+     *
+     * <p>Если Orchestra вернула неидеальный {@code userState}, но в body уже видно, что
+     * {@code currentVisitService.serviceId} совпал с запрошенной услугой, assign считается
+     * эффективно примененным и цикл может продолжить transfer.</p>
+     */
     @Override
     public void assignServiceToVisit(int branchId, long visitId, int serviceId, int staffId, long servicePointId) {
         String path = assignmentProperties.getExperimentalEndpoints().getAssignServicePath();
@@ -145,6 +159,13 @@ public class ConfigurableVisitWorkflowGateway implements VisitWorkflowGateway {
         }
     }
 
+    /**
+     * Выполняет transfer-visit через конфигурируемый endpoint.
+     *
+     * <p>На текущей интеграции Orchestra нередко отвечает {@code 204 No Content}, поэтому
+     * клиент читает полный {@link HttpResponse} через {@code byte[]} и не требует обязательного
+     * строкового тела ответа.</p>
+     */
     @Override
     public void transferVisitToQueue(int branchId, long visitId, int sourceQueueId, int targetQueueId) {
         String path = assignmentProperties.getExperimentalEndpoints().getTransferVisitPath();

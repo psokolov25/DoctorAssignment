@@ -8,7 +8,12 @@ import java.util.Map;
  *
  * <p>Помимо самих значений хранит карту происхождения полей. Это полезно при поддержке и
  * разборе инцидентов, когда нужно понять, из event payload или из fallback lookup было взято
- * конкретное значение.</p>
+ * конкретное значение.
+ *
+ * <p>Важно не смешивать два разных идентификатора точки:
+ * {@code servicePointId} — внешний unit id/service point id из Orchestra событий и кэша;
+ * {@code servicePointLogicId} — внутренний серверный marker, полезный для корреляции и
+ * диагностики, но не заменяющий конфигурируемый entry point id для transfer-операций.</p>
  */
 public class DoctorContext {
 

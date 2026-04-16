@@ -15,7 +15,14 @@ import java.time.Duration;
 import java.util.Optional;
 
 /**
- * Обработчик входящих событий Orchestra, относящихся к началу работы врача.
+ * Главный обработчик входящих событий Orchestra для сценария автоматического назначения визитов.
+ *
+ * <p>Класс не запускает mutating workflow "по любому событию". Вместо этого он строит
+ * небольшой конечный автомат:
+ * USER_SERVICE_POINT_SESSION_START открывает pending-session, следующий SET_WORK_PROFILE
+ * завершает стабилизацию посадки и превращается во внутренний trigger USER_SESSION_READY,
+ * а отдельный SET_WORK_PROFILE внутри уже активной сессии может породить trigger
+ * WORK_PROFILE_EXPANDED, если новый профиль действительно расширил набор доступных услуг.</p>
  */
 @Singleton
 public class DoctorAssignmentEventHandler {
@@ -43,6 +50,14 @@ public class DoctorAssignmentEventHandler {
         this.workProfileExpansionTriggerEvaluator = workProfileExpansionTriggerEvaluator;
     }
 
+    /**
+     * Обрабатывает одно нормализованное событие Orchestra.
+     *
+     * <p>На этом уровне происходит только маршрутизация и корреляция событий. Восстановление
+     * полного {@link com.qsystems.meddoctorassignment.model.event.DoctorContext} и запуск
+     * доменного цикла выполняются только для событий, которые уже признаны безопасными
+     * trigger-ами.</p>
+     */
     public void handle(OrchestraEvent event) {
         TriggerSource triggerSource = map(event.getEventName());
         if (triggerSource == null) {

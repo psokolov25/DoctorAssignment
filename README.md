@@ -7,13 +7,14 @@
 Типовой поток работы выглядит так:
 
 1. Врач входит на service point.
-2. Orchestra публикует связанный набор событий посадки: `USER_SERVICE_POINT_SESSION_START`, затем `SET_WORK_PROFILE` (а `SERVICE_POINT_OPEN` используется только как вспомогательный/диагностический сигнал).
+2. Orchestra публикует связанный набор событий посадки: `USER_SERVICE_POINT_SESSION_START`, затем `SET_WORK_PROFILE`. Сервис коррелирует их по `staffTransactionId` и формирует внутренний trigger `USER_SESSION_READY`. `SERVICE_POINT_OPEN` используется только как вспомогательный/диагностический сигнал и в боевой workflow по умолчанию не запускает мутации.
 3. Сервис определяет branch, service point, врача и его work profile.
 4. По кэшу справочников определяет, какие услуги врач может обслуживать.
 5. Берет визиты из очереди «врач не назначен».
 6. Анализирует непройденные услуги визита.
 7. Выбирает лучшую услугу для этого врача.
-8. Назначает услугу визиту и переводит визит в очередь услуги.
+8. Если нужная услуга уже назначена визиту, сразу переводит его в очередь услуги (`transfer-only`).
+9. Если услуга ещё не назначена, выполняет `assign-service`, а затем `transfer-visit`.
 
 Сервис проектировался так, чтобы:
 
@@ -135,12 +136,13 @@ src/main/java/com/qsystems/meddoctorassignment
 - `SERVICE_POINT_OPEN`
 - `SET_WORK_PROFILE`
 
-`WebsocketFrameHandler` превращает сырой JSON в `OrchestraEvent`, а `DoctorAssignmentEventHandler`:
+`WebsocketFrameHandler` превращает сырой JSON в `OrchestraEvent`, а `DoctorAssignmentEventHandler` строит небольшую state machine вокруг посадки врача:
 
-1. определяет `TriggerSource`;
-2. отбрасывает дубликаты через `EventDeduplicator`;
-3. восстанавливает `DoctorContext`;
-4. запускает доменный цикл назначения.
+1. `USER_SERVICE_POINT_SESSION_START` регистрирует pending-session;
+2. следующий `SET_WORK_PROFILE` с тем же `staffTransactionId` завершает корреляцию;
+3. сервис формирует внутренний trigger `USER_SESSION_READY`;
+4. только после этого восстанавливает `DoctorContext` и запускает доменный цикл назначения;
+5. если во время активной сессии приходит `SET_WORK_PROFILE`, который расширяет доступный набор услуг врача, сервис может сформировать trigger `WORK_PROFILE_EXPANDED` и повторно обработать очередь «врач не назначен».
 
 ### 3.4. Domain layer
 
@@ -215,12 +217,13 @@ src/main/java/com/qsystems/meddoctorassignment
 
 ### 4.4. Исполнение решения
 
-`DefaultVisitAssignmentExecutor` делает три шага:
+`DefaultVisitAssignmentExecutor` делает ветвящийся workflow:
 
 1. optional recheck — все ли еще визит находится в очереди «врач не назначен»;
-2. вызов `assignServiceToVisit(...)`;
-3. вызов `transferVisitToQueue(...)`;
-4. optional post-check — действительно ли визит оказался в ожидаемой очереди.
+2. если `currentVisitService` уже совпадает с выбранной услугой врача, executor пропускает redundant `assign-service` и идет сразу в `transfer-only`;
+3. если услуга ещё не совпадает, выполняет `assignServiceToVisit(...)`;
+4. затем выполняет `transferVisitToQueue(...)`;
+5. optional post-check — действительно ли визит оказался в ожидаемой очереди.
 
 Перед началом цикла `AutonomousMedicalExamAssignmentService` теперь также умеет вызывать
 опциональный activation-step (`OperatorContextActivationGateway`). Он нужен для тех инсталляций,
@@ -228,6 +231,8 @@ src/main/java/com/qsystems/meddoctorassignment
 запускающий или привязывающий server-side session service point / operator context.
 
 При `dry-run=true` сервис только пишет в лог, какие действия он бы выполнил.
+
+Важно: по проверенным логам Orchestra ответ `assign-service` может возвращать `userState=INACTIVE`, но при этом уже фактически менять `currentVisitService` визита. Поэтому текущая реализация считает `assign` **эффективно успешным**, если HTTP-статус равен `200`, а в response body уже видно, что `currentVisitService.serviceId` совпал с запрошенной услугой. В этом случае сервис не abort-ит цикл и сразу продолжает `transfer`.
 
 ## 5. Подтвержденные и неподтвержденные API
 
@@ -311,7 +316,19 @@ src/main/java/com/qsystems/meddoctorassignment
 - recheck перед переводом;
 - список разрешенных branch;
 - конфигурируемые приоритеты услуг;
-- пути для visit workflow endpoint-ов.
+- пути для visit workflow endpoint-ов;
+- composite-trigger посадки (`user-service-point-session-start-trigger-enabled`, `user-session-settle-window-ms`);
+- trigger расширения профиля (`work-profile-expanded-trigger-enabled`);
+- правила раннего завершения цикла при контекстных ошибках mutation;
+- настройки optional activation-step перед mutating REST.
+
+Практически важные флаги:
+
+- `user-service-point-session-start-trigger-enabled` — основной безопасный trigger посадки;
+- `set-work-profile-trigger-enabled` — raw-trigger для `SET_WORK_PROFILE`, обычно выключен;
+- `work-profile-expanded-trigger-enabled` — повторный запуск цикла, когда новый профиль дал врачу больше услуг;
+- `abort-cycle-on-forbidden-mutation` — не долбить Orchestra повторными PUT после первого контекстного отказа;
+- `treat-inactive-user-state-as-failure` / `treat-no-started-service-point-session-as-failure` — как интерпретировать server-side user state в ответах `assign-service`.
 
 ## 7. Руководство для разработчиков
 
@@ -328,6 +345,37 @@ mvn mn:run
 mvn clean package
 java -jar target/med-doctor-assignment-service-*.jar
 ```
+
+### 6.4. Текущие интеграционные инварианты
+
+Ниже перечислены правила, которые уже подтверждены живыми прогонами и заложены в код:
+
+1. **Websocket и REST разделены по сессионной модели.**
+   Websocket/SockJS использует только `Authorization` header. REST GET-запросы могут использовать read-cookie, а replay mutation-cookie для PUT/POST по умолчанию выключен.
+
+2. **Entry point и service point — разные сущности.**
+   `fromId` для `transfer-visit` остается конфигурируемым через `application.yml` и не вычисляется из `servicePointLogicId`.
+
+3. **Профиль врача для готовой посадки берется из `USER_SERVICE_POINT_SESSION_START`.**
+   `SET_WORK_PROFILE` используется как сигнал завершения корреляции и как источник событий расширения профиля, но не должен слепо перетирать выбранный в UI профиль врача.
+
+4. **`204 No Content` на `transfer-visit` — это штатный успешный ответ.**
+   Клиент не должен пытаться читать из него обязательное строковое тело.
+
+5. **Визит с уже назначенной целевой услугой должен идти по пути `transfer-only`.**
+   Повторный `assign-service` для такого визита избыточен и может преждевременно ломать цикл.
+
+6. **`assign-service` оценивается не только по `userState`, но и по фактическому состоянию визита.**
+   Если Orchestra уже сменила `currentVisitService` на нужную услугу, сервис продолжает `transfer`, даже если `userState` выглядит как неидеальный серверный контекст.
+
+### 6.5. Наблюдаемый выигрыш по скорости
+
+По реальным логам проекта зафиксирован заметный выигрыш после введения composite-trigger, `transfer-only` и корректной трактовки эффективного `assign`:
+
+- ранний сценарий `72 -> 4 -> transfer` отрабатывал примерно за **46 секунд**, потому что `transfer` происходил только в следующем polling-цикле;
+- после последних правок тот же класс сценария начал отрабатывать примерно за **1.1 секунды** в одном цикле.
+
+Практический выигрыш — порядка **43x** для кейса «назначить услугу и сразу перевести визит».
 
 ### 7.2. Что важно понимать при доработке
 
@@ -395,13 +443,24 @@ java -jar target/med-doctor-assignment-service-*.jar
 Проверить:
 
 - `unknown-doctor-queue-id`
+- корреляцию `USER_SERVICE_POINT_SESSION_START -> SET_WORK_PROFILE` по `staffTransactionId`
+- какой `TriggerSource` реально запустил цикл (`USER_SESSION_READY`, `WORK_PROFILE_EXPANDED`, `POLLING`)
 - `workProfile -> queues`
 - `queue -> services`
 - наличие непройденных услуг у визитов
 - совпадение service id/external key
+- не сработал ли путь `transfer-only` для already-assigned визита
 
 **Симптом:** сервис пытается назначить услугу, но получает `500`.  
 Проверить правильность visit endpoint-ов и допустимость операции на стороне Orchestra.
+
+**Симптом:** `assign-service` вернул `200`, но цикл все равно оборвался.  
+Проверить:
+
+- какой `userState` вернула Orchestra;
+- изменилась ли в response body `currentVisitService.serviceId`;
+- не попал ли визит в ветку `transfer-only`;
+- не сработал ли `abort-cycle-on-forbidden-mutation` на действительно неподтвержденном assign.
 
 ### 8.3. Минимальный набор данных для разбора инцидента
 
@@ -503,7 +562,10 @@ Micronaut поднимает сервер на `micronaut.server.port`, по у�
 - сопоставление услуг врачу;
 - восстановление doctor context;
 - JSON mapping визитов;
-- интеграционный сценарий `SET_WORK_PROFILE`.
+- корреляция `USER_SERVICE_POINT_SESSION_START -> SET_WORK_PROFILE`;
+- trigger расширения профиля;
+- `transfer-only` для уже назначенной услуги;
+- эффективный `assign-service`, когда фактическое состояние визита важнее формального `userState`.
 
 Тесты используют in-memory/fake gateway-реализации и подтверждают доменную логику независимо от реальной Orchestra.
 

@@ -48,9 +48,71 @@ public class AssignmentProperties {
     private boolean dryRun = true;
 
     /**
+     * Разрешает ли SERVICE_POINT_OPEN запускать mutating workflow.
+     *
+     * <p>По логам Orchestra этот сигнал часто приходит раньше окончательной фиксации work profile,
+     * поэтому по умолчанию отключен и используется только как диагностический.</p>
+     */
+    private boolean servicePointOpenTriggerEnabled = false;
+
+    /**
+     * Разрешает ли SET_WORK_PROFILE запускать mutating workflow.
+     *
+     * <p>После обнаружения USER_SERVICE_POINT_SESSION_START этот сигнал по умолчанию оставлен
+     * только как вспомогательный и диагностический.</p>
+     */
+    private boolean setWorkProfileTriggerEnabled = false;
+
+    /**
+     * Разрешает ли USER_SERVICE_POINT_SESSION_START запускать mutating workflow.
+     *
+     * <p>Это основной рекомендуемый trigger: он лучше всего соответствует реальному началу
+     * пользовательской сессии на точке обслуживания.</p>
+     */
+    private boolean userServicePointSessionStartTriggerEnabled = true;
+
+    /**
+     * Окно ожидания финального SET_WORK_PROFILE после USER_SERVICE_POINT_SESSION_START.
+     *
+     * <p>По наблюдаемым логам итоговый профиль приходит через десятки миллисекунд,
+     * поэтому по умолчанию даем короткое окно на стабилизацию посадки.</p>
+     */
+    private long userSessionSettleWindowMs = 2000L;
+
+    /**
      * Нужно ли перечитывать визит перед переводом между очередями.
      */
     private boolean recheckVisitBeforeTransfer = true;
+
+    /**
+     * Прерывать ли текущий цикл после первого 403/контекстного отказа mutation-запроса.
+     *
+     * <p>По логам Orchestra повторные PUT в том же невалидном контексте почти всегда
+     * приводят к одинаковым 403, поэтому безопаснее остановить цикл и дождаться
+     * следующего события или polling fallback.</p>
+     */
+    private boolean abortCycleOnForbiddenMutation = true;
+
+    /**
+     * Считать ли ответ assign с userState=INACTIVE контекстной ошибкой.
+     *
+     * <p>Такой ответ означает, что Orchestra приняла запрос формально, но операторский
+     * контекст EntryPoint ещё не активирован для безопасного последующего transfer.</p>
+     */
+    private boolean treatInactiveUserStateAsFailure = true;
+
+    /**
+     * Считать ли ответ assign с userState=NO_STARTED_SERVICE_POINT_SESSION контекстной ошибкой.
+     *
+     * <p>По свежим логам Orchestra такое состояние означает, что текущая service point session
+     * ещё не стартовала в серверном EntryPoint-контуре, даже если assign формально вернул 200.</p>
+     */
+    private boolean treatNoStartedServicePointSessionAsFailure = true;
+
+    /**
+     * Конфигурация предварительной активации operator/service-point context.
+     */
+    private Activation activation = new Activation();
 
     /**
      * Белый список branch id. Пустой список означает "все отделения".
@@ -147,12 +209,76 @@ public class AssignmentProperties {
         this.dryRun = dryRun;
     }
 
+    public boolean isServicePointOpenTriggerEnabled() {
+        return servicePointOpenTriggerEnabled;
+    }
+
+    public void setServicePointOpenTriggerEnabled(boolean servicePointOpenTriggerEnabled) {
+        this.servicePointOpenTriggerEnabled = servicePointOpenTriggerEnabled;
+    }
+
+    public boolean isSetWorkProfileTriggerEnabled() {
+        return setWorkProfileTriggerEnabled;
+    }
+
+    public void setSetWorkProfileTriggerEnabled(boolean setWorkProfileTriggerEnabled) {
+        this.setWorkProfileTriggerEnabled = setWorkProfileTriggerEnabled;
+    }
+
+    public boolean isUserServicePointSessionStartTriggerEnabled() {
+        return userServicePointSessionStartTriggerEnabled;
+    }
+
+    public void setUserServicePointSessionStartTriggerEnabled(boolean userServicePointSessionStartTriggerEnabled) {
+        this.userServicePointSessionStartTriggerEnabled = userServicePointSessionStartTriggerEnabled;
+    }
+
+    public long getUserSessionSettleWindowMs() {
+        return userSessionSettleWindowMs;
+    }
+
+    public void setUserSessionSettleWindowMs(long userSessionSettleWindowMs) {
+        this.userSessionSettleWindowMs = userSessionSettleWindowMs;
+    }
+
     public boolean isRecheckVisitBeforeTransfer() {
         return recheckVisitBeforeTransfer;
     }
 
     public void setRecheckVisitBeforeTransfer(boolean recheckVisitBeforeTransfer) {
         this.recheckVisitBeforeTransfer = recheckVisitBeforeTransfer;
+    }
+
+    public boolean isAbortCycleOnForbiddenMutation() {
+        return abortCycleOnForbiddenMutation;
+    }
+
+    public void setAbortCycleOnForbiddenMutation(boolean abortCycleOnForbiddenMutation) {
+        this.abortCycleOnForbiddenMutation = abortCycleOnForbiddenMutation;
+    }
+
+    public boolean isTreatInactiveUserStateAsFailure() {
+        return treatInactiveUserStateAsFailure;
+    }
+
+    public void setTreatInactiveUserStateAsFailure(boolean treatInactiveUserStateAsFailure) {
+        this.treatInactiveUserStateAsFailure = treatInactiveUserStateAsFailure;
+    }
+
+    public boolean isTreatNoStartedServicePointSessionAsFailure() {
+        return treatNoStartedServicePointSessionAsFailure;
+    }
+
+    public void setTreatNoStartedServicePointSessionAsFailure(boolean treatNoStartedServicePointSessionAsFailure) {
+        this.treatNoStartedServicePointSessionAsFailure = treatNoStartedServicePointSessionAsFailure;
+    }
+
+    public Activation getActivation() {
+        return activation;
+    }
+
+    public void setActivation(Activation activation) {
+        this.activation = activation;
     }
 
     public List<Integer> getAllowedBranches() {
@@ -230,6 +356,28 @@ public class AssignmentProperties {
     }
 
     /**
+     * Проверяет, разрешено ли источнику события запускать mutating workflow.
+     */
+    public boolean isTriggerEnabled(com.qsystems.meddoctorassignment.model.event.TriggerSource triggerSource) {
+        if (triggerSource == null) {
+            return false;
+        }
+        switch (triggerSource) {
+            case SERVICE_POINT_OPEN:
+                return servicePointOpenTriggerEnabled;
+            case SET_WORK_PROFILE:
+                return setWorkProfileTriggerEnabled;
+            case USER_SERVICE_POINT_SESSION_START:
+            case USER_SESSION_READY:
+                return userServicePointSessionStartTriggerEnabled;
+            case POLLING:
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    /**
      * Возвращает конфигурируемый приоритет услуги.
      *
      * @param key      serviceId, internalName или externalName услуги
@@ -260,6 +408,83 @@ public class AssignmentProperties {
             }
         }
         return defaultSourceEntryPointId;
+    }
+
+    /**
+     * Конфигурация предварительного activation-step перед mutating REST.
+     */
+    @ConfigurationProperties("activation")
+    public static class Activation {
+
+        /**
+         * Включает отдельный activation-step перед assign/transfer.
+         */
+        private boolean enabled = false;
+
+        /**
+         * Прерывать ли текущий цикл, если activation-step завершился ошибкой.
+         */
+        private boolean failCycleOnError = true;
+
+        /**
+         * HTTP-метод вызова activation-step. Поддерживаются GET/POST/PUT/PATCH/DELETE.
+         */
+        private String method = "POST";
+
+        /**
+         * Путь activation endpoint-а. Может содержать placeholders:
+         * {branchId}, {servicePointId}, {staffId}, {workProfileId}, {servicePointName},
+         * {workProfileName}, {userName}.
+         */
+        private String path;
+
+        /**
+         * Тело запроса activation-step как шаблон строки с теми же placeholders.
+         *
+         * <p>Шаблон подставляется как есть, поэтому кавычки и формат JSON нужно задавать
+         * непосредственно в конфигурации.</p>
+         */
+        private String payloadTemplate = "";
+
+        public boolean isEnabled() {
+            return enabled;
+        }
+
+        public void setEnabled(boolean enabled) {
+            this.enabled = enabled;
+        }
+
+        public boolean isFailCycleOnError() {
+            return failCycleOnError;
+        }
+
+        public void setFailCycleOnError(boolean failCycleOnError) {
+            this.failCycleOnError = failCycleOnError;
+        }
+
+        public String getMethod() {
+            return method;
+        }
+
+        public void setMethod(String method) {
+            this.method = method;
+        }
+
+        public String getPath() {
+            return path;
+        }
+
+        public void setPath(String path) {
+            this.path = path;
+        }
+
+        public String getPayloadTemplate() {
+            return payloadTemplate;
+        }
+
+        public void setPayloadTemplate(String payloadTemplate) {
+            this.payloadTemplate = payloadTemplate;
+        }
     }
 
     /**

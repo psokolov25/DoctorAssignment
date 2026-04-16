@@ -75,6 +75,25 @@ public class AutonomousMedicalExamAssignmentServiceTest {
     }
 
     @Test
+    void skipsRedundantAssignWhenVisitAlreadyHasSelectedServiceAndTransfersDirectly() {
+        Fixture fixture = new Fixture();
+        fixture.prepareBranchTopology();
+        fixture.assignmentProperties.setDryRun(false);
+        fixture.gateways.waitingVisitsByQueue.put("7|900", Collections.singletonList(new VisitSummary(1500L, 900, "WAITING", "A-1500")));
+        VisitDetails visitDetails = new VisitDetails(1500L, 900, Arrays.asList(new VisitUnservedService(301, null, 1)));
+        visitDetails.setCurrentServiceId(Integer.valueOf(301));
+        fixture.gateways.visitDetailsById.put(1500L, visitDetails);
+        fixture.gateways.visitById.put(1500L, new VisitSummary(1500L, 900, "WAITING", "A-1500"));
+
+        DoctorContext context = fixture.openDoctor(7, 41220000000007L, 45, 15);
+        fixture.service.process(context);
+
+        Assertions.assertTrue(fixture.gateways.assignedOperations.isEmpty());
+        Assertions.assertEquals(1, fixture.gateways.transferredOperations.size());
+        Assertions.assertTrue(fixture.gateways.transferredOperations.get(0).endsWith("|901"));
+    }
+
+    @Test
     void continuesWhenOneVisitFailsAndProcessesNextOne() {
         Fixture fixture = new Fixture();
         fixture.prepareBranchTopology();
@@ -95,6 +114,50 @@ public class AutonomousMedicalExamAssignmentServiceTest {
 
         Assertions.assertEquals(1, fixture.gateways.assignedOperations.size());
         Assertions.assertTrue(fixture.gateways.assignedOperations.get(0).contains("2002"));
+    }
+
+    @Test
+    void abortsRemainingVisitsWhenAssignDetectsInvalidMutationContext() {
+        Fixture fixture = new Fixture();
+        fixture.prepareBranchTopology();
+        fixture.assignmentProperties.setDryRun(false);
+
+        fixture.gateways.waitingVisitsByQueue.put("7|900", Arrays.asList(
+                new VisitSummary(3001L, 900, "WAITING", "A-005"),
+                new VisitSummary(3002L, 900, "WAITING", "A-006")
+        ));
+        fixture.gateways.visitDetailsById.put(3001L, new VisitDetails(3001L, 900, Arrays.asList(new VisitUnservedService(301, null, 1))));
+        fixture.gateways.visitDetailsById.put(3002L, new VisitDetails(3002L, 900, Arrays.asList(new VisitUnservedService(301, null, 1))));
+        fixture.gateways.visitById.put(3001L, new VisitSummary(3001L, 900, "WAITING", "A-005"));
+        fixture.gateways.visitById.put(3002L, new VisitSummary(3002L, 900, "WAITING", "A-006"));
+        fixture.gateways.blockedAssignVisitId = 3001L;
+
+        DoctorContext context = fixture.openDoctor(7, 41220000000007L, 45, 15);
+        fixture.service.process(context);
+
+        Assertions.assertTrue(fixture.gateways.assignedOperations.isEmpty());
+        Assertions.assertTrue(fixture.gateways.transferredOperations.isEmpty());
+    }
+
+    @Test
+    void abortsBeforeFirstVisitWhenActivationStepFails() {
+        Fixture fixture = new Fixture();
+        fixture.prepareBranchTopology();
+        fixture.assignmentProperties.setDryRun(false);
+        fixture.assignmentProperties.getActivation().setEnabled(true);
+        fixture.gateways.activationEnabled = true;
+        fixture.gateways.activationFail = true;
+
+        fixture.gateways.waitingVisitsByQueue.put("7|900", Collections.singletonList(new VisitSummary(4001L, 900, "WAITING", "A-007")));
+        fixture.gateways.visitDetailsById.put(4001L, new VisitDetails(4001L, 900, Arrays.asList(new VisitUnservedService(301, null, 1))));
+        fixture.gateways.visitById.put(4001L, new VisitSummary(4001L, 900, "WAITING", "A-007"));
+
+        DoctorContext context = fixture.openDoctor(7, 41220000000007L, 45, 15);
+        fixture.service.process(context);
+
+        Assertions.assertEquals(1, fixture.gateways.activationOperations.size());
+        Assertions.assertTrue(fixture.gateways.assignedOperations.isEmpty());
+        Assertions.assertTrue(fixture.gateways.transferredOperations.isEmpty());
     }
 
     static final class Fixture {
@@ -119,6 +182,7 @@ public class AutonomousMedicalExamAssignmentServiceTest {
                 new DefaultVisitRouteAnalyzer(gateways),
                 new DefaultDoctorServiceMatcher(assignmentProperties),
                 new DefaultVisitAssignmentExecutor(gateways, assignmentProperties),
+                gateways,
                 new BranchLockManager(),
                 new ProcessedVisitRegistry(),
                 assignmentProperties

@@ -15,6 +15,7 @@ public class WebsocketProperties {
     private String topic = "/topic/event";
     private List<String> subscribedEvents = new ArrayList<String>();
     private long delayBeforeReconnectInMilliseconds = 10000L;
+    private boolean sendCookiesInHandshake = false;
 
     public boolean isEnabled() {
         return enabled;
@@ -47,4 +48,12 @@ public class WebsocketProperties {
     public void setDelayBeforeReconnectInMilliseconds(long delayBeforeReconnectInMilliseconds) {
         this.delayBeforeReconnectInMilliseconds = delayBeforeReconnectInMilliseconds;
     }
+    public boolean isSendCookiesInHandshake() {
+        return sendCookiesInHandshake;
+    }
+
+    public void setSendCookiesInHandshake(boolean sendCookiesInHandshake) {
+        this.sendCookiesInHandshake = sendCookiesInHandshake;
+    }
+
 }

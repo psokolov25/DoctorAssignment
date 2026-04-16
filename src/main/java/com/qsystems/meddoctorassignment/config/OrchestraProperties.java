@@ -14,6 +14,7 @@ public class OrchestraProperties {
     private String commonRestPath = "/rest";
     private String configurationRestPath = "/qsystem/rest/config";
     private String branchesForCache = "*";
+    private boolean replayMutationCookies = false;
 
     public String getUrl() {
         return url;
@@ -61,5 +62,13 @@ public class OrchestraProperties {
 
     public void setBranchesForCache(String branchesForCache) {
         this.branchesForCache = branchesForCache;
+    }
+
+    public boolean isReplayMutationCookies() {
+        return replayMutationCookies;
+    }
+
+    public void setReplayMutationCookies(boolean replayMutationCookies) {
+        this.replayMutationCookies = replayMutationCookies;
     }
 }

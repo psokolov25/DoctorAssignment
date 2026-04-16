@@ -1,5 +1,6 @@
 package com.qsystems.meddoctorassignment.support;
 
+import com.qsystems.meddoctorassignment.adapter.gateway.OperatorContextActivationGateway;
 import com.qsystems.meddoctorassignment.adapter.gateway.OrchestraMetadataGateway;
 import com.qsystems.meddoctorassignment.adapter.gateway.ServicePointContextGateway;
 import com.qsystems.meddoctorassignment.adapter.gateway.VisitWorkflowGateway;
@@ -9,6 +10,7 @@ import com.qsystems.meddoctorassignment.adapter.orchestra.dto.SmallBranch;
 import com.qsystems.meddoctorassignment.adapter.orchestra.dto.TinyQueue;
 import com.qsystems.meddoctorassignment.adapter.orchestra.dto.WorkProfileData;
 import com.qsystems.meddoctorassignment.cache.model.ServicePointRuntimeState;
+import com.qsystems.meddoctorassignment.domain.exception.MutationContextException;
 import com.qsystems.meddoctorassignment.domain.model.VisitDetails;
 import com.qsystems.meddoctorassignment.domain.model.VisitSummary;
 
@@ -20,7 +22,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-public class InMemoryTestGateways implements OrchestraMetadataGateway, ServicePointContextGateway, VisitWorkflowGateway {
+public class InMemoryTestGateways implements OrchestraMetadataGateway, ServicePointContextGateway, VisitWorkflowGateway, OperatorContextActivationGateway {
 
     public final Map<Integer, List<SmallBranch>> branches = new HashMap<Integer, List<SmallBranch>>();
     public final Map<Integer, List<ServiceData>> servicesByBranch = new HashMap<Integer, List<ServiceData>>();
@@ -34,10 +36,14 @@ public class InMemoryTestGateways implements OrchestraMetadataGateway, ServicePo
     public final Map<Long, VisitDetails> visitDetailsById = new HashMap<Long, VisitDetails>();
     public final Map<Long, VisitSummary> visitById = new HashMap<Long, VisitSummary>();
 
+    public final List<String> activationOperations = new ArrayList<String>();
     public final List<String> assignedOperations = new ArrayList<String>();
     public final List<String> transferredOperations = new ArrayList<String>();
 
+    public boolean activationEnabled;
+    public boolean activationFail;
     public long failVisitId = -1L;
+    public long blockedAssignVisitId = -1L;
 
     @Override
     public List<SmallBranch> getAllBranches() {
@@ -112,7 +118,21 @@ public class InMemoryTestGateways implements OrchestraMetadataGateway, ServicePo
     }
 
     @Override
+    public void activate(com.qsystems.meddoctorassignment.model.event.DoctorContext doctorContext) {
+        if (!activationEnabled) {
+            return;
+        }
+        activationOperations.add(doctorContext.getBranchId() + "|" + doctorContext.getServicePointId() + "|" + doctorContext.getStaffId() + "|" + doctorContext.getWorkProfileId());
+        if (activationFail) {
+            throw new MutationContextException("simulated activation failure for branch " + doctorContext.getBranchId());
+        }
+    }
+
+    @Override
     public void assignServiceToVisit(int branchId, long visitId, int serviceId, int staffId, long servicePointId) {
+        if (visitId == blockedAssignVisitId) {
+            throw new MutationContextException("simulated inactive operator context for visit " + visitId);
+        }
         assignedOperations.add(branchId + "|" + visitId + "|" + serviceId + "|" + staffId + "|" + servicePointId);
     }
 

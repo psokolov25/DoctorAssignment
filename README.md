@@ -7,7 +7,7 @@
 Типовой поток работы выглядит так:
 
 1. Врач входит на service point.
-2. Orchestra публикует событие `SERVICE_POINT_OPEN` или `SET_WORK_PROFILE`.
+2. Orchestra публикует связанный набор событий посадки: `USER_SERVICE_POINT_SESSION_START`, затем `SET_WORK_PROFILE` (а `SERVICE_POINT_OPEN` используется только как вспомогательный/диагностический сигнал).
 3. Сервис определяет branch, service point, врача и его work profile.
 4. По кэшу справочников определяет, какие услуги врач может обслуживать.
 5. Берет визиты из очереди «врач не назначен».
@@ -131,6 +131,7 @@ src/main/java/com/qsystems/meddoctorassignment
 
 `StompSessionHandlerImpl` подписывается на события:
 
+- `USER_SERVICE_POINT_SESSION_START`
 - `SERVICE_POINT_OPEN`
 - `SET_WORK_PROFILE`
 
@@ -221,6 +222,11 @@ src/main/java/com/qsystems/meddoctorassignment
 3. вызов `transferVisitToQueue(...)`;
 4. optional post-check — действительно ли визит оказался в ожидаемой очереди.
 
+Перед началом цикла `AutonomousMedicalExamAssignmentService` теперь также умеет вызывать
+опциональный activation-step (`OperatorContextActivationGateway`). Он нужен для тех инсталляций,
+где между событием «врач сел на рабочее место» и mutating REST необходим отдельный вызов,
+запускающий или привязывающий server-side session service point / operator context.
+
 При `dry-run=true` сервис только пишет в лог, какие действия он бы выполнил.
 
 ## 5. Подтвержденные и неподтвержденные API
@@ -238,6 +244,27 @@ src/main/java/com/qsystems/meddoctorassignment
 - `/rest/servicepoint/branches/{branchId}/queues/`
 
 ### 5.2. Конфигурируемые visit endpoint-ы
+
+Кроме assign/transfer endpoint-ов проект теперь поддерживает и **отдельный activation-step**.
+Он задается через `application.assignment.activation.*` и по умолчанию выключен, потому что
+точный контракт REST-вызова активации зависит от конкретной инсталляции Orchestra.
+
+Поддерживаются placeholders:
+- `{branchId}`
+- `{servicePointId}`
+- `{staffId}`
+- `{workProfileId}`
+- `{servicePointName}`
+- `{workProfileName}`
+- `{userName}`
+
+Типовой сценарий включения выглядит так:
+
+1. снять HTTP-трассу штатного UI Orchestra в момент «посадки» врача;
+2. определить точный REST-вызов, который переводит operator/session context в активное состояние;
+3. прописать его путь, метод и payload-template в `application.yml`;
+4. включить `application.assignment.activation.enabled=true`.
+
 
 Пути для операций над визитами задаются в `application.assignment.experimental-endpoints`:
 
@@ -397,7 +424,7 @@ java -jar target/med-doctor-assignment-service-*.jar
 1. queue id очереди «врач не назначен» для каждого отделения;
 2. корректность mapping `service -> queue`;
 3. корректность mapping `workProfile -> queues`;
-4. факт публикации событий `SERVICE_POINT_OPEN` и `SET_WORK_PROFILE`;
+4. факт публикации событий `USER_SERVICE_POINT_SESSION_START`, `SERVICE_POINT_OPEN` и `SET_WORK_PROFILE`;
 5. рабочие endpoint-ы для:
    - чтения визитов очереди,
    - чтения визита по id,
@@ -492,3 +519,28 @@ Micronaut поднимает сервер на `micronaut.server.port`, по у�
 - [ ] Подтвержден успешный перевод визита в реальную очередь
 - [ ] Настроены уровни логирования и сбор логов
 - [ ] Учетные данные Orchestra вынесены в безопасное хранилище
+
+
+## Актуальные защитные режимы по результатам анализа логов 2026-04-16
+
+- `application.orchestra.replay-mutation-cookies=false` — mutating cookie сохраняются только для диагностики и не переиспользуются автоматически.
+- `application.assignment.abort-cycle-on-forbidden-mutation=true` — после первого `403` на mutating REST цикл по branch прерывается.
+- `application.assignment.treat-inactive-user-state-as-failure=true` — ответ assign с `userState=INACTIVE` считается контекстной ошибкой и блокирует последующий transfer в том же цикле.
+- `application.assignment.treat-no-started-service-point-session-as-failure=true` — ответ assign с `userState=NO_STARTED_SERVICE_POINT_SESSION` обрабатывается как такой же контекстный отказ и завершает цикл раньше.
+- На старте сервис пишет строку `Runtime configuration marker=2026-04-16-run953-r3-activation ...`, чтобы по логу сразу проверить, какой именно артефакт запущен и какие effective-флаги реально подхватились.
+- `transfer-visit` читает ответ через `exchange(..., byte[].class)` и трактует `204 No Content` как штатный ответ без попытки десериализовать пустое тело.
+
+- 2026-04-16 websocket/SockJS: HTTP transport `/qpevents/events/info` и `/xhr_*` теперь принудительно получает Basic Auth и GET-session Cookie через `SockJsHandshakeRequestInterceptor`, чтобы XHR transport не терял авторизационный контекст относительно обычных REST GET.
+
+
+## 2026-04-16 websocket auth/cookie split
+
+- WebSocket/SockJS handshake по умолчанию больше не использует REST cookie.
+- Для websocket остаётся только `Authorization: Basic ...`.
+- Cookie продолжают использоваться только в обычных REST API запросах.
+- При необходимости websocket-cookie можно вернуть конфигом `application.websocket.send-cookies-in-handshake=true`.
+
+
+## Корреляция посадки врача
+
+По реальным логам итоговый профиль врача может стабилизироваться через несколько десятков миллисекунд после `USER_SERVICE_POINT_SESSION_START`. Поэтому сервис по умолчанию не запускает assignment сразу на этом событии. Вместо этого он сохраняет pending-session по `staffTransactionId` и ждёт связанный `SET_WORK_PROFILE` в пределах окна `application.assignment.user-session-settle-window-ms`. Только после этой пары событий стартует mutating workflow.

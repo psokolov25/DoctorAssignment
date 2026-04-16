@@ -10,12 +10,13 @@ import com.qsystems.meddoctorassignment.support.InMemoryTestGateways;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-public class ServicePointOpenContextResolverTest {
+class ServicePointOpenContextResolverTest {
 
     @Test
     void resolvesContextDirectlyFromServicePointOpenPayload() {
         OrchestraDataCacheContainer cacheContainer = new OrchestraDataCacheContainer();
-        DefaultLoggedDoctorContextResolver resolver = new DefaultLoggedDoctorContextResolver(cacheContainer, new InMemoryTestGateways());
+        DefaultLoggedDoctorContextResolver resolver =
+                new DefaultLoggedDoctorContextResolver(cacheContainer, new InMemoryTestGateways());
 
         OrchestraEvent event = new OrchestraEvent();
         event.setEventName("SERVICE_POINT_OPEN");
@@ -26,6 +27,7 @@ public class ServicePointOpenContextResolverTest {
         event.getParameters().put("workProfileName", "Маммография");
         event.getParameters().put("servicePointName", "102 Маммография");
         event.getParameters().put("userName", "p.sokolov");
+        event.getParameters().put("servicePointLogicId", 1);
 
         DoctorContext context = resolver.resolve(event, TriggerSource.SERVICE_POINT_OPEN);
 
@@ -33,7 +35,8 @@ public class ServicePointOpenContextResolverTest {
         Assertions.assertEquals(10220000000007L, context.getServicePointId());
         Assertions.assertEquals(1000002, context.getStaffId());
         Assertions.assertEquals(31, context.getWorkProfileId());
-        Assertions.assertEquals("SERVICE_POINT_OPEN", context.getTriggerSource().name());
+        Assertions.assertEquals(TriggerSource.SERVICE_POINT_OPEN, context.getTriggerSource());
+        Assertions.assertEquals(Integer.valueOf(1), context.getServicePointLogicId());
     }
 
     @Test
@@ -44,7 +47,8 @@ public class ServicePointOpenContextResolverTest {
                 .put(820000000010L, new ServicePointRuntimeState(820000000010L, 10, 29, 28, "OPEN"));
 
         InMemoryTestGateways gateways = new InMemoryTestGateways();
-        DefaultLoggedDoctorContextResolver resolver = new DefaultLoggedDoctorContextResolver(cacheContainer, gateways);
+        DefaultLoggedDoctorContextResolver resolver =
+                new DefaultLoggedDoctorContextResolver(cacheContainer, gateways);
 
         OrchestraEvent event = new OrchestraEvent();
         event.setEventName("SET_WORK_PROFILE");
@@ -55,6 +59,8 @@ public class ServicePointOpenContextResolverTest {
 
         Assertions.assertEquals(820000000010L, context.getServicePointId());
         Assertions.assertEquals(28, context.getWorkProfileId());
-        Assertions.assertEquals("fallback.servicePointRuntimeState", context.getFieldSources().get("servicePointId"));
+        Assertions.assertEquals(
+                "fallback.servicePointRuntimeState",
+                context.getFieldSources().get("servicePointId"));
     }
 }

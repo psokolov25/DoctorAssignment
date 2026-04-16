@@ -15,6 +15,7 @@ import com.qsystems.meddoctorassignment.domain.service.impl.DefaultUnknownDoctor
 import com.qsystems.meddoctorassignment.domain.service.impl.DefaultVisitAssignmentExecutor;
 import com.qsystems.meddoctorassignment.domain.service.impl.DefaultVisitRouteAnalyzer;
 import com.qsystems.meddoctorassignment.event.DoctorAssignmentEventHandler;
+import com.qsystems.meddoctorassignment.event.UserSessionReadinessCoordinator;
 import com.qsystems.meddoctorassignment.model.event.OrchestraEvent;
 import com.qsystems.meddoctorassignment.support.InMemoryTestGateways;
 import com.qsystems.meddoctorassignment.util.BranchLockManager;
@@ -34,6 +35,7 @@ public class SetWorkProfileIntegrationTest {
         OrchestraDataCacheContainer container = new OrchestraDataCacheContainer();
         AssignmentProperties assignmentProperties = new AssignmentProperties();
         assignmentProperties.setDryRun(false);
+        assignmentProperties.setSetWorkProfileTriggerEnabled(true);
         assignmentProperties.setUnknownDoctorQueueId(900);
         OrchestraProperties orchestraProperties = new OrchestraProperties();
         orchestraProperties.setBranchesForCache("7");
@@ -95,6 +97,7 @@ public class SetWorkProfileIntegrationTest {
                 new DefaultVisitRouteAnalyzer(gateways),
                 new DefaultDoctorServiceMatcher(assignmentProperties),
                 new DefaultVisitAssignmentExecutor(gateways, assignmentProperties),
+                gateways,
                 new BranchLockManager(),
                 new ProcessedVisitRegistry(),
                 assignmentProperties
@@ -104,7 +107,8 @@ public class SetWorkProfileIntegrationTest {
                 new EventDeduplicator(),
                 new DefaultLoggedDoctorContextResolver(container, gateways),
                 serviceLogic,
-                assignmentProperties
+                assignmentProperties,
+                new UserSessionReadinessCoordinator(assignmentProperties)
         );
 
         OrchestraEvent event = new OrchestraEvent();

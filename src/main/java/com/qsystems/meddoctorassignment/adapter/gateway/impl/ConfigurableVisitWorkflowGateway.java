@@ -3,10 +3,12 @@ package com.qsystems.meddoctorassignment.adapter.gateway.impl;
 import com.qsystems.meddoctorassignment.adapter.gateway.VisitWorkflowGateway;
 import com.qsystems.meddoctorassignment.config.AssignmentProperties;
 import com.qsystems.meddoctorassignment.config.OrchestraProperties;
+import com.qsystems.meddoctorassignment.domain.exception.MutationContextException;
 import com.qsystems.meddoctorassignment.domain.model.VisitDetails;
 import com.qsystems.meddoctorassignment.domain.model.VisitSummary;
 import io.micronaut.core.type.Argument;
 import io.micronaut.http.HttpRequest;
+import io.micronaut.http.HttpResponse;
 import io.micronaut.http.MediaType;
 import io.micronaut.http.MutableHttpRequest;
 import io.micronaut.http.client.HttpClient;
@@ -16,6 +18,7 @@ import jakarta.inject.Singleton;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -83,7 +86,14 @@ public class ConfigurableVisitWorkflowGateway implements VisitWorkflowGateway {
         variables.put("serviceId", serviceId);
 
         String expandedPath = expand(path, variables);
-        log.info("Assign service {} to visit {} in branch {} using PUT {}", serviceId, visitId, branchId, expandedPath);
+        log.info("Assign service request branchId={} visitId={} serviceId={} staffId={} servicePointId={} path={} payload=<empty>",
+                branchId,
+                visitId,
+                serviceId,
+                staffId,
+                servicePointId,
+                expandedPath);
+        log.warn("Experimental assign-service adapter does not include staffId/servicePointId in payload yet. Context is logged for incident analysis.");
 
         // На части инсталляций Orchestra назначение услуги работает именно через PUT по URL ресурса,
         // а дополнительные поля staffId/servicePointId либо игнорируются, либо приводят к ошибкам.
@@ -92,7 +102,36 @@ public class ConfigurableVisitWorkflowGateway implements VisitWorkflowGateway {
                 .accept(MediaType.APPLICATION_JSON_TYPE);
 
         try {
-            httpClient.toBlocking().exchange(request, Object.class);
+            String responseBody = httpClient.toBlocking().retrieve(request, String.class);
+            log.info("Assign service response branchId={} visitId={} serviceId={} status=200 responseBody={}",
+                    branchId,
+                    visitId,
+                    serviceId,
+                    responseBody != null && !responseBody.trim().isEmpty() ? responseBody : "<empty>");
+
+            String invalidUserState = detectInvalidUserState(responseBody);
+            if (invalidUserState != null) {
+                Integer currentVisitServiceId = extractCurrentVisitServiceId(responseBody);
+                if (isAssignEffectivelyApplied(currentVisitServiceId, serviceId)) {
+                    log.warn("Assign service returned userState={} for visit {} in branch {}, but currentVisitService.serviceId={} already matches requested serviceId={}. Treating assign as effectively successful and continuing with transfer. ResponseBody={}",
+                            invalidUserState,
+                            visitId,
+                            branchId,
+                            currentVisitServiceId,
+                            serviceId,
+                            responseBody != null && !responseBody.trim().isEmpty() ? responseBody : "<empty>");
+                } else {
+                    String message = "Assign service returned userState=" + invalidUserState
+                            + " for visit " + visitId
+                            + " in branch " + branchId
+                            + ". Orchestra accepted the request formally, but mutating EntryPoint context is not ready yet and currentVisitService.serviceId did not confirm the requested service.";
+                    log.error(message + " requestedServiceId={} currentVisitServiceId={} ResponseBody={}",
+                            serviceId,
+                            currentVisitServiceId,
+                            responseBody != null && !responseBody.trim().isEmpty() ? responseBody : "<empty>");
+                    throw new MutationContextException(message);
+                }
+            }
         } catch (HttpClientResponseException exception) {
             String responseBody = exception.getResponse().getBody(String.class).orElse("<empty>");
             log.error("Failed to assign service {} to visit {} in branch {}: status={} responseBody={}",
@@ -131,20 +170,32 @@ public class ConfigurableVisitWorkflowGateway implements VisitWorkflowGateway {
         // В этой интеграции поле fromId трактуется как entry point id исходного потока,
         // а не как идентификатор очереди. Именно поэтому sourceEntryPoint задается отдельно в конфиге.
         String expandedPath = expand(path, variables);
-        log.info("Transfer visit {} from queue {} to queue {} in branch {} using entryPointId={} and PUT {}",
+        log.info("Transfer visit request branchId={} visitId={} sourceQueueId={} targetQueueId={} sourceEntryPointId={} path={} payload={}",
+                branchId,
                 visitId,
                 sourceQueueId,
                 targetQueueId,
-                branchId,
                 sourceEntryPointId,
-                expandedPath);
+                expandedPath,
+                payload);
+        log.warn("Experimental transfer-visit adapter assumes fromId={} is source entry point for branch {}. Validate this against штатный Orchestra UI trace.",
+                sourceEntryPointId,
+                branchId);
 
         MutableHttpRequest<Map<String, Object>> request = applyAuth(HttpRequest.PUT(expandedPath, payload))
                 .contentType(MediaType.APPLICATION_JSON_TYPE)
                 .accept(MediaType.APPLICATION_JSON_TYPE);
 
         try {
-            httpClient.toBlocking().exchange(request, Object.class);
+            HttpResponse<byte[]> response = httpClient.toBlocking().exchange(request, byte[].class);
+            String responseBody = toLoggableBody(response.getBody(byte[].class).orElse(null));
+            log.info("Transfer visit response branchId={} visitId={} targetQueueId={} sourceEntryPointId={} status={} bodyReadMode=exchange-byte-array responseBody={}",
+                    branchId,
+                    visitId,
+                    targetQueueId,
+                    sourceEntryPointId,
+                    response.getStatus().getCode(),
+                    responseBody);
         } catch (HttpClientResponseException exception) {
             String responseBody = exception.getResponse().getBody(String.class).orElse("<empty>");
             log.error("Failed to transfer visit {} from queue {} to queue {} in branch {} using entryPointId={}: status={} responseBody={}",
@@ -174,6 +225,103 @@ public class ConfigurableVisitWorkflowGateway implements VisitWorkflowGateway {
         HttpRequest<Object> request = applyAuth(HttpRequest.GET(expand(path, variables)));
         VisitSummary summary = httpClient.toBlocking().retrieve(request, VisitSummary.class);
         return Optional.ofNullable(summary);
+    }
+
+    private static String toLoggableBody(byte[] responseBodyBytes) {
+        if (responseBodyBytes == null || responseBodyBytes.length == 0) {
+            return "<empty>";
+        }
+        String responseBody = new String(responseBodyBytes, StandardCharsets.UTF_8);
+        return responseBody.trim().isEmpty() ? "<empty>" : responseBody;
+    }
+
+    static Integer extractCurrentVisitServiceId(String responseBody) {
+        if (responseBody == null || responseBody.trim().isEmpty()) {
+            return null;
+        }
+        String normalized = responseBody.replace(" ", "").replace("\n", "").replace("\r", "").replace("\t", "");
+        String objectMarker = "\"currentVisitService\":{";
+        int objectIndex = normalized.indexOf(objectMarker);
+        if (objectIndex < 0) {
+            return null;
+        }
+        int objectStart = objectIndex + objectMarker.length();
+        int objectEnd = normalized.indexOf('}', objectStart);
+        if (objectEnd <= objectStart) {
+            return null;
+        }
+        String currentVisitServiceJson = normalized.substring(objectStart, objectEnd);
+        Integer resolvedServiceId = extractIntegerField(currentVisitServiceJson, "serviceId");
+        if (resolvedServiceId != null) {
+            return resolvedServiceId;
+        }
+        return extractIntegerField(currentVisitServiceJson, "id");
+    }
+
+    static boolean isAssignEffectivelyApplied(Integer currentVisitServiceId, int requestedServiceId) {
+        return currentVisitServiceId != null && currentVisitServiceId.intValue() == requestedServiceId;
+    }
+
+    static String extractUserState(String responseBody) {
+        if (responseBody == null || responseBody.trim().isEmpty()) {
+            return null;
+        }
+        String normalized = responseBody.replace(" ", "").replace("\n", "").replace("\r", "").replace("\t", "");
+        String marker = "\"userState\":\"";
+        int markerIndex = normalized.indexOf(marker);
+        if (markerIndex < 0) {
+            return null;
+        }
+        int valueStart = markerIndex + marker.length();
+        int valueEnd = normalized.indexOf('\"', valueStart);
+        if (valueEnd <= valueStart) {
+            return null;
+        }
+        return normalized.substring(valueStart, valueEnd);
+    }
+
+    private static Integer extractIntegerField(String jsonFragment, String fieldName) {
+        if (jsonFragment == null || jsonFragment.isEmpty()) {
+            return null;
+        }
+        String marker = "\"" + fieldName + "\":";
+        int markerIndex = jsonFragment.indexOf(marker);
+        if (markerIndex < 0) {
+            return null;
+        }
+        int valueStart = markerIndex + marker.length();
+        int valueEnd = valueStart;
+        while (valueEnd < jsonFragment.length()) {
+            char symbol = jsonFragment.charAt(valueEnd);
+            if (symbol == ',' || symbol == '}') {
+                break;
+            }
+            valueEnd++;
+        }
+        if (valueEnd <= valueStart) {
+            return null;
+        }
+        String rawValue = jsonFragment.substring(valueStart, valueEnd).replace("\"", "");
+        try {
+            return Integer.valueOf(rawValue);
+        } catch (NumberFormatException ignored) {
+            return null;
+        }
+    }
+
+    private String detectInvalidUserState(String responseBody) {
+        String userState = extractUserState(responseBody);
+        if (userState == null) {
+            return null;
+        }
+        if (assignmentProperties.isTreatInactiveUserStateAsFailure() && "INACTIVE".equals(userState)) {
+            return userState;
+        }
+        if (assignmentProperties.isTreatNoStartedServicePointSessionAsFailure()
+                && "NO_STARTED_SERVICE_POINT_SESSION".equals(userState)) {
+            return userState;
+        }
+        return null;
     }
 
     private void ensureConfigured(String path, String property) {

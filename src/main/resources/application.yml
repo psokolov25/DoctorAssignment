@@ -34,6 +34,11 @@ application:
     #   "6,7" -> несколько отделений через запятую
     branches-for-cache: "6"
 
+    # Повторно отправлять ли cookie, полученные на mutating REST-операциях.
+    # По свежим логам Orchestra первый PUT без cookie проходит, а последующие PUT с mutation-cookie
+    # массово получают 403, поэтому по умолчанию replay выключен.
+    replay-mutation-cookies: false
+
   websocket:
     # Включает event-driven режим через SockJS/STOMP.
     # Если false, сервис будет работать только через polling fallback.
@@ -43,15 +48,20 @@ application:
     # Подписка формируется как <topic>/<eventName>/*.
     topic: /topic/event
 
-    # Список событий Orchestra, которые запускают цикл назначения.
-    # SERVICE_POINT_OPEN используется как сигнал начала работы врача.
-    # SET_WORK_PROFILE используется как дополнительный триггер повторной обработки.
+    # Список событий Orchestra, которые нужны для безопасной корреляции посадки.
+    # USER_SERVICE_POINT_SESSION_START открывает pending-session,
+    # а следующий SET_WORK_PROFILE той же посадки завершает стабилизацию профиля.
     subscribed-events:
-      - SERVICE_POINT_OPEN
+      - USER_SERVICE_POINT_SESSION_START
       - SET_WORK_PROFILE
 
     # Задержка перед попыткой переподключения websocket, если канал был потерян.
     delay-before-reconnect-in-milliseconds: 10000
+
+    # Передавать ли REST cookie в websocket/SockJS handshake.
+    # По умолчанию выключено: websocket авторизуется только через Authorization header,
+    # а cookie используются только в обычных REST API запросах.
+    send-cookies-in-handshake: false
 
   assignment:
     # Глобальный флаг включения алгоритма назначения.
@@ -77,8 +87,60 @@ application:
     # При true сервис только пишет в лог, какие действия он бы выполнил.
     dry-run: false
 
+    # Разрешает ли SERVICE_POINT_OPEN запускать mutating workflow.
+    # По логам Orchestra этот сигнал часто преждевременный, поэтому по умолчанию выключен.
+    service-point-open-trigger-enabled: false
+
+    # Разрешает ли SET_WORK_PROFILE запускать mutating workflow как самостоятельный raw-trigger.
+    # По умолчанию выключено: этот сигнал используется как вторая половина корреляции посадки.
+    set-work-profile-trigger-enabled: false
+
+    # Разрешает ли цепочке USER_SERVICE_POINT_SESSION_START -> SET_WORK_PROFILE запускать mutating workflow.
+    # Это основной рекомендуемый trigger для реального назначения и перевода визитов.
+    user-service-point-session-start-trigger-enabled: true
+
+    # Окно ожидания финального SET_WORK_PROFILE после USER_SERVICE_POINT_SESSION_START.
+    # По наблюдаемым логам профиль стабилизируется за десятки миллисекунд,
+    # поэтому по умолчанию достаточно короткого окна.
+    user-session-settle-window-ms: 2000
+
     # Перед переводом визита перечитать его и убедиться, что он все еще находится в очереди "врач не назначен".
     recheck-visit-before-transfer: true
+
+    # После первого 403/контекстного отказа на mutating REST не продолжать цикл по оставшимся визитам.
+    # Это уменьшает шум в логах и не долбит Orchestra повторными заведомо неверными PUT.
+    abort-cycle-on-forbidden-mutation: true
+
+    # Если assign-service вернул userState=INACTIVE, считать такой ответ контекстной ошибкой
+    # и не переходить к transfer в том же цикле.
+    treat-inactive-user-state-as-failure: true
+
+    # Если assign-service вернул userState=NO_STARTED_SERVICE_POINT_SESSION, считать такой ответ
+    # контекстной ошибкой того же класса, что и INACTIVE, и завершать текущий цикл раньше.
+    treat-no-started-service-point-session-as-failure: true
+
+    # Опциональный отдельный activation-step перед assign/transfer.
+    # Нужен для тех инсталляций Orchestra, где перед мутациями требуется явный REST-вызов,
+    # запускающий или привязывающий server-side session рабочего места/оператора.
+    activation:
+      # По умолчанию выключено, потому что точный REST-контракт activation endpoint-а пока не подтвержден.
+      enabled: false
+
+      # Если activation-step вернул 4xx/5xx или тело с userState=INACTIVE / NO_STARTED_SERVICE_POINT_SESSION,
+      # завершать текущий цикл до первой мутации.
+      fail-cycle-on-error: true
+
+      # HTTP-метод activation вызова. Поддерживаются GET/POST/PUT/PATCH/DELETE.
+      method: POST
+
+      # Путь activation endpoint-а. Может содержать placeholders:
+      # {branchId}, {servicePointId}, {staffId}, {workProfileId}, {servicePointName}, {workProfileName}, {userName}
+      path: ""
+
+      # Тело activation-запроса как шаблон строки с теми же placeholders.
+      # Пример:
+      # payload-template: '{"branchId":{branchId},"servicePointId":{servicePointId},"staffId":{staffId},"workProfileId":{workProfileId}}'
+      payload-template: ""
 
     # Белый список branch id, на которых разрешено реальное выполнение алгоритма.
     # Пустой список означает "разрешены все".

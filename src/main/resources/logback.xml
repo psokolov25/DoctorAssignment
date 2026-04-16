@@ -15,7 +15,7 @@
         </encoder>
         <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
             <fileNamePattern>
-                ${LOG-PATH}/archived/med-robot.%d{yyyy-MM-dd}.%i.log
+                ${LOG-PATH}/archived/med-doctor-assignment-service.%d{yyyy-MM-dd}.%i.log
             </fileNamePattern>
             <timeBasedFileNamingAndTriggeringPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
                 <maxFileSize>10MB</maxFileSize>
@@ -29,7 +29,7 @@
         </encoder>
         <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
             <fileNamePattern>
-                ${LOG-PATH}/archived/med-robot-http.%d{yyyy-MM-dd}.%i.log
+                ${LOG-PATH}/archived/med-doctor-assignment-service-http.%d{yyyy-MM-dd}.%i.log
             </fileNamePattern>
             <timeBasedFileNamingAndTriggeringPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
                 <maxFileSize>10MB</maxFileSize>
@@ -43,7 +43,7 @@
         </encoder>
         <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
             <fileNamePattern>
-                ${LOG-PATH}/archived/med-robot-busines.%d{yyyy-MM-dd}.%i.log
+                ${LOG-PATH}/archived/med-doctor-assignment-service-busines.%d{yyyy-MM-dd}.%i.log
             </fileNamePattern>
             <timeBasedFileNamingAndTriggeringPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
                 <maxFileSize>10MB</maxFileSize>
@@ -56,23 +56,14 @@
         <appender-ref ref="STDOUT"/>
     </logger>
     
-    <logger name="com.qsystems.medrobot.optimalserviceselector" level="DEBUG" additivity="false">
+        <logger name="com.qsystems.meddoctorassignment" level="DEBUG" additivity="false">
         <appender-ref ref="FILE-BUSINES"/>
         <appender-ref ref="STDOUT"/>
     </logger>
-    <logger name="com.qsystems.medrobot.model.application.ServiceDetails" level="DEBUG" additivity="false">
-        <appender-ref ref="FILE-BUSINES"/>
-        <appender-ref ref="STDOUT"/>
-    </logger>
-
-    <logger name="com.qsystems.medrobot.cache.orchestra.update" level="TRACE" />
-    <logger name="com.qsystems.medrobot.zone.getter" level="TRACE" />
-    <logger name="com.qsystems.medrobot.websocket" level="WARN" />
-    <logger name="com.qsystems.medrobot.websocket.stomp.session.handler" level="WARN" />
-    <logger name="com.qsystems.medrobot.websocket.servicePoint.cache.change" level="WARN" />
-    <logger name="com.qsystems.medrobot.websocket.configuration" level="WARN" />
-    <logger name="org.springframework" level="WARN" />    
-    <logger name="com.qsystems.medrobot.rest" level="TRACE" />
+    <logger name="com.qsystems.meddoctorassignment.websocket" level="INFO" />
+    <logger name="com.qsystems.meddoctorassignment.adapter.orchestra" level="DEBUG" />
+    <logger name="com.qsystems.meddoctorassignment.adapter.gateway.impl.ConfigurableVisitWorkflowGateway" level="DEBUG" />
+    <logger name="org.springframework" level="WARN" />
     
     
     <root level="debug">

@@ -1,16 +1,19 @@
 package com.qsystems.meddoctorassignment.domain.service;
 
+import com.qsystems.meddoctorassignment.adapter.gateway.OperatorContextActivationGateway;
 import com.qsystems.meddoctorassignment.cache.OrchestraDataCacheContainer;
 import com.qsystems.meddoctorassignment.cache.model.BranchAssignmentCache;
 import com.qsystems.meddoctorassignment.cache.model.ServicePointRuntimeState;
 import com.qsystems.meddoctorassignment.cache.service.OrchestraDataCacheUpdateService;
 import com.qsystems.meddoctorassignment.config.AssignmentProperties;
+import com.qsystems.meddoctorassignment.domain.exception.MutationContextException;
 import com.qsystems.meddoctorassignment.domain.model.SelectedDoctorService;
 import com.qsystems.meddoctorassignment.domain.model.VisitDetails;
 import com.qsystems.meddoctorassignment.domain.model.VisitSummary;
 import com.qsystems.meddoctorassignment.model.event.DoctorContext;
 import com.qsystems.meddoctorassignment.util.BranchLockManager;
 import com.qsystems.meddoctorassignment.util.ProcessedVisitRegistry;
+import io.micronaut.http.client.exceptions.HttpClientResponseException;
 import jakarta.inject.Singleton;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,6 +41,7 @@ public class AutonomousMedicalExamAssignmentService {
     private final VisitRouteAnalyzer visitRouteAnalyzer;
     private final DoctorServiceMatcher doctorServiceMatcher;
     private final VisitAssignmentExecutor visitAssignmentExecutor;
+    private final OperatorContextActivationGateway operatorContextActivationGateway;
     private final BranchLockManager branchLockManager;
     private final ProcessedVisitRegistry processedVisitRegistry;
     private final AssignmentProperties assignmentProperties;
@@ -49,6 +53,7 @@ public class AutonomousMedicalExamAssignmentService {
                                                   VisitRouteAnalyzer visitRouteAnalyzer,
                                                   DoctorServiceMatcher doctorServiceMatcher,
                                                   VisitAssignmentExecutor visitAssignmentExecutor,
+                                                  OperatorContextActivationGateway operatorContextActivationGateway,
                                                   BranchLockManager branchLockManager,
                                                   ProcessedVisitRegistry processedVisitRegistry,
                                                   AssignmentProperties assignmentProperties) {
@@ -59,6 +64,7 @@ public class AutonomousMedicalExamAssignmentService {
         this.visitRouteAnalyzer = visitRouteAnalyzer;
         this.doctorServiceMatcher = doctorServiceMatcher;
         this.visitAssignmentExecutor = visitAssignmentExecutor;
+        this.operatorContextActivationGateway = operatorContextActivationGateway;
         this.branchLockManager = branchLockManager;
         this.processedVisitRegistry = processedVisitRegistry;
         this.assignmentProperties = assignmentProperties;
@@ -121,6 +127,27 @@ public class AutonomousMedicalExamAssignmentService {
                     doctorContext.getWorkProfileId(),
                     doctorContext.describeSources());
 
+            try {
+                operatorContextActivationGateway.activate(doctorContext);
+            } catch (Exception activationException) {
+                log.error("Activation step failed source={} branchId={} servicePointId={} staffId={} workProfileId={}: {}",
+                        doctorContext.getTriggerSource(),
+                        doctorContext.getBranchId(),
+                        doctorContext.getServicePointId(),
+                        doctorContext.getStaffId(),
+                        doctorContext.getWorkProfileId(),
+                        activationException.getMessage(),
+                        activationException);
+                if (shouldAbortCycle(activationException)) {
+                    log.warn("Abort assignment cycle source={} branchId={} before first visit because activation step did not produce a valid mutating context: {}",
+                            doctorContext.getTriggerSource(),
+                            doctorContext.getBranchId(),
+                            activationException.getMessage());
+                    return;
+                }
+                throw activationException;
+            }
+
             Set<Integer> doctorAvailableServices = doctorAvailableServicesResolver.resolve(doctorContext, branchCache);
             log.info("Doctor {} available services={}", doctorContext.getStaffId(), doctorAvailableServices);
 
@@ -163,6 +190,7 @@ public class AutonomousMedicalExamAssignmentService {
                     boolean success = visitAssignmentExecutor.assign(
                             doctorContext,
                             visit,
+                            visitDetails,
                             selected.get(),
                             branchCache.getUnknownDoctorQueueId().intValue());
 
@@ -181,6 +209,14 @@ public class AutonomousMedicalExamAssignmentService {
                     }
                 } catch (Exception exception) {
                     log.error("Failed to process visit {} in branch {}: {}", visit.getId(), doctorContext.getBranchId(), exception.getMessage(), exception);
+                    if (shouldAbortCycle(exception)) {
+                        log.warn("Abort assignment cycle source={} branchId={} after visit {} because mutating context is invalid: {}",
+                                doctorContext.getTriggerSource(),
+                                doctorContext.getBranchId(),
+                                visit.getId(),
+                                exception.getMessage());
+                        break;
+                    }
                 }
             }
 
@@ -196,5 +232,26 @@ public class AutonomousMedicalExamAssignmentService {
                 branchLockManager.unlock(doctorContext.getBranchId());
             }
         }
+    }
+
+    private boolean shouldAbortCycle(Exception exception) {
+        if (exception instanceof MutationContextException) {
+            return true;
+        }
+        if (!assignmentProperties.isAbortCycleOnForbiddenMutation()) {
+            return false;
+        }
+
+        Throwable cursor = exception;
+        while (cursor != null) {
+            if (cursor instanceof HttpClientResponseException) {
+                HttpClientResponseException httpException = (HttpClientResponseException) cursor;
+                if (httpException.getStatus() != null && httpException.getStatus().getCode() == 403) {
+                    return true;
+                }
+            }
+            cursor = cursor.getCause();
+        }
+        return false;
     }
 }

@@ -16,6 +16,7 @@ public class VisitDetails {
 
     private long id;
     private Integer queueId;
+    private Integer currentServiceId;
 
     @JsonAlias({"unservedServices", "unservedVisitServices"})
     private List<VisitUnservedService> unservedServices = new ArrayList<VisitUnservedService>();
@@ -45,6 +46,14 @@ public class VisitDetails {
         this.queueId = queueId;
     }
 
+    public Integer getCurrentServiceId() {
+        return currentServiceId;
+    }
+
+    public void setCurrentServiceId(Integer currentServiceId) {
+        this.currentServiceId = currentServiceId;
+    }
+
     public List<VisitUnservedService> getUnservedServices() {
         return unservedServices;
     }
@@ -59,15 +68,32 @@ public class VisitDetails {
      */
     @JsonSetter("parameterMap")
     public void setParameterMap(Map<String, Object> parameterMap) {
-        if (this.queueId != null || parameterMap == null) {
+        if (this.queueId == null && parameterMap != null) {
+            Integer resolvedQueueId = readInteger(parameterMap.get("currentQueueOrigId"));
+            if (resolvedQueueId == null) {
+                resolvedQueueId = readInteger(parameterMap.get("startQueueOrigId"));
+            }
+            if (resolvedQueueId != null) {
+                this.queueId = resolvedQueueId;
+            }
+        }
+    }
+
+    /**
+     * На живых ответах Orchestra текущая назначенная услуга часто приходит как вложенный объект
+     * currentVisitService.serviceId. Поле нужно для ветки transfer-only, когда услуга уже назначена.
+     */
+    @JsonSetter("currentVisitService")
+    public void setCurrentVisitService(Map<String, Object> currentVisitService) {
+        if (currentVisitService == null) {
             return;
         }
-        Integer resolvedQueueId = readInteger(parameterMap.get("currentQueueOrigId"));
-        if (resolvedQueueId == null) {
-            resolvedQueueId = readInteger(parameterMap.get("startQueueOrigId"));
+        Integer resolvedServiceId = readInteger(currentVisitService.get("serviceId"));
+        if (resolvedServiceId == null) {
+            resolvedServiceId = readInteger(currentVisitService.get("id"));
         }
-        if (resolvedQueueId != null) {
-            this.queueId = resolvedQueueId;
+        if (resolvedServiceId != null) {
+            this.currentServiceId = resolvedServiceId;
         }
     }
 

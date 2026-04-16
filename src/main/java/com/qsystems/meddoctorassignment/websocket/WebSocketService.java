@@ -1,5 +1,6 @@
 package com.qsystems.meddoctorassignment.websocket;
 
+import com.qsystems.meddoctorassignment.adapter.orchestra.OrchestraSessionCookieStore;
 import com.qsystems.meddoctorassignment.config.OrchestraProperties;
 import com.qsystems.meddoctorassignment.config.WebsocketProperties;
 import io.micronaut.context.event.ApplicationEventListener;
@@ -8,6 +9,8 @@ import io.micronaut.http.uri.UriBuilder;
 import jakarta.inject.Singleton;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.client.ClientHttpRequestInterceptor;
+import org.springframework.web.client.RestTemplate;
 import org.springframework.messaging.simp.stomp.StompHeaders;
 import org.springframework.messaging.simp.stomp.StompSession;
 import org.springframework.messaging.simp.stomp.StompSessionHandler;
@@ -46,6 +49,8 @@ public class WebSocketService implements ApplicationEventListener<StartupEvent> 
     private final String username;
     private final String password;
     private final StompSessionHandler sessionHandler;
+    private final OrchestraSessionCookieStore cookieStore;
+    private final boolean sendCookiesInHandshake;
     private final ScheduledExecutorService reconnectScheduler = Executors.newSingleThreadScheduledExecutor();
     private final AtomicBoolean reconnectScheduled = new AtomicBoolean(false);
     private final AtomicBoolean heartbeatScheduled = new AtomicBoolean(false);
@@ -55,13 +60,16 @@ public class WebSocketService implements ApplicationEventListener<StartupEvent> 
 
     public WebSocketService(OrchestraProperties orchestraProperties,
                             WebsocketProperties websocketProperties,
-                            StompSessionHandler sessionHandler) {
+                            StompSessionHandler sessionHandler,
+                            OrchestraSessionCookieStore cookieStore) {
         this.connectUrl = String.valueOf(UriBuilder.of(orchestraProperties.getUrl()).path("qpevents/events").build());
         this.reconnectDelayMs = websocketProperties.getDelayBeforeReconnectInMilliseconds();
         this.enabled = websocketProperties.isEnabled();
         this.username = orchestraProperties.getUsername();
         this.password = orchestraProperties.getPassword();
         this.sessionHandler = sessionHandler;
+        this.cookieStore = cookieStore;
+        this.sendCookiesInHandshake = websocketProperties.isSendCookiesInHandshake();
     }
 
     @Override
@@ -109,7 +117,7 @@ public class WebSocketService implements ApplicationEventListener<StartupEvent> 
     private synchronized WebSocketStompClient getOrCreateClient() {
         if (this.stompClient == null) {
             List<Transport> transports = new ArrayList<Transport>();
-            transports.add(new RestTemplateXhrTransport());
+            transports.add(createAuthenticatedXhrTransport());
 
             SockJsClient sockJsClient = new SockJsClient(transports);
             WebSocketStompClient client = new WebSocketStompClient(sockJsClient);
@@ -118,6 +126,14 @@ public class WebSocketService implements ApplicationEventListener<StartupEvent> 
             this.stompClient = client;
         }
         return this.stompClient;
+    }
+
+    private Transport createAuthenticatedXhrTransport() {
+        RestTemplate restTemplate = new RestTemplate();
+        List<ClientHttpRequestInterceptor> interceptors = new ArrayList<ClientHttpRequestInterceptor>();
+        interceptors.add(new SockJsHandshakeRequestInterceptor(username, password, cookieStore, sendCookiesInHandshake));
+        restTemplate.setInterceptors(interceptors);
+        return new RestTemplateXhrTransport(restTemplate);
     }
 
     private ThreadPoolTaskScheduler createHeartbeatScheduler() {
@@ -134,6 +150,20 @@ public class WebSocketService implements ApplicationEventListener<StartupEvent> 
             String rawValue = username + ":" + (password != null ? password : "");
             String encodedValue = Base64.getEncoder().encodeToString(rawValue.getBytes(StandardCharsets.UTF_8));
             headers.add("Authorization", "Basic " + encodedValue);
+        }
+
+        String cookieHeader = sendCookiesInHandshake
+                ? cookieStore.buildCookieHeaderForWebsocketHandshake()
+                : "";
+        if (sendCookiesInHandshake && cookieHeader != null && !cookieHeader.trim().isEmpty()) {
+            headers.add("Cookie", cookieHeader);
+        }
+        if (log.isInfoEnabled()) {
+            log.info("Prepared websocket handshake headers authPresent={} cookiePresent={} cookieLength={} sendCookiesInHandshake={} transport=xhr-rest-template",
+                    username != null && !username.trim().isEmpty(),
+                    cookieHeader != null && !cookieHeader.trim().isEmpty(),
+                    cookieHeader != null ? cookieHeader.length() : 0,
+                    sendCookiesInHandshake);
         }
         return headers;
     }

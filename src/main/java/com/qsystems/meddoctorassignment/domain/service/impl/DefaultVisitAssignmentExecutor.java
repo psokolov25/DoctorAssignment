@@ -3,6 +3,7 @@ package com.qsystems.meddoctorassignment.domain.service.impl;
 import com.qsystems.meddoctorassignment.adapter.gateway.VisitWorkflowGateway;
 import com.qsystems.meddoctorassignment.config.AssignmentProperties;
 import com.qsystems.meddoctorassignment.domain.model.SelectedDoctorService;
+import com.qsystems.meddoctorassignment.domain.model.VisitDetails;
 import com.qsystems.meddoctorassignment.domain.model.VisitSummary;
 import com.qsystems.meddoctorassignment.domain.service.VisitAssignmentExecutor;
 import com.qsystems.meddoctorassignment.model.event.DoctorContext;
@@ -32,6 +33,7 @@ public class DefaultVisitAssignmentExecutor implements VisitAssignmentExecutor {
     @Override
     public boolean assign(DoctorContext doctorContext,
                           VisitSummary visitSummary,
+                          VisitDetails visitDetails,
                           SelectedDoctorService selectedDoctorService,
                           int unknownDoctorQueueId) {
         if (assignmentProperties.isDryRun()) {
@@ -53,12 +55,43 @@ public class DefaultVisitAssignmentExecutor implements VisitAssignmentExecutor {
             }
         }
 
-        visitWorkflowGateway.assignServiceToVisit(
-                doctorContext.getBranchId(),
+        log.info("Assign workflow start visit={} currentQueue={} currentService={} selectedService={} targetQueue={} doctor={} servicePoint={} workProfile={} trigger={}",
                 visitSummary.getId(),
+                visitSummary.getQueueId(),
+                visitDetails != null ? visitDetails.getCurrentServiceId() : null,
                 selectedDoctorService.getServiceId(),
+                selectedDoctorService.getTargetQueueId(),
                 doctorContext.getStaffId(),
-                doctorContext.getServicePointId());
+                doctorContext.getServicePointId(),
+                doctorContext.getWorkProfileId(),
+                doctorContext.getTriggerSource());
+
+        boolean assignRequired = visitDetails == null
+                || visitDetails.getCurrentServiceId() == null
+                || visitDetails.getCurrentServiceId().intValue() != selectedDoctorService.getServiceId();
+
+        if (assignRequired) {
+            visitWorkflowGateway.assignServiceToVisit(
+                    doctorContext.getBranchId(),
+                    visitSummary.getId(),
+                    selectedDoctorService.getServiceId(),
+                    doctorContext.getStaffId(),
+                    doctorContext.getServicePointId());
+        } else {
+            log.info("Skip redundant assign for visit={} because currentService={} already matches selectedService={} and workflow can continue with transfer-only",
+                    visitSummary.getId(),
+                    visitDetails.getCurrentServiceId(),
+                    selectedDoctorService.getServiceId());
+        }
+
+        log.info("Assign workflow transfer step visit={} sourceQueue={} targetQueue={} doctor={} servicePoint={} trigger={} transferOnly={}",
+                visitSummary.getId(),
+                unknownDoctorQueueId,
+                selectedDoctorService.getTargetQueueId(),
+                doctorContext.getStaffId(),
+                doctorContext.getServicePointId(),
+                doctorContext.getTriggerSource(),
+                !assignRequired);
 
         visitWorkflowGateway.transferVisitToQueue(
                 doctorContext.getBranchId(),

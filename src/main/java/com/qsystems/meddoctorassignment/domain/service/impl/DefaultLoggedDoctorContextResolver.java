@@ -9,6 +9,8 @@ import com.qsystems.meddoctorassignment.model.event.DoctorContext;
 import com.qsystems.meddoctorassignment.model.event.OrchestraEvent;
 import com.qsystems.meddoctorassignment.model.event.TriggerSource;
 import jakarta.inject.Singleton;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.Serializable;
 import java.util.Map;
@@ -19,6 +21,8 @@ import java.util.Optional;
  */
 @Singleton
 public class DefaultLoggedDoctorContextResolver implements LoggedDoctorContextResolver {
+
+    private static final Logger log = LoggerFactory.getLogger(DefaultLoggedDoctorContextResolver.class);
 
     private final OrchestraDataCacheContainer cacheContainer;
     private final ServicePointContextGateway servicePointContextGateway;
@@ -57,6 +61,12 @@ public class DefaultLoggedDoctorContextResolver implements LoggedDoctorContextRe
         }
         if (servicePointId != null) {
             context.setServicePointId(servicePointId.longValue());
+        }
+
+        Integer servicePointLogicId = asInteger(parameters.get("servicePointLogicId"));
+        if (servicePointLogicId != null) {
+            context.setServicePointLogicId(servicePointLogicId);
+            context.recordSource("servicePointLogicId", "event.parameters.servicePointLogicId");
         }
 
         // В разных payload сотрудник может приходить как staffId или как userId.
@@ -109,6 +119,17 @@ public class DefaultLoggedDoctorContextResolver implements LoggedDoctorContextRe
         }
 
         enrichMissingFields(context);
+        log.info("Resolved doctor context source={} branchId={} servicePointId={} servicePointLogicId={} staffId={} workProfileId={} servicePointName={} workProfileName={} userName={} fieldSources={}",
+                triggerSource,
+                context.getBranchId(),
+                context.getServicePointId(),
+                context.getServicePointLogicId(),
+                context.getStaffId(),
+                context.getWorkProfileId(),
+                context.getServicePointName(),
+                context.getWorkProfileName(),
+                context.getUserName(),
+                context.describeSources());
         return context;
     }
 

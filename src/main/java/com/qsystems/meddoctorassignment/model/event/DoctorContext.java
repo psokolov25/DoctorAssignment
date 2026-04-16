@@ -14,6 +14,7 @@ public class DoctorContext {
 
     private int branchId;
     private long servicePointId;
+    private Integer servicePointLogicId;
     private int staffId;
     private int workProfileId;
     private String workProfileName;
@@ -36,6 +37,15 @@ public class DoctorContext {
 
     public void setServicePointId(long servicePointId) {
         this.servicePointId = servicePointId;
+    }
+
+
+    public Integer getServicePointLogicId() {
+        return servicePointLogicId;
+    }
+
+    public void setServicePointLogicId(Integer servicePointLogicId) {
+        this.servicePointLogicId = servicePointLogicId;
     }
 
     public int getStaffId() {

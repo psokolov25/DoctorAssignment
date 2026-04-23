@@ -14,12 +14,11 @@ import io.micronaut.http.client.HttpClient;
 import io.micronaut.http.client.annotation.Client;
 import io.micronaut.http.client.exceptions.HttpClientResponseException;
 import jakarta.inject.Singleton;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Конфигурируемый activation-step перед mutating REST-операциями.
@@ -43,6 +42,41 @@ public class ConfigurableOperatorContextActivationGateway implements OperatorCon
         this.httpClient = httpClient;
         this.assignmentProperties = assignmentProperties;
         this.orchestraProperties = orchestraProperties;
+    }
+
+    static HttpMethod resolveMethod(String methodName) {
+        if ("GET".equals(methodName)) {
+            return HttpMethod.GET;
+        }
+        if ("PUT".equals(methodName)) {
+            return HttpMethod.PUT;
+        }
+        if ("PATCH".equals(methodName)) {
+            return HttpMethod.PATCH;
+        }
+        if ("DELETE".equals(methodName)) {
+            return HttpMethod.DELETE;
+        }
+        return HttpMethod.POST;
+    }
+
+    static String expand(String template, Map<String, Object> variables) {
+        if (template == null) {
+            return "";
+        }
+        String result = template;
+        for (Map.Entry<String, Object> entry : variables.entrySet()) {
+            result = result.replace("{" + entry.getKey() + "}", String.valueOf(entry.getValue()));
+        }
+        return result;
+    }
+
+    private static String toLoggableBody(byte[] responseBodyBytes) {
+        if (responseBodyBytes == null || responseBodyBytes.length == 0) {
+            return "<empty>";
+        }
+        String responseBody = new String(responseBodyBytes, StandardCharsets.UTF_8);
+        return responseBody.trim().isEmpty() ? "<empty>" : responseBody;
     }
 
     @Override
@@ -124,33 +158,6 @@ public class ConfigurableOperatorContextActivationGateway implements OperatorCon
         }
     }
 
-    static HttpMethod resolveMethod(String methodName) {
-        if ("GET".equals(methodName)) {
-            return HttpMethod.GET;
-        }
-        if ("PUT".equals(methodName)) {
-            return HttpMethod.PUT;
-        }
-        if ("PATCH".equals(methodName)) {
-            return HttpMethod.PATCH;
-        }
-        if ("DELETE".equals(methodName)) {
-            return HttpMethod.DELETE;
-        }
-        return HttpMethod.POST;
-    }
-
-    static String expand(String template, Map<String, Object> variables) {
-        if (template == null) {
-            return "";
-        }
-        String result = template;
-        for (Map.Entry<String, Object> entry : variables.entrySet()) {
-            result = result.replace("{" + entry.getKey() + "}", String.valueOf(entry.getValue()));
-        }
-        return result;
-    }
-
     private MutableHttpRequest<?> buildRequest(HttpMethod method, String path, String payload) {
         if (method == HttpMethod.GET) {
             return HttpRequest.GET(path);
@@ -181,14 +188,6 @@ public class ConfigurableOperatorContextActivationGateway implements OperatorCon
             return userState;
         }
         return null;
-    }
-
-    private static String toLoggableBody(byte[] responseBodyBytes) {
-        if (responseBodyBytes == null || responseBodyBytes.length == 0) {
-            return "<empty>";
-        }
-        String responseBody = new String(responseBodyBytes, StandardCharsets.UTF_8);
-        return responseBody.trim().isEmpty() ? "<empty>" : responseBody;
     }
 
     private <T> MutableHttpRequest<T> applyAuth(MutableHttpRequest<T> request) {

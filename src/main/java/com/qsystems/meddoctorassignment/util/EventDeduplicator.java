@@ -2,7 +2,6 @@ package com.qsystems.meddoctorassignment.util;
 
 import com.qsystems.meddoctorassignment.model.event.OrchestraEvent;
 import jakarta.inject.Singleton;
-
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Map;

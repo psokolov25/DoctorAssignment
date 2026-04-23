@@ -2,11 +2,10 @@ package com.qsystems.meddoctorassignment;
 
 import com.qsystems.meddoctorassignment.config.AssignmentProperties;
 import com.qsystems.meddoctorassignment.model.event.TriggerSource;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
-
 import java.util.HashMap;
 import java.util.Map;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 public class AssignmentPropertiesTest {
 

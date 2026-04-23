@@ -9,12 +9,11 @@ import com.qsystems.meddoctorassignment.model.event.DoctorContext;
 import com.qsystems.meddoctorassignment.model.event.OrchestraEvent;
 import com.qsystems.meddoctorassignment.model.event.TriggerSource;
 import jakarta.inject.Singleton;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.Serializable;
 import java.util.Map;
 import java.util.Optional;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Стандартная реализация восстановления контекста врача из event payload и fallback-источников.

@@ -17,6 +17,7 @@ import java.util.Map;
  */
 public class DoctorContext {
 
+    private final Map<String, String> fieldSources = new LinkedHashMap<String, String>();
     private int branchId;
     private long servicePointId;
     private Integer servicePointLogicId;
@@ -26,7 +27,6 @@ public class DoctorContext {
     private String servicePointName;
     private String userName;
     private TriggerSource triggerSource;
-    private final Map<String, String> fieldSources = new LinkedHashMap<String, String>();
 
     public int getBranchId() {
         return branchId;

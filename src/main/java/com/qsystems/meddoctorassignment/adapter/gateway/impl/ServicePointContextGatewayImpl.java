@@ -5,7 +5,6 @@ import com.qsystems.meddoctorassignment.adapter.gateway.ServicePointContextGatew
 import com.qsystems.meddoctorassignment.adapter.orchestra.dto.ServicePointData;
 import com.qsystems.meddoctorassignment.cache.model.ServicePointRuntimeState;
 import jakarta.inject.Singleton;
-
 import java.util.List;
 import java.util.Optional;
 

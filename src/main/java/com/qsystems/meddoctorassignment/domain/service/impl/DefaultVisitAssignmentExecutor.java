@@ -8,10 +8,9 @@ import com.qsystems.meddoctorassignment.domain.model.VisitSummary;
 import com.qsystems.meddoctorassignment.domain.service.VisitAssignmentExecutor;
 import com.qsystems.meddoctorassignment.model.event.DoctorContext;
 import jakarta.inject.Singleton;
+import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.Optional;
 
 /**
  * Исполнитель доменного решения: назначает услугу визиту и переводит его в целевую очередь.

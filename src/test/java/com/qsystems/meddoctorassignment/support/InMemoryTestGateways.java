@@ -13,7 +13,6 @@ import com.qsystems.meddoctorassignment.cache.model.ServicePointRuntimeState;
 import com.qsystems.meddoctorassignment.domain.exception.MutationContextException;
 import com.qsystems.meddoctorassignment.domain.model.VisitDetails;
 import com.qsystems.meddoctorassignment.domain.model.VisitSummary;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;

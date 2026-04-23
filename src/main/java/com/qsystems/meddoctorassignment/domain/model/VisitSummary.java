@@ -3,7 +3,6 @@ package com.qsystems.meddoctorassignment.domain.model;
 import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonSetter;
-
 import java.util.Map;
 
 /**

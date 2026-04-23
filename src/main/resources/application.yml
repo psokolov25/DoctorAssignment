@@ -148,7 +148,7 @@ application:
 
     # Белый список branch id, на которых разрешено реальное выполнение алгоритма.
     # Пустой список означает "разрешены все".
-    allowed-branches: [6]
+    allowed-branches: [ 6 ]
 
     # TTL branch cache в секундах.
     # Если кэш старше этого значения, перед обработкой события он будет перестроен.
@@ -168,7 +168,7 @@ application:
     # service-priority-by-key:
     #   "4": 10
     #   "THERAPIST": 5
-    service-priority-by-key: {}
+    service-priority-by-key: { }
 
     # Резервный source entry point id для отделений, у которых нет собственного значения.
     # Нужен, если Orchestra в поле fromId endpoint-а перевода ожидает именно entry point id.

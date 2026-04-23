@@ -9,11 +9,10 @@ import com.qsystems.meddoctorassignment.model.event.DoctorContext;
 import com.qsystems.meddoctorassignment.model.event.OrchestraEvent;
 import com.qsystems.meddoctorassignment.model.event.TriggerSource;
 import jakarta.inject.Singleton;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.util.Collections;
 import java.util.Set;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Определяет, нужно ли запускать повторный assignment cycle при смене рабочего профиля

@@ -6,11 +6,11 @@ import org.junit.jupiter.api.Test;
 
 class WebsocketPropertiesTest {
 
-    @Test
-    void websocketCookiesAreDisabledByDefault() {
-        WebsocketProperties properties = new WebsocketProperties();
+  @Test
+  void websocketCookiesAreDisabledByDefault() {
+    WebsocketProperties properties = new WebsocketProperties();
 
-        Assertions.assertFalse(properties.isSendCookiesInHandshake());
-        Assertions.assertTrue(properties.isEnabled());
-    }
+    Assertions.assertFalse(properties.isSendCookiesInHandshake());
+    Assertions.assertTrue(properties.isEnabled());
+  }
 }

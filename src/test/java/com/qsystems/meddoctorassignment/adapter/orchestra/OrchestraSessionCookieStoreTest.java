@@ -1,10 +1,9 @@
 package com.qsystems.meddoctorassignment.adapter.orchestra;
 
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
-
 import java.util.Arrays;
 import java.util.Collections;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 public class OrchestraSessionCookieStoreTest {
 

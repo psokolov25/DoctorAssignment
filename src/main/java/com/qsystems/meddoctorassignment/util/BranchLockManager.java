@@ -1,7 +1,6 @@
 package com.qsystems.meddoctorassignment.util;
 
 import jakarta.inject.Singleton;
-
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;

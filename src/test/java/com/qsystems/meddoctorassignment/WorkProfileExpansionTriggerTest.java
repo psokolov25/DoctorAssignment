@@ -25,11 +25,10 @@ import com.qsystems.meddoctorassignment.support.InMemoryTestGateways;
 import com.qsystems.meddoctorassignment.util.BranchLockManager;
 import com.qsystems.meddoctorassignment.util.EventDeduplicator;
 import com.qsystems.meddoctorassignment.util.ProcessedVisitRegistry;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
-
 import java.util.Arrays;
 import java.util.Collections;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 public class WorkProfileExpansionTriggerTest {
 
@@ -82,7 +81,6 @@ public class WorkProfileExpansionTriggerTest {
                 new DefinedBranchesGetter(orchestraProperties)
         );
         final DefaultDoctorAvailableServicesResolver availableServicesResolver = new DefaultDoctorAvailableServicesResolver();
-        final DefaultLoggedDoctorContextResolver contextResolver = new DefaultLoggedDoctorContextResolver(container, gateways);
         final AutonomousMedicalExamAssignmentService serviceLogic = new AutonomousMedicalExamAssignmentService(
                 updateService,
                 container,
@@ -96,6 +94,8 @@ public class WorkProfileExpansionTriggerTest {
                 new ProcessedVisitRegistry(),
                 assignmentProperties
         );
+
+        final DefaultLoggedDoctorContextResolver contextResolver = new DefaultLoggedDoctorContextResolver(container, gateways);
         final DoctorAssignmentEventHandler handler = new DoctorAssignmentEventHandler(
                 new EventDeduplicator(),
                 contextResolver,

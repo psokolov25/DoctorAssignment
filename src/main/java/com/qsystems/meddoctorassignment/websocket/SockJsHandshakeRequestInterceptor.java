@@ -1,15 +1,14 @@
 package com.qsystems.meddoctorassignment.websocket;
 
 import com.qsystems.meddoctorassignment.adapter.orchestra.OrchestraSessionCookieStore;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpRequest;
 import org.springframework.http.client.ClientHttpRequestExecution;
 import org.springframework.http.client.ClientHttpRequestInterceptor;
 import org.springframework.http.client.ClientHttpResponse;
-
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.util.Base64;
 
 /**
  * Добавляет Basic Auth ко всем HTTP-запросам SockJS/XHR транспорта.

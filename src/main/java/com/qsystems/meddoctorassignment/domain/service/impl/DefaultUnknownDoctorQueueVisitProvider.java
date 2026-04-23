@@ -6,7 +6,6 @@ import com.qsystems.meddoctorassignment.domain.model.VisitSummary;
 import com.qsystems.meddoctorassignment.domain.service.UnknownDoctorQueueVisitProvider;
 import com.qsystems.meddoctorassignment.model.event.DoctorContext;
 import jakarta.inject.Singleton;
-
 import java.util.Collections;
 import java.util.List;
 

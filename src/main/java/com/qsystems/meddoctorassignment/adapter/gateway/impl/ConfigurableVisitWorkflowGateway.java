@@ -15,14 +15,13 @@ import io.micronaut.http.client.HttpClient;
 import io.micronaut.http.client.annotation.Client;
 import io.micronaut.http.client.exceptions.HttpClientResponseException;
 import jakarta.inject.Singleton;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Реализация {@link com.qsystems.meddoctorassignment.adapter.gateway.VisitWorkflowGateway},
@@ -53,6 +52,88 @@ public class ConfigurableVisitWorkflowGateway implements VisitWorkflowGateway {
         this.httpClient = httpClient;
         this.assignmentProperties = assignmentProperties;
         this.orchestraProperties = orchestraProperties;
+    }
+
+    private static String toLoggableBody(byte[] responseBodyBytes) {
+        if (responseBodyBytes == null || responseBodyBytes.length == 0) {
+            return "<empty>";
+        }
+        String responseBody = new String(responseBodyBytes, StandardCharsets.UTF_8);
+        return responseBody.trim().isEmpty() ? "<empty>" : responseBody;
+    }
+
+    static Integer extractCurrentVisitServiceId(String responseBody) {
+        if (responseBody == null || responseBody.trim().isEmpty()) {
+            return null;
+        }
+        String normalized = responseBody.replace(" ", "").replace("\n", "").replace("\r", "").replace("\t", "");
+        String objectMarker = "\"currentVisitService\":{";
+        int objectIndex = normalized.indexOf(objectMarker);
+        if (objectIndex < 0) {
+            return null;
+        }
+        int objectStart = objectIndex + objectMarker.length();
+        int objectEnd = normalized.indexOf('}', objectStart);
+        if (objectEnd <= objectStart) {
+            return null;
+        }
+        String currentVisitServiceJson = normalized.substring(objectStart, objectEnd);
+        Integer resolvedServiceId = extractIntegerField(currentVisitServiceJson, "serviceId");
+        if (resolvedServiceId != null) {
+            return resolvedServiceId;
+        }
+        return extractIntegerField(currentVisitServiceJson, "id");
+    }
+
+    static boolean isAssignEffectivelyApplied(Integer currentVisitServiceId, int requestedServiceId) {
+        return currentVisitServiceId != null && currentVisitServiceId.intValue() == requestedServiceId;
+    }
+
+    static String extractUserState(String responseBody) {
+        if (responseBody == null || responseBody.trim().isEmpty()) {
+            return null;
+        }
+        String normalized = responseBody.replace(" ", "").replace("\n", "").replace("\r", "").replace("\t", "");
+        String marker = "\"userState\":\"";
+        int markerIndex = normalized.indexOf(marker);
+        if (markerIndex < 0) {
+            return null;
+        }
+        int valueStart = markerIndex + marker.length();
+        int valueEnd = normalized.indexOf('\"', valueStart);
+        if (valueEnd <= valueStart) {
+            return null;
+        }
+        return normalized.substring(valueStart, valueEnd);
+    }
+
+    private static Integer extractIntegerField(String jsonFragment, String fieldName) {
+        if (jsonFragment == null || jsonFragment.isEmpty()) {
+            return null;
+        }
+        String marker = "\"" + fieldName + "\":";
+        int markerIndex = jsonFragment.indexOf(marker);
+        if (markerIndex < 0) {
+            return null;
+        }
+        int valueStart = markerIndex + marker.length();
+        int valueEnd = valueStart;
+        while (valueEnd < jsonFragment.length()) {
+            char symbol = jsonFragment.charAt(valueEnd);
+            if (symbol == ',' || symbol == '}') {
+                break;
+            }
+            valueEnd++;
+        }
+        if (valueEnd <= valueStart) {
+            return null;
+        }
+        String rawValue = jsonFragment.substring(valueStart, valueEnd).replace("\"", "");
+        try {
+            return Integer.valueOf(rawValue);
+        } catch (NumberFormatException ignored) {
+            return null;
+        }
     }
 
     @Override
@@ -246,88 +327,6 @@ public class ConfigurableVisitWorkflowGateway implements VisitWorkflowGateway {
         HttpRequest<Object> request = applyAuth(HttpRequest.GET(expand(path, variables)));
         VisitSummary summary = httpClient.toBlocking().retrieve(request, VisitSummary.class);
         return Optional.ofNullable(summary);
-    }
-
-    private static String toLoggableBody(byte[] responseBodyBytes) {
-        if (responseBodyBytes == null || responseBodyBytes.length == 0) {
-            return "<empty>";
-        }
-        String responseBody = new String(responseBodyBytes, StandardCharsets.UTF_8);
-        return responseBody.trim().isEmpty() ? "<empty>" : responseBody;
-    }
-
-    static Integer extractCurrentVisitServiceId(String responseBody) {
-        if (responseBody == null || responseBody.trim().isEmpty()) {
-            return null;
-        }
-        String normalized = responseBody.replace(" ", "").replace("\n", "").replace("\r", "").replace("\t", "");
-        String objectMarker = "\"currentVisitService\":{";
-        int objectIndex = normalized.indexOf(objectMarker);
-        if (objectIndex < 0) {
-            return null;
-        }
-        int objectStart = objectIndex + objectMarker.length();
-        int objectEnd = normalized.indexOf('}', objectStart);
-        if (objectEnd <= objectStart) {
-            return null;
-        }
-        String currentVisitServiceJson = normalized.substring(objectStart, objectEnd);
-        Integer resolvedServiceId = extractIntegerField(currentVisitServiceJson, "serviceId");
-        if (resolvedServiceId != null) {
-            return resolvedServiceId;
-        }
-        return extractIntegerField(currentVisitServiceJson, "id");
-    }
-
-    static boolean isAssignEffectivelyApplied(Integer currentVisitServiceId, int requestedServiceId) {
-        return currentVisitServiceId != null && currentVisitServiceId.intValue() == requestedServiceId;
-    }
-
-    static String extractUserState(String responseBody) {
-        if (responseBody == null || responseBody.trim().isEmpty()) {
-            return null;
-        }
-        String normalized = responseBody.replace(" ", "").replace("\n", "").replace("\r", "").replace("\t", "");
-        String marker = "\"userState\":\"";
-        int markerIndex = normalized.indexOf(marker);
-        if (markerIndex < 0) {
-            return null;
-        }
-        int valueStart = markerIndex + marker.length();
-        int valueEnd = normalized.indexOf('\"', valueStart);
-        if (valueEnd <= valueStart) {
-            return null;
-        }
-        return normalized.substring(valueStart, valueEnd);
-    }
-
-    private static Integer extractIntegerField(String jsonFragment, String fieldName) {
-        if (jsonFragment == null || jsonFragment.isEmpty()) {
-            return null;
-        }
-        String marker = "\"" + fieldName + "\":";
-        int markerIndex = jsonFragment.indexOf(marker);
-        if (markerIndex < 0) {
-            return null;
-        }
-        int valueStart = markerIndex + marker.length();
-        int valueEnd = valueStart;
-        while (valueEnd < jsonFragment.length()) {
-            char symbol = jsonFragment.charAt(valueEnd);
-            if (symbol == ',' || symbol == '}') {
-                break;
-            }
-            valueEnd++;
-        }
-        if (valueEnd <= valueStart) {
-            return null;
-        }
-        String rawValue = jsonFragment.substring(valueStart, valueEnd).replace("\"", "");
-        try {
-            return Integer.valueOf(rawValue);
-        } catch (NumberFormatException ignored) {
-            return null;
-        }
     }
 
     private String detectInvalidUserState(String responseBody) {

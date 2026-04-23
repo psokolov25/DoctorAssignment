@@ -9,13 +9,12 @@ import com.qsystems.meddoctorassignment.cache.model.BranchAssignmentCache;
 import com.qsystems.meddoctorassignment.cache.model.ServicePointRuntimeState;
 import com.qsystems.meddoctorassignment.config.AssignmentProperties;
 import jakarta.inject.Singleton;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Пересобирает branch cache с нуля на основе актуальных метаданных Orchestra.

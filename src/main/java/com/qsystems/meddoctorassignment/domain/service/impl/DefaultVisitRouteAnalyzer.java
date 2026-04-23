@@ -6,19 +6,20 @@ import com.qsystems.meddoctorassignment.domain.service.VisitRouteAnalyzer;
 import jakarta.inject.Singleton;
 
 /**
- * Минимальная реализация анализатора маршрута визита, делегирующая чтение детального состояния gateway-слою.
+ * Минимальная реализация анализатора маршрута визита, делегирующая чтение детального состояния
+ * gateway-слою.
  */
 @Singleton
 public class DefaultVisitRouteAnalyzer implements VisitRouteAnalyzer {
 
-    private final VisitWorkflowGateway visitWorkflowGateway;
+  private final VisitWorkflowGateway visitWorkflowGateway;
 
-    public DefaultVisitRouteAnalyzer(VisitWorkflowGateway visitWorkflowGateway) {
-        this.visitWorkflowGateway = visitWorkflowGateway;
-    }
+  public DefaultVisitRouteAnalyzer(VisitWorkflowGateway visitWorkflowGateway) {
+    this.visitWorkflowGateway = visitWorkflowGateway;
+  }
 
-    @Override
-    public VisitDetails analyze(int branchId, long visitId) {
-        return visitWorkflowGateway.getVisitDetails(branchId, visitId);
-    }
+  @Override
+  public VisitDetails analyze(int branchId, long visitId) {
+    return visitWorkflowGateway.getVisitDetails(branchId, visitId);
+  }
 }

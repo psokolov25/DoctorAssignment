@@ -13,7 +13,6 @@ import io.micronaut.http.MutableHttpRequest;
 import io.micronaut.http.client.HttpClient;
 import io.micronaut.http.client.annotation.Client;
 import jakarta.inject.Singleton;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;

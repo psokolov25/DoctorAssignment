@@ -2,7 +2,6 @@ package com.qsystems.meddoctorassignment.adapter.gateway;
 
 import com.qsystems.meddoctorassignment.domain.model.VisitDetails;
 import com.qsystems.meddoctorassignment.domain.model.VisitSummary;
-
 import java.util.List;
 import java.util.Optional;
 

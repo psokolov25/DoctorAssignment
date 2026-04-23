@@ -4,7 +4,6 @@ import com.qsystems.meddoctorassignment.cache.model.BranchAssignmentCache;
 import com.qsystems.meddoctorassignment.domain.service.DoctorAvailableServicesResolver;
 import com.qsystems.meddoctorassignment.model.event.DoctorContext;
 import jakarta.inject.Singleton;
-
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;

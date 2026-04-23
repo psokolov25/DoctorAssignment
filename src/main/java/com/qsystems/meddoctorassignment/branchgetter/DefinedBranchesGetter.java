@@ -2,7 +2,6 @@ package com.qsystems.meddoctorassignment.branchgetter;
 
 import com.qsystems.meddoctorassignment.config.OrchestraProperties;
 import jakarta.inject.Singleton;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;

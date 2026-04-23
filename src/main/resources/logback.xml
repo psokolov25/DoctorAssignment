@@ -50,22 +50,23 @@
             </timeBasedFileNamingAndTriggeringPolicy>
         </rollingPolicy>
     </appender>
-    <logger name="io.micronaut" level="INFO" />
+    <logger name="io.micronaut" level="INFO"/>
     <logger name="io.micronaut.http" level="TRACE" additivity="false">
         <appender-ref ref="FILE-HTTP"/>
         <appender-ref ref="STDOUT"/>
     </logger>
-    
-        <logger name="com.qsystems.meddoctorassignment" level="DEBUG" additivity="false">
+
+    <logger name="com.qsystems.meddoctorassignment" level="DEBUG" additivity="false">
         <appender-ref ref="FILE-BUSINES"/>
         <appender-ref ref="STDOUT"/>
     </logger>
-    <logger name="com.qsystems.meddoctorassignment.websocket" level="INFO" />
-    <logger name="com.qsystems.meddoctorassignment.adapter.orchestra" level="DEBUG" />
-    <logger name="com.qsystems.meddoctorassignment.adapter.gateway.impl.ConfigurableVisitWorkflowGateway" level="DEBUG" />
-    <logger name="org.springframework" level="WARN" />
-    
-    
+    <logger name="com.qsystems.meddoctorassignment.websocket" level="INFO"/>
+    <logger name="com.qsystems.meddoctorassignment.adapter.orchestra" level="DEBUG"/>
+    <logger name="com.qsystems.meddoctorassignment.adapter.gateway.impl.ConfigurableVisitWorkflowGateway"
+            level="DEBUG"/>
+    <logger name="org.springframework" level="WARN"/>
+
+
     <root level="debug">
         <appender-ref ref="STDOUT"/>
         <appender-ref ref="FILE"/>

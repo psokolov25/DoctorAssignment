@@ -1,6 +1,5 @@
 package com.qsystems.meddoctorassignment;
 
-import com.qsystems.meddoctorassignment.adapter.gateway.impl.OrchestraMetadataGatewayImpl;
 import com.qsystems.meddoctorassignment.cache.BranchCacheUpdater;
 import com.qsystems.meddoctorassignment.cache.OrchestraDataCacheContainer;
 import com.qsystems.meddoctorassignment.cache.service.OrchestraDataCacheUpdateService;
@@ -20,11 +19,10 @@ import com.qsystems.meddoctorassignment.model.event.TriggerSource;
 import com.qsystems.meddoctorassignment.support.InMemoryTestGateways;
 import com.qsystems.meddoctorassignment.util.BranchLockManager;
 import com.qsystems.meddoctorassignment.util.ProcessedVisitRegistry;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
-
 import java.util.Arrays;
 import java.util.Collections;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 public class AutonomousMedicalExamAssignmentServiceTest {
 

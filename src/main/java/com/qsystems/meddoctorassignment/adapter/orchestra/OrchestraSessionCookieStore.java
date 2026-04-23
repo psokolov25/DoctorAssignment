@@ -1,16 +1,14 @@
 package com.qsystems.meddoctorassignment.adapter.orchestra;
 
 import io.micronaut.context.annotation.Value;
-import io.micronaut.http.HttpHeaders;
 import jakarta.inject.Singleton;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Хранилище cookie Orchestra с раздельными областями видимости по типу HTTP-операции.
@@ -21,11 +19,9 @@ import java.util.concurrent.ConcurrentHashMap;
 @Singleton
 public class OrchestraSessionCookieStore {
 
-    private static final Logger log = LoggerFactory.getLogger(OrchestraSessionCookieStore.class);
-
     static final String READ_SCOPE = "READ";
     static final String MUTATION_SCOPE = "MUTATION";
-
+    private static final Logger log = LoggerFactory.getLogger(OrchestraSessionCookieStore.class);
     private final Map<String, Map<String, String>> cookiesByScope = new ConcurrentHashMap<String, Map<String, String>>();
     private volatile boolean replayMutationCookies = false;
 

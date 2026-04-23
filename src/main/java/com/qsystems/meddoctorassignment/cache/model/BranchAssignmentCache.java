@@ -2,7 +2,6 @@ package com.qsystems.meddoctorassignment.cache.model;
 
 import com.qsystems.meddoctorassignment.adapter.orchestra.dto.ServiceData;
 import com.qsystems.meddoctorassignment.adapter.orchestra.dto.TinyQueue;
-
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Map;

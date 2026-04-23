@@ -1,7 +1,6 @@
 package com.qsystems.meddoctorassignment.config;
 
 import io.micronaut.context.annotation.ConfigurationProperties;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;

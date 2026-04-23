@@ -8,11 +8,10 @@ import com.qsystems.meddoctorassignment.model.event.OrchestraEvent;
 import com.qsystems.meddoctorassignment.model.event.TriggerSource;
 import com.qsystems.meddoctorassignment.util.EventDeduplicator;
 import jakarta.inject.Singleton;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.time.Duration;
 import java.util.Optional;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Главный обработчик входящих событий Orchestra для сценария автоматического назначения визитов.

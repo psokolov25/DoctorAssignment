@@ -15,13 +15,12 @@ import com.qsystems.meddoctorassignment.util.BranchLockManager;
 import com.qsystems.meddoctorassignment.util.ProcessedVisitRegistry;
 import io.micronaut.http.client.exceptions.HttpClientResponseException;
 import jakarta.inject.Singleton;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Центральный доменный оркестратор цикла автоматического назначения врача.

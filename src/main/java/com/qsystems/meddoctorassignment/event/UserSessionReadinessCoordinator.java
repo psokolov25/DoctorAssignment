@@ -3,15 +3,14 @@ package com.qsystems.meddoctorassignment.event;
 import com.qsystems.meddoctorassignment.config.AssignmentProperties;
 import com.qsystems.meddoctorassignment.model.event.OrchestraEvent;
 import jakarta.inject.Singleton;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Координирует короткую цепочку посадки врача:
@@ -212,18 +211,6 @@ public class UserSessionReadinessCoordinator {
                     copyEvent(event));
         }
 
-        public boolean matches(PendingUserSession other) {
-            return equalsNullable(branchId, other.branchId)
-                    && equalsNullable(userId, other.userId)
-                    && equalsNullable(servicePointId, other.servicePointId)
-                    && equalsNullable(servicePointLogicId, other.servicePointLogicId)
-                    && equalsNullable(staffTransactionId, other.staffTransactionId);
-        }
-
-        public OrchestraEvent copySourceEvent() {
-            return copyEvent(sourceEvent);
-        }
-
         private static OrchestraEvent copyEvent(OrchestraEvent event) {
             OrchestraEvent copy = new OrchestraEvent();
             copy.setEventName(event.getEventName());
@@ -264,6 +251,18 @@ public class UserSessionReadinessCoordinator {
 
         private static String asString(Object value) {
             return value != null ? String.valueOf(value) : null;
+        }
+
+        public boolean matches(PendingUserSession other) {
+            return equalsNullable(branchId, other.branchId)
+                    && equalsNullable(userId, other.userId)
+                    && equalsNullable(servicePointId, other.servicePointId)
+                    && equalsNullable(servicePointLogicId, other.servicePointLogicId)
+                    && equalsNullable(staffTransactionId, other.staffTransactionId);
+        }
+
+        public OrchestraEvent copySourceEvent() {
+            return copyEvent(sourceEvent);
         }
 
         public Integer getBranchId() { return branchId; }

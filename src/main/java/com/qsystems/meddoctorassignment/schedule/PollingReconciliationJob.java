@@ -17,56 +17,62 @@ import org.slf4j.LoggerFactory;
  * Периодическая подстраховочная задача, запускающая повторную обработку по runtime cache.
  *
  * <p>Нужна на случай, если websocket-событие было потеряно, пришло до прогрева кэша или было
- * отклонено из-за временной сетевой проблемы.</p>
+ * отклонено из-за временной сетевой проблемы.
  */
 @Singleton
 public class PollingReconciliationJob {
 
-    private static final Logger log = LoggerFactory.getLogger(PollingReconciliationJob.class);
+  private static final Logger log = LoggerFactory.getLogger(PollingReconciliationJob.class);
 
-    private final OrchestraDataCacheContainer cacheContainer;
-    private final OrchestraDataCacheUpdateService cacheUpdateService;
-    private final AutonomousMedicalExamAssignmentService assignmentService;
-    private final AssignmentProperties assignmentProperties;
+  private final OrchestraDataCacheContainer cacheContainer;
+  private final OrchestraDataCacheUpdateService cacheUpdateService;
+  private final AutonomousMedicalExamAssignmentService assignmentService;
+  private final AssignmentProperties assignmentProperties;
 
-    public PollingReconciliationJob(OrchestraDataCacheContainer cacheContainer,
-                                    OrchestraDataCacheUpdateService cacheUpdateService,
-                                    AutonomousMedicalExamAssignmentService assignmentService,
-                                    AssignmentProperties assignmentProperties) {
-        this.cacheContainer = cacheContainer;
-        this.cacheUpdateService = cacheUpdateService;
-        this.assignmentService = assignmentService;
-        this.assignmentProperties = assignmentProperties;
+  public PollingReconciliationJob(
+      OrchestraDataCacheContainer cacheContainer,
+      OrchestraDataCacheUpdateService cacheUpdateService,
+      AutonomousMedicalExamAssignmentService assignmentService,
+      AssignmentProperties assignmentProperties) {
+    this.cacheContainer = cacheContainer;
+    this.cacheUpdateService = cacheUpdateService;
+    this.assignmentService = assignmentService;
+    this.assignmentProperties = assignmentProperties;
+  }
+
+  @Scheduled(cron = "${application.assignment.polling-cron}")
+  public void reconcile() {
+    if (!assignmentProperties.isEnabled()) {
+      return;
     }
-
-    @Scheduled(cron = "${application.assignment.polling-cron}")
-    public void reconcile() {
-        if (!assignmentProperties.isEnabled()) {
-            return;
+    for (BranchAssignmentCache branchCache : cacheContainer.getBranchCacheMap().values()) {
+      if (!assignmentProperties.isAllowedBranch(branchCache.getBranchId())) {
+        continue;
+      }
+      cacheUpdateService.ensureFresh(branchCache.getBranchId());
+      for (ServicePointRuntimeState runtimeState :
+          branchCache.getServicePointRuntimeStateMap().values()) {
+        if (runtimeState.getStaffId() <= 0 || runtimeState.getWorkProfileId() <= 0) {
+          continue;
         }
-        for (BranchAssignmentCache branchCache : cacheContainer.getBranchCacheMap().values()) {
-            if (!assignmentProperties.isAllowedBranch(branchCache.getBranchId())) {
-                continue;
-            }
-            cacheUpdateService.ensureFresh(branchCache.getBranchId());
-            for (ServicePointRuntimeState runtimeState : branchCache.getServicePointRuntimeStateMap().values()) {
-                if (runtimeState.getStaffId() <= 0 || runtimeState.getWorkProfileId() <= 0) {
-                    continue;
-                }
-                DoctorContext context = new DoctorContext();
-                context.setTriggerSource(TriggerSource.POLLING);
-                context.setBranchId(runtimeState.getBranchId());
-                context.setServicePointId(runtimeState.getServicePointId());
-                context.setStaffId(runtimeState.getStaffId());
-                context.setWorkProfileId(runtimeState.getWorkProfileId());
-                context.recordSource("branchId", "polling.runtime-cache");
-                context.recordSource("servicePointId", "polling.runtime-cache");
-                context.recordSource("staffId", "polling.runtime-cache");
-                context.recordSource("workProfileId", "polling.runtime-cache");
-                log.info("Polling reconciliation for branch={} servicePoint={} staff={} workProfile={}",
-                        context.getBranchId(), context.getServicePointId(), context.getStaffId(), context.getWorkProfileId());
-                assignmentService.process(context);
-            }
-        }
+        DoctorContext context = new DoctorContext();
+        context.setTriggerSource(TriggerSource.POLLING);
+        context.setBranchId(runtimeState.getBranchId());
+        context.setServicePointId(runtimeState.getServicePointId());
+        context.setStaffId(runtimeState.getStaffId());
+        context.setWorkProfileId(runtimeState.getWorkProfileId());
+        context.recordSource("branchId", "polling.runtime-cache");
+        context.recordSource("servicePointId", "polling.runtime-cache");
+        context.recordSource("staffId", "polling.runtime-cache");
+        context.recordSource("workProfileId", "polling.runtime-cache");
+        log.info(
+            "Polling reconciliation for branch={} servicePoint={} staff={} workProfile={}",
+            context.getBranchId(),
+            context.getServicePointId(),
+            context.getStaffId(),
+            context.getWorkProfileId());
+        assignmentService.process(context);
+      }
     }
+  }
 }

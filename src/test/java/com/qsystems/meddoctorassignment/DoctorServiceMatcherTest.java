@@ -6,12 +6,11 @@ import com.qsystems.meddoctorassignment.domain.model.SelectedDoctorService;
 import com.qsystems.meddoctorassignment.domain.model.VisitDetails;
 import com.qsystems.meddoctorassignment.domain.model.VisitUnservedService;
 import com.qsystems.meddoctorassignment.domain.service.impl.DefaultDoctorServiceMatcher;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
-
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Optional;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 public class DoctorServiceMatcherTest {
 

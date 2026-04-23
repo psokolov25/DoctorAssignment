@@ -2,7 +2,6 @@ package com.qsystems.meddoctorassignment.cache;
 
 import com.qsystems.meddoctorassignment.cache.model.BranchAssignmentCache;
 import jakarta.inject.Singleton;
-
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 

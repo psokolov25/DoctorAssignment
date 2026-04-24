@@ -6,6 +6,7 @@ import com.qsystems.meddoctorassignment.cache.BranchCacheUpdater;
 import com.qsystems.meddoctorassignment.cache.OrchestraDataCacheContainer;
 import com.qsystems.meddoctorassignment.cache.service.OrchestraDataCacheUpdateService;
 import com.qsystems.meddoctorassignment.config.AssignmentProperties;
+import com.qsystems.meddoctorassignment.config.MedRobotProperties;
 import com.qsystems.meddoctorassignment.config.OrchestraProperties;
 import com.qsystems.meddoctorassignment.domain.model.VisitDetails;
 import com.qsystems.meddoctorassignment.domain.model.VisitSummary;
@@ -17,6 +18,7 @@ import com.qsystems.meddoctorassignment.domain.service.impl.DefaultLoggedDoctorC
 import com.qsystems.meddoctorassignment.domain.service.impl.DefaultUnknownDoctorQueueVisitProvider;
 import com.qsystems.meddoctorassignment.domain.service.impl.DefaultVisitAssignmentExecutor;
 import com.qsystems.meddoctorassignment.domain.service.impl.DefaultVisitRouteAnalyzer;
+import com.qsystems.meddoctorassignment.domain.service.impl.MedRobotAwareDoctorServiceSelectionService;
 import com.qsystems.meddoctorassignment.event.DoctorAssignmentEventHandler;
 import com.qsystems.meddoctorassignment.event.UserSessionReadinessCoordinator;
 import com.qsystems.meddoctorassignment.event.WorkProfileExpansionTriggerEvaluator;
@@ -87,7 +89,10 @@ public class WorkProfileExpansionTriggerTest {
                 availableServicesResolver,
                 new DefaultUnknownDoctorQueueVisitProvider(gateways),
                 new DefaultVisitRouteAnalyzer(gateways),
-                new DefaultDoctorServiceMatcher(assignmentProperties),
+                new MedRobotAwareDoctorServiceSelectionService(
+                        new DefaultDoctorServiceMatcher(assignmentProperties),
+                        gateways,
+                        new MedRobotProperties()),
                 new DefaultVisitAssignmentExecutor(gateways, assignmentProperties),
                 gateways,
                 new BranchLockManager(),

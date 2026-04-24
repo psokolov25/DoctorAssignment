@@ -32,6 +32,15 @@ public class AssignmentProperties {
     private int maxVisitsPerCycle = 50;
 
     /**
+     * Включает периодическую reconciliation-задачу.
+     *
+     * <p>Если нужно работать только по событиям websocket, этот флаг можно выключить.
+     * Если нужно работать только по расписанию, нужно выключить application.websocket.enabled и
+     * оставить этот флаг включенным.</p>
+     */
+    private boolean pollingEnabled = true;
+
+    /**
      * Расписание polling fallback.
      */
     private String pollingCron = "0 */5 * * * ?";
@@ -189,6 +198,14 @@ public class AssignmentProperties {
 
     public void setMaxVisitsPerCycle(int maxVisitsPerCycle) {
         this.maxVisitsPerCycle = maxVisitsPerCycle;
+    }
+
+    public boolean isPollingEnabled() {
+        return pollingEnabled;
+    }
+
+    public void setPollingEnabled(boolean pollingEnabled) {
+        this.pollingEnabled = pollingEnabled;
     }
 
     public String getPollingCron() {
@@ -387,7 +404,7 @@ public class AssignmentProperties {
             case WORK_PROFILE_EXPANDED:
                 return workProfileExpandedTriggerEnabled;
             case POLLING:
-                return true;
+                return pollingEnabled;
             default:
                 return false;
         }

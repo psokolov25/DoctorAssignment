@@ -4,6 +4,8 @@ import com.qsystems.meddoctorassignment.adapter.gateway.OperatorContextActivatio
 import com.qsystems.meddoctorassignment.adapter.gateway.OrchestraMetadataGateway;
 import com.qsystems.meddoctorassignment.adapter.gateway.ServicePointContextGateway;
 import com.qsystems.meddoctorassignment.adapter.gateway.VisitWorkflowGateway;
+import com.qsystems.meddoctorassignment.adapter.gateway.MedRobotOptimalServiceGateway;
+import com.qsystems.meddoctorassignment.adapter.medrobot.dto.MedRobotOptimalServiceResponse;
 import com.qsystems.meddoctorassignment.adapter.orchestra.dto.ServiceData;
 import com.qsystems.meddoctorassignment.adapter.orchestra.dto.ServicePointData;
 import com.qsystems.meddoctorassignment.adapter.orchestra.dto.SmallBranch;
@@ -21,7 +23,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-public class InMemoryTestGateways implements OrchestraMetadataGateway, ServicePointContextGateway, VisitWorkflowGateway, OperatorContextActivationGateway {
+public class InMemoryTestGateways implements OrchestraMetadataGateway, ServicePointContextGateway, VisitWorkflowGateway, OperatorContextActivationGateway, MedRobotOptimalServiceGateway {
 
     public final Map<Integer, List<SmallBranch>> branches = new HashMap<Integer, List<SmallBranch>>();
     public final Map<Integer, List<ServiceData>> servicesByBranch = new HashMap<Integer, List<ServiceData>>();
@@ -34,6 +36,10 @@ public class InMemoryTestGateways implements OrchestraMetadataGateway, ServicePo
     public final Map<String, List<VisitSummary>> waitingVisitsByQueue = new LinkedHashMap<String, List<VisitSummary>>();
     public final Map<Long, VisitDetails> visitDetailsById = new HashMap<Long, VisitDetails>();
     public final Map<Long, VisitSummary> visitById = new HashMap<Long, VisitSummary>();
+    public final Map<String, MedRobotOptimalServiceResponse> medRobotResponses = new HashMap<String, MedRobotOptimalServiceResponse>();
+    public final List<String> medRobotRequests = new ArrayList<String>();
+
+    public boolean medRobotFail;
 
     public final List<String> activationOperations = new ArrayList<String>();
     public final List<String> assignedOperations = new ArrayList<String>();
@@ -147,6 +153,15 @@ public class InMemoryTestGateways implements OrchestraMetadataGateway, ServicePo
     @Override
     public Optional<VisitSummary> findVisit(int branchId, long visitId) {
         return Optional.ofNullable(visitById.get(visitId));
+    }
+
+    @Override
+    public MedRobotOptimalServiceResponse selectOptimalService(int branchId, int currentServiceId, java.util.Set<Integer> unservedServiceIds) {
+        medRobotRequests.add(branchId + "|" + currentServiceId + "|" + unservedServiceIds);
+        if (medRobotFail) {
+            throw new IllegalStateException("simulated med-robot failure");
+        }
+        return medRobotResponses.get(branchId + "|" + currentServiceId);
     }
 
     private <T> List<T> getOrEmpty(List<T> input) {

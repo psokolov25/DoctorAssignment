@@ -42,7 +42,7 @@ public class PollingReconciliationJob {
 
   @Scheduled(cron = "${application.assignment.polling-cron}")
   public void reconcile() {
-    if (!assignmentProperties.isEnabled()) {
+    if (!assignmentProperties.isEnabled() || !assignmentProperties.isPollingEnabled()) {
       return;
     }
     for (BranchAssignmentCache branchCache : cacheContainer.getBranchCacheMap().values()) {

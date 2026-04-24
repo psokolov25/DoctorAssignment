@@ -43,6 +43,7 @@ public class AssignmentPropertiesTest {
         Assertions.assertFalse(properties.isServicePointOpenTriggerEnabled());
         Assertions.assertFalse(properties.isSetWorkProfileTriggerEnabled());
         Assertions.assertTrue(properties.isUserServicePointSessionStartTriggerEnabled());
+        Assertions.assertTrue(properties.isPollingEnabled());
         Assertions.assertEquals(2000L, properties.getUserSessionSettleWindowMs());
         Assertions.assertTrue(properties.isAbortCycleOnForbiddenMutation());
         Assertions.assertTrue(properties.isTreatInactiveUserStateAsFailure());

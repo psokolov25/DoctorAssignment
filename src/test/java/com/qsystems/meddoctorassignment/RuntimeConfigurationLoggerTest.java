@@ -18,6 +18,7 @@ public class RuntimeConfigurationLoggerTest {
     Assertions.assertTrue(properties.isAbortCycleOnForbiddenMutation());
     Assertions.assertTrue(properties.isTreatInactiveUserStateAsFailure());
     Assertions.assertTrue(properties.isTreatNoStartedServicePointSessionAsFailure());
+    Assertions.assertTrue(properties.isPollingEnabled());
     Assertions.assertFalse(properties.getActivation().isEnabled());
     Assertions.assertTrue(properties.getActivation().isFailCycleOnError());
   }

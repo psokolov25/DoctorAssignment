@@ -4,6 +4,7 @@ import com.qsystems.meddoctorassignment.adapter.gateway.OperatorContextActivatio
 import com.qsystems.meddoctorassignment.adapter.gateway.VisitWorkflowGateway;
 import com.qsystems.meddoctorassignment.adapter.orchestra.OrchestraSessionCookieStore;
 import com.qsystems.meddoctorassignment.config.AssignmentProperties;
+import com.qsystems.meddoctorassignment.config.MedRobotProperties;
 import com.qsystems.meddoctorassignment.config.WebsocketProperties;
 import io.micronaut.context.event.ApplicationEventListener;
 import io.micronaut.context.event.StartupEvent;
@@ -26,9 +27,10 @@ import org.slf4j.LoggerFactory;
 public class RuntimeConfigurationLogger implements ApplicationEventListener<StartupEvent> {
 
   private static final Logger log = LoggerFactory.getLogger(RuntimeConfigurationLogger.class);
-  private static final String BUILD_MARKER = "2026-04-16-run1328-r9-profile-expansion";
+  private static final String BUILD_MARKER = "2026-04-24-med-robot-selection-polling-toggle";
 
   private final AssignmentProperties assignmentProperties;
+  private final MedRobotProperties medRobotProperties;
   private final OrchestraSessionCookieStore orchestraSessionCookieStore;
   private final VisitWorkflowGateway visitWorkflowGateway;
   private final OperatorContextActivationGateway operatorContextActivationGateway;
@@ -36,11 +38,13 @@ public class RuntimeConfigurationLogger implements ApplicationEventListener<Star
 
   public RuntimeConfigurationLogger(
       AssignmentProperties assignmentProperties,
+      MedRobotProperties medRobotProperties,
       OrchestraSessionCookieStore orchestraSessionCookieStore,
       VisitWorkflowGateway visitWorkflowGateway,
       OperatorContextActivationGateway operatorContextActivationGateway,
       WebsocketProperties websocketProperties) {
     this.assignmentProperties = assignmentProperties;
+    this.medRobotProperties = medRobotProperties;
     this.orchestraSessionCookieStore = orchestraSessionCookieStore;
     this.visitWorkflowGateway = visitWorkflowGateway;
     this.operatorContextActivationGateway = operatorContextActivationGateway;
@@ -50,7 +54,7 @@ public class RuntimeConfigurationLogger implements ApplicationEventListener<Star
   @Override
   public void onApplicationEvent(StartupEvent event) {
     log.info(
-        "Runtime configuration marker={} gatewayClass={} gatewayCodeSource={} activationGatewayClass={} activationGatewayCodeSource={} activationEnabled={} activationMethod={} activationPath={} activationFailCycleOnError={} userServicePointSessionStartTriggerEnabled={} workProfileExpandedTriggerEnabled={} setWorkProfileTriggerEnabled={} servicePointOpenTriggerEnabled={} userSessionSettleWindowMs={} abortCycleOnForbiddenMutation={} treatInactiveUserStateAsFailure={} treatNoStartedServicePointSessionAsFailure={} replayMutationCookiesForPut={} replayReadCookiesForGet={} websocketSendCookiesInHandshake={}",
+        "Runtime configuration marker={} gatewayClass={} gatewayCodeSource={} activationGatewayClass={} activationGatewayCodeSource={} activationEnabled={} activationMethod={} activationPath={} activationFailCycleOnError={} userServicePointSessionStartTriggerEnabled={} workProfileExpandedTriggerEnabled={} setWorkProfileTriggerEnabled={} servicePointOpenTriggerEnabled={} userSessionSettleWindowMs={} abortCycleOnForbiddenMutation={} treatInactiveUserStateAsFailure={} treatNoStartedServicePointSessionAsFailure={} replayMutationCookiesForPut={} replayReadCookiesForGet={} websocketSendCookiesInHandshake={} pollingEnabled={} pollingCron={} medRobotEnabled={} medRobotUrl={} medRobotOptimalServicePath={} medRobotFallbackOnError={} medRobotFallbackOnEmpty={} medRobotRequireDoctorAvailableService={} medRobotRequireKnownQueue={}",
         BUILD_MARKER,
         visitWorkflowGateway.getClass().getName(),
         resolveCodeSource(visitWorkflowGateway.getClass()),
@@ -76,7 +80,16 @@ public class RuntimeConfigurationLogger implements ApplicationEventListener<Star
         assignmentProperties.isTreatNoStartedServicePointSessionAsFailure(),
         orchestraSessionCookieStore.isCookieReplayEnabledForMethod("PUT"),
         orchestraSessionCookieStore.isCookieReplayEnabledForMethod("GET"),
-        websocketProperties.isSendCookiesInHandshake());
+        websocketProperties.isSendCookiesInHandshake(),
+        assignmentProperties.isPollingEnabled(),
+        assignmentProperties.getPollingCron(),
+        medRobotProperties.isEnabled(),
+        medRobotProperties.getUrl(),
+        medRobotProperties.getOptimalServicePath(),
+        medRobotProperties.isFallbackToLocalOnError(),
+        medRobotProperties.isFallbackToLocalOnEmptyResponse(),
+        medRobotProperties.isRequireDoctorAvailableService(),
+        medRobotProperties.isRequireKnownQueue());
   }
 
   private String resolveCodeSource(Class<?> type) {

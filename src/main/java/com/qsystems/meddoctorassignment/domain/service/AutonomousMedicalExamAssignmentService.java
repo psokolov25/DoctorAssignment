@@ -38,7 +38,7 @@ public class AutonomousMedicalExamAssignmentService {
     private final DoctorAvailableServicesResolver doctorAvailableServicesResolver;
     private final UnknownDoctorQueueVisitProvider unknownDoctorQueueVisitProvider;
     private final VisitRouteAnalyzer visitRouteAnalyzer;
-    private final DoctorServiceMatcher doctorServiceMatcher;
+    private final DoctorServiceSelectionService doctorServiceSelectionService;
     private final VisitAssignmentExecutor visitAssignmentExecutor;
     private final OperatorContextActivationGateway operatorContextActivationGateway;
     private final BranchLockManager branchLockManager;
@@ -50,7 +50,7 @@ public class AutonomousMedicalExamAssignmentService {
                                                   DoctorAvailableServicesResolver doctorAvailableServicesResolver,
                                                   UnknownDoctorQueueVisitProvider unknownDoctorQueueVisitProvider,
                                                   VisitRouteAnalyzer visitRouteAnalyzer,
-                                                  DoctorServiceMatcher doctorServiceMatcher,
+                                                  DoctorServiceSelectionService doctorServiceSelectionService,
                                                   VisitAssignmentExecutor visitAssignmentExecutor,
                                                   OperatorContextActivationGateway operatorContextActivationGateway,
                                                   BranchLockManager branchLockManager,
@@ -61,7 +61,7 @@ public class AutonomousMedicalExamAssignmentService {
         this.doctorAvailableServicesResolver = doctorAvailableServicesResolver;
         this.unknownDoctorQueueVisitProvider = unknownDoctorQueueVisitProvider;
         this.visitRouteAnalyzer = visitRouteAnalyzer;
-        this.doctorServiceMatcher = doctorServiceMatcher;
+        this.doctorServiceSelectionService = doctorServiceSelectionService;
         this.visitAssignmentExecutor = visitAssignmentExecutor;
         this.operatorContextActivationGateway = operatorContextActivationGateway;
         this.branchLockManager = branchLockManager;
@@ -179,7 +179,7 @@ public class AutonomousMedicalExamAssignmentService {
 
                 try {
                     VisitDetails visitDetails = visitRouteAnalyzer.analyze(doctorContext.getBranchId(), visit.getId());
-                    Optional<SelectedDoctorService> selected = doctorServiceMatcher.match(visitDetails, doctorAvailableServices, branchCache);
+                    Optional<SelectedDoctorService> selected = doctorServiceSelectionService.select(visitDetails, doctorAvailableServices, branchCache);
 
                     if (!selected.isPresent()) {
                         log.info("Visit {} has no matching unserved service for doctor {}", visit.getId(), doctorContext.getStaffId());

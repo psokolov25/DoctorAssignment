@@ -4,6 +4,8 @@ import com.qsystems.meddoctorassignment.cache.BranchCacheUpdater;
 import com.qsystems.meddoctorassignment.cache.OrchestraDataCacheContainer;
 import com.qsystems.meddoctorassignment.cache.service.OrchestraDataCacheUpdateService;
 import com.qsystems.meddoctorassignment.config.AssignmentProperties;
+import com.qsystems.meddoctorassignment.config.MedRobotProperties;
+import com.qsystems.meddoctorassignment.adapter.medrobot.dto.MedRobotOptimalServiceResponse;
 import com.qsystems.meddoctorassignment.config.OrchestraProperties;
 import com.qsystems.meddoctorassignment.domain.model.VisitDetails;
 import com.qsystems.meddoctorassignment.domain.model.VisitSummary;
@@ -14,6 +16,7 @@ import com.qsystems.meddoctorassignment.domain.service.impl.DefaultDoctorService
 import com.qsystems.meddoctorassignment.domain.service.impl.DefaultUnknownDoctorQueueVisitProvider;
 import com.qsystems.meddoctorassignment.domain.service.impl.DefaultVisitAssignmentExecutor;
 import com.qsystems.meddoctorassignment.domain.service.impl.DefaultVisitRouteAnalyzer;
+import com.qsystems.meddoctorassignment.domain.service.impl.MedRobotAwareDoctorServiceSelectionService;
 import com.qsystems.meddoctorassignment.model.event.DoctorContext;
 import com.qsystems.meddoctorassignment.model.event.TriggerSource;
 import com.qsystems.meddoctorassignment.support.InMemoryTestGateways;
@@ -158,10 +161,67 @@ public class AutonomousMedicalExamAssignmentServiceTest {
         Assertions.assertTrue(fixture.gateways.transferredOperations.isEmpty());
     }
 
+    @Test
+    void usesMedRobotSelectionWhenEnabled() {
+        Fixture fixture = new Fixture();
+        fixture.prepareBranchTopology();
+        fixture.assignmentProperties.setDryRun(false);
+        fixture.medRobotProperties.setEnabled(true);
+
+        com.qsystems.meddoctorassignment.adapter.orchestra.dto.TinyQueue robotQueue = new com.qsystems.meddoctorassignment.adapter.orchestra.dto.TinyQueue();
+        robotQueue.setId(902);
+        robotQueue.setName("оптимальная очередь робота");
+        fixture.cacheContainer.getOrCreateBranchCache(7).getQueueMap().put(902, robotQueue);
+
+        MedRobotOptimalServiceResponse response = new MedRobotOptimalServiceResponse();
+        response.setServiceId(302);
+        response.setQueueId(902);
+        fixture.gateways.medRobotResponses.put("7|301", response);
+
+        fixture.gateways.waitingVisitsByQueue.put("7|900", Collections.singletonList(new VisitSummary(5001L, 900, "WAITING", "A-5001")));
+        fixture.gateways.visitDetailsById.put(5001L, new VisitDetails(5001L, 900, Arrays.asList(
+                new VisitUnservedService(301, null, 1),
+                new VisitUnservedService(302, null, 2)
+        )));
+        fixture.gateways.visitById.put(5001L, new VisitSummary(5001L, 900, "WAITING", "A-5001"));
+
+        DoctorContext context = fixture.openDoctor(7, 41220000000007L, 45, 15);
+        fixture.service.process(context);
+
+        Assertions.assertEquals(1, fixture.gateways.medRobotRequests.size());
+        Assertions.assertEquals(1, fixture.gateways.assignedOperations.size());
+        Assertions.assertTrue(fixture.gateways.assignedOperations.get(0).contains("|302|45|41220000000007"));
+        Assertions.assertEquals(1, fixture.gateways.transferredOperations.size());
+        Assertions.assertTrue(fixture.gateways.transferredOperations.get(0).endsWith("|902"));
+    }
+
+    @Test
+    void fallsBackToLocalSelectionWhenMedRobotFails() {
+        Fixture fixture = new Fixture();
+        fixture.prepareBranchTopology();
+        fixture.assignmentProperties.setDryRun(false);
+        fixture.medRobotProperties.setEnabled(true);
+        fixture.gateways.medRobotFail = true;
+
+        fixture.gateways.waitingVisitsByQueue.put("7|900", Collections.singletonList(new VisitSummary(5002L, 900, "WAITING", "A-5002")));
+        fixture.gateways.visitDetailsById.put(5002L, new VisitDetails(5002L, 900, Arrays.asList(new VisitUnservedService(301, null, 1))));
+        fixture.gateways.visitById.put(5002L, new VisitSummary(5002L, 900, "WAITING", "A-5002"));
+
+        DoctorContext context = fixture.openDoctor(7, 41220000000007L, 45, 15);
+        fixture.service.process(context);
+
+        Assertions.assertEquals(1, fixture.gateways.medRobotRequests.size());
+        Assertions.assertEquals(1, fixture.gateways.assignedOperations.size());
+        Assertions.assertTrue(fixture.gateways.assignedOperations.get(0).contains("|301|45|41220000000007"));
+        Assertions.assertEquals(1, fixture.gateways.transferredOperations.size());
+        Assertions.assertTrue(fixture.gateways.transferredOperations.get(0).endsWith("|901"));
+    }
+
     static final class Fixture {
         final InMemoryTestGateways gateways = new InMemoryTestGateways();
         final OrchestraDataCacheContainer cacheContainer = new OrchestraDataCacheContainer();
         final AssignmentProperties assignmentProperties = new AssignmentProperties();
+        final MedRobotProperties medRobotProperties = new MedRobotProperties();
         final OrchestraProperties orchestraProperties = new OrchestraProperties();
         final BranchCacheUpdater updater = new BranchCacheUpdater(gateways, cacheContainer, assignmentProperties);
         final OrchestraDataCacheUpdateService updateService = new OrchestraDataCacheUpdateService(
@@ -178,7 +238,10 @@ public class AutonomousMedicalExamAssignmentServiceTest {
                 new DefaultDoctorAvailableServicesResolver(),
                 new DefaultUnknownDoctorQueueVisitProvider(gateways),
                 new DefaultVisitRouteAnalyzer(gateways),
-                new DefaultDoctorServiceMatcher(assignmentProperties),
+                new MedRobotAwareDoctorServiceSelectionService(
+                        new DefaultDoctorServiceMatcher(assignmentProperties),
+                        gateways,
+                        medRobotProperties),
                 new DefaultVisitAssignmentExecutor(gateways, assignmentProperties),
                 gateways,
                 new BranchLockManager(),

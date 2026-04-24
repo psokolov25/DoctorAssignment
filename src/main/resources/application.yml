@@ -39,6 +39,35 @@ application:
     # массово получают 403, поэтому по умолчанию replay выключен.
     replay-mutation-cookies: false
 
+  med-robot:
+    # Включает обращение к med-robot для выбора оптимальной услуги и очереди.
+    # false — полностью старая локальная схема Doctor Assistant.
+    enabled: false
+
+    # Базовый URL REST API med-robot.
+    url: http://localhost:8082
+
+    # Контракт из med-robot: POST /prorobot/optimalqueue/{branchId}/service/{serviceId}
+    # Тело запроса — JSON-массив id непройденных услуг визита.
+    optimal-service-path: /prorobot/optimalqueue/{branchId}/service/{serviceId}
+
+    # Опциональная Basic Auth для закрытого REST API med-robot.
+    # username: robot
+    # password: secret
+
+    # При ошибке med-robot не останавливать цикл, а использовать локальный алгоритм.
+    fallback-to-local-on-error: true
+
+    # Если med-robot вернул null/null или 0/0, использовать локальный алгоритм.
+    fallback-to-local-on-empty-response: true
+
+    # true — принимать только услуги, доступные текущему врачу;
+    # false — доверять med-robot как оптимизатору очереди в масштабе отделения.
+    require-doctor-available-service: false
+
+    # Проверять, что очередь, возвращенная med-robot, присутствует в кэше отделения.
+    require-known-queue: true
+
   websocket:
     # Включает event-driven режим через SockJS/STOMP.
     # Если false, сервис будет работать только через polling fallback.
@@ -74,6 +103,11 @@ application:
     # Максимальное количество визитов, обрабатываемых за один цикл.
     # Нужен как предохранитель от слишком длинной обработки одного события.
     max-visits-per-cycle: 50
+
+    # Включает периодическую reconciliation-задачу.
+    # Для режима только по событиям установите false.
+    # Для режима только по расписанию оставьте true и выключите application.websocket.enabled.
+    polling-enabled: true
 
     # Cron для fallback polling.
     # Даже при включенном websocket эта задача полезна как страховка от потерянных событий.

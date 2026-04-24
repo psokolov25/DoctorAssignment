@@ -1,0 +1,38 @@
+@startuml
+skinparam backgroundColor #F8FAFC
+skinparam defaultFontName "DejaVu Sans"
+skinparam shadowing false
+skinparam ArrowColor #475569
+skinparam rectangle {
+  BackgroundColor #FFFFFF
+  BorderColor #2563EB
+  FontColor #0F172A
+  RoundCorner 14
+}
+skinparam note {
+  BackgroundColor #EFF6FF
+  BorderColor #93C5FD
+  FontColor #0F172A
+}
+title Карта данных и REST-контракта med-robot
+rectangle "Doctor Assistant" as DA {
+  rectangle "Непройденные услуги визита\nSet<Long> serviceIds" as Unserved
+  rectangle "Текущая услуга-кандидат\nserviceId из локального выбора" as Current
+}
+rectangle "med-robot REST API" as MR {
+  rectangle "POST /prorobot/optimalqueue/{branchId}/service/{serviceId}" as Endpoint
+  rectangle "Тело запроса: отсортированный список serviceId" as Body
+  rectangle "Ответ: serviceId + queueId" as Response
+}
+rectangle "Проверка ответа" as Validate {
+  rectangle "услуга есть в маршруте" as V1
+  rectangle "очередь есть в кэше" as V2
+  rectangle "при строгом режиме услуга доступна врачу" as V3
+}
+Unserved --> Body
+Current --> Endpoint
+Endpoint --> Response
+Response --> V1
+Response --> V2
+Response --> V3
+@enduml

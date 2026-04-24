@@ -11,6 +11,8 @@
         </encoder>
     </appender>
 
+    <logger name="com.qsystems.meddoctorassignment.domain.service.AutonomousMedicalExamAssignmentService" level="OFF" />
+    <logger name="com.qsystems.meddoctorassignment.domain.service.impl.MedRobotAwareDoctorServiceSelectionService" level="OFF" />
     <logger name="com.qsystems.meddoctorassignment" level="WARN" />
     <logger name="io.micronaut" level="WARN" />
     <logger name="org.springframework" level="WARN" />

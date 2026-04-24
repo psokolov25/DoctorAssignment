@@ -1,0 +1,26 @@
+@startuml
+skinparam backgroundColor #F8FAFC
+skinparam defaultFontName "DejaVu Sans"
+skinparam shadowing false
+skinparam ArrowColor #475569
+skinparam ArrowThickness 1.2
+skinparam state {
+  BackgroundColor #FFFFFF
+  BorderColor #2563EB
+  FontColor #0F172A
+  StartColor #16A34A
+  EndColor #DC2626
+}
+title Состояния визита при автоматическом назначении
+[*] --> Очередь_врач_не_назначен
+Очередь_врач_не_назначен --> Анализ_маршрута : найден врач
+Анализ_маршрута --> Выбор_услуги : есть непройденные услуги
+Выбор_услуги --> Проверка_med_robot : robot enabled
+Выбор_услуги --> Локальный_выбор : robot disabled
+Проверка_med_robot --> Локальный_выбор : ошибка или невалидный ответ
+Проверка_med_robot --> Назначение_услуги : валидная услуга и очередь
+Локальный_выбор --> Назначение_услуги
+Назначение_услуги --> Перевод_в_очередь
+Перевод_в_очередь --> Готов_к_вызову
+Готов_к_вызову --> [*]
+@enduml

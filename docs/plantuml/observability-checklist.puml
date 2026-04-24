@@ -1,0 +1,38 @@
+@startuml
+skinparam backgroundColor #F8FAFC
+skinparam defaultFontName "DejaVu Sans"
+skinparam shadowing false
+skinparam ArrowColor #475569
+skinparam rectangle {
+  BackgroundColor #FFFFFF
+  BorderColor #2563EB
+  FontColor #0F172A
+  RoundCorner 14
+}
+skinparam note {
+  BackgroundColor #EFF6FF
+  BorderColor #93C5FD
+  FontColor #0F172A
+}
+title Наблюдаемость и эксплуатационная проверка
+rectangle "Старт службы" as Start
+rectangle "Лог конфигурации\nбез паролей и токенов" as Config
+rectangle "Пересборка кэша\nпо отделениям" as Cache
+rectangle "События / расписание\nисточник запуска" as Trigger
+rectangle "Выбор услуги\nлокально или через med-robot" as Select
+rectangle "Мутации Orchestra\nassign-service / transfer-visit" as Mutate
+rectangle "Итог цикла\nprocessed, skipped, fallback" as Result
+Start --> Config
+Config --> Cache
+Cache --> Trigger
+Trigger --> Select
+Select --> Mutate
+Mutate --> Result
+note bottom of Result
+  В журнале должны быть понятны:
+  причина выбора услуги,
+  источник запуска,
+  факт fallback,
+  целевая очередь.
+end note
+@enduml

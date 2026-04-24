@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1120" height="620" viewBox="0 0 1120 620" role="img" aria-label="Наблюдаемость и эксплуатационная проверка">
+  <defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L0,6 L9,3 z" fill="#64748B"/></marker></defs>
+  <rect width="100%" height="100%" rx="24" fill="#F8FAFC"/>
+  <text x="40" y="58" font-family="DejaVu Sans, Arial, sans-serif" font-size="30" font-weight="700" fill="#0F172A">Наблюдаемость и эксплуатационная проверка</text>
+  <text x="40" y="92" font-family="DejaVu Sans, Arial, sans-serif" font-size="16" fill="#475569">Документационная диаграмма: русские пояснения, аккуратное выравнивание и читаемые подписи.</text>
+  <rect x="70" y="140" width="455" height="74" rx="18" fill="#DBEAFE" stroke="#2563EB" stroke-width="1.3"/>
+  <text x="94" y="184" font-family="DejaVu Sans, Arial, sans-serif" font-size="18" font-weight="600" fill="#0F172A">лог конфигурации без секретов</text>
+  <path d="M 525 177 C 560 177, 555 177, 590 177" fill="none" stroke="#64748B" stroke-width="2" marker-end="url(#arrow)"/>
+  <rect x="590" y="140" width="455" height="74" rx="18" fill="#E0F2FE" stroke="#2563EB" stroke-width="1.3"/>
+  <text x="614" y="184" font-family="DejaVu Sans, Arial, sans-serif" font-size="18" font-weight="600" fill="#0F172A">пересборка кэша</text>
+  <path d="M 817 214 C 817 250, 297 250, 297 284" fill="none" stroke="#64748B" stroke-width="2" marker-end="url(#arrow)"/>
+  <rect x="70" y="284" width="455" height="74" rx="18" fill="#DCFCE7" stroke="#2563EB" stroke-width="1.3"/>
+  <text x="94" y="328" font-family="DejaVu Sans, Arial, sans-serif" font-size="18" font-weight="600" fill="#0F172A">источник запуска</text>
+  <path d="M 525 321 C 560 321, 555 321, 590 321" fill="none" stroke="#64748B" stroke-width="2" marker-end="url(#arrow)"/>
+  <rect x="590" y="284" width="455" height="74" rx="18" fill="#FEF3C7" stroke="#2563EB" stroke-width="1.3"/>
+  <text x="614" y="328" font-family="DejaVu Sans, Arial, sans-serif" font-size="18" font-weight="600" fill="#0F172A">fallback и итог цикла</text>
+  <path d="M 817 358 C 817 394, 297 394, 297 428" fill="none" stroke="#64748B" stroke-width="2" marker-end="url(#arrow)"/>
+  <rect x="70" y="428" width="455" height="74" rx="18" fill="#FCE7F3" stroke="#2563EB" stroke-width="1.3"/>
+  <text x="94" y="472" font-family="DejaVu Sans, Arial, sans-serif" font-size="18" font-weight="600" fill="#0F172A">понятные причины решений в журнале</text>
+  <rect x="590" y="428" width="455" height="74" rx="18" fill="#EDE9FE" stroke="#2563EB" stroke-width="1.3"/>
+  <text x="614" y="462" font-family="DejaVu Sans, Arial, sans-serif" font-size="17" font-weight="600" fill="#0F172A">Итог: прозрачный процесс,</text>
+  <text x="614" y="486" font-family="DejaVu Sans, Arial, sans-serif" font-size="17" font-weight="600" fill="#0F172A">контролируемый fallback и журналируемые решения</text>
+</svg>

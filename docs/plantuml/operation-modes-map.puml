@@ -1,0 +1,25 @@
+@startmindmap
+skinparam backgroundColor #F8FAFC
+skinparam defaultFontName "DejaVu Sans"
+skinparam shadowing false
+title Карта режимов запуска обработки
+* Режимы запуска обработки
+** Событийный режим
+*** websocket.enabled=true
+*** assignment.polling-enabled=false
+*** минимальная задержка реакции
+** Регламентный режим
+*** websocket.enabled=false
+*** assignment.polling-enabled=true
+*** обработка по cron
+** Смешанный режим
+*** websocket.enabled=true
+*** assignment.polling-enabled=true
+*** события плюс страховочная сверка
+** Режим без робота
+*** application.med-robot.enabled=false
+*** используется старый локальный выбор
+** Режим с роботом
+*** application.med-robot.enabled=true
+*** робот выбирает услугу и очередь
+@endmindmap

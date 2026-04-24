@@ -1,0 +1,35 @@
+@startuml
+skinparam backgroundColor #F8FAFC
+skinparam defaultFontName "DejaVu Sans"
+skinparam shadowing false
+skinparam ArrowColor #475569
+skinparam ArrowThickness 1.2
+skinparam activity {
+  BackgroundColor #FFFFFF
+  BorderColor #2563EB
+  FontColor #0F172A
+  StartColor #16A34A
+  EndColor #DC2626
+}
+title Отказы и восстановление без остановки цикла
+start
+:Начать обработку визитов отделения;
+repeat
+  :Взять следующий визит из очереди «врач не назначен»;
+  if (Ошибка чтения деталей визита?) then (да)
+    :Записать предупреждение;
+    :Перейти к следующему визиту;
+  else (нет)
+    if (Контекст мутации потерян?) then (да)
+      :Прервать цикл отделения;
+      stop
+    else (нет)
+      if (med-robot недоступен?) then (да)
+        :Применить локальный fallback;
+      endif
+      :Назначить услугу и перевести визит;
+    endif
+  endif
+repeat while (есть еще визиты?) is (да)
+stop
+@enduml

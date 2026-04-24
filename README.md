@@ -102,6 +102,54 @@ src/main/java/com/qsystems/meddoctorassignment
 
 Исходник: `docs/plantuml/deployment-view.puml`
 
+#### Процесс работы по зонам ответственности
+
+![Процесс работы по зонам ответственности](docs/diagrams/orchestration-swimlane.svg)
+
+Исходник: `docs/plantuml/orchestration-swimlane.puml`
+
+#### Состояния визита при автоматическом назначении
+
+![Состояния визита при автоматическом назначении](docs/diagrams/visit-lifecycle-state.svg)
+
+Исходник: `docs/plantuml/visit-lifecycle-state.puml`
+
+#### Дерево решений med-robot и локального fallback
+
+![Дерево решений при ответе med-robot](docs/diagrams/med-robot-fallback-decision.svg)
+
+Исходник: `docs/plantuml/med-robot-fallback-decision.puml`
+
+#### Карта режимов запуска обработки
+
+![Карта режимов запуска обработки](docs/diagrams/operation-modes-map.svg)
+
+Исходник: `docs/plantuml/operation-modes-map.puml`
+
+#### Карта данных и REST-контракта med-robot
+
+![Карта данных и REST-контракта med-robot](docs/diagrams/data-contract-map.svg)
+
+Исходник: `docs/plantuml/data-contract-map.puml`
+
+#### Отказы и восстановление без остановки цикла
+
+![Отказы и восстановление без остановки цикла](docs/diagrams/failure-recovery-flow.svg)
+
+Исходник: `docs/plantuml/failure-recovery-flow.puml`
+
+#### REST-мутации Orchestra при назначении визита
+
+![REST-мутации Orchestra при назначении визита](docs/diagrams/rest-mutation-flow.svg)
+
+Исходник: `docs/plantuml/rest-mutation-flow.puml`
+
+#### Наблюдаемость и эксплуатационная проверка
+
+![Наблюдаемость и эксплуатационная проверка](docs/diagrams/observability-checklist.svg)
+
+Исходник: `docs/plantuml/observability-checklist.puml`
+
 ### 3.1. Слой адаптеров
 
 `OrchestraMetadataGateway` и `OrchestraMetadataGatewayImpl` отвечают за чтение справочных сущностей Orchestra:

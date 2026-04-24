@@ -37,6 +37,25 @@ Content-Type: application/json
 
 Если med-robot вернул `null/null`, `0/0`, ошибку или недопустимую пару, поведение зависит от флагов возврата к локальному алгоритму.
 
+## Документационные диаграммы
+
+Для внедрения и сопровождения интеграции подготовлен расширенный набор диаграмм. Все подписи даны на русском языке; программные имена оставлены только там, где они нужны для сопоставления с кодом, REST-точками и настройками.
+
+| Диаграмма | Что показывает |
+|---|---|
+| `docs/diagrams/architecture-overview.svg` | общую архитектуру Doctor Assistant, Orchestra и med-robot |
+| `docs/diagrams/assignment-sequence.svg` | последовательность назначения визита врачу |
+| `docs/diagrams/orchestration-swimlane.svg` | распределение ответственности между Orchestra, Doctor Assistant и med-robot |
+| `docs/diagrams/visit-lifecycle-state.svg` | состояния визита от очереди «врач не назначен» до готовности к вызову |
+| `docs/diagrams/med-robot-fallback-decision.svg` | дерево решений при ответе med-robot и возврате к локальному алгоритму |
+| `docs/diagrams/operation-modes-map.svg` | режимы запуска: события, расписание, смешанный режим, с роботом и без робота |
+| `docs/diagrams/data-contract-map.svg` | REST-контракт med-robot, тело запроса, ответ и проверки валидности |
+| `docs/diagrams/failure-recovery-flow.svg` | поведение при отказах без остановки всей службы |
+| `docs/diagrams/rest-mutation-flow.svg` | REST-мутации Orchestra: активация контекста, назначение услуги и перевод визита |
+| `docs/diagrams/observability-checklist.svg` | какие признаки должны быть видны в логах при эксплуатации |
+
+Исходники лежат рядом в `docs/plantuml/*.puml`, поэтому диаграммы можно редактировать как код и версионировать вместе с изменениями интеграции.
+
 ## Настройки application.yml
 
 ```yaml

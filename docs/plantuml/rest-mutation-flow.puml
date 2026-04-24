@@ -1,0 +1,28 @@
+@startuml
+skinparam backgroundColor #F8FAFC
+skinparam defaultFontName "DejaVu Sans"
+skinparam shadowing false
+skinparam ArrowColor #475569
+skinparam sequence {
+  ParticipantBackgroundColor #FFFFFF
+  ParticipantBorderColor #2563EB
+  LifeLineBorderColor #94A3B8
+  ArrowColor #475569
+}
+title REST-мутации Orchestra при назначении визита
+actor "Врач" as Doctor
+participant "Doctor Assistant" as DA
+participant "Orchestra REST" as OR
+participant "Очередь услуги" as Queue
+Doctor -> DA : событие готовности врача
+DA -> OR : активировать операторский контекст
+DA -> OR : получить детали визита
+alt услуга уже назначена визиту
+  DA -> OR : transfer-visit
+else услуга не назначена
+  DA -> OR : assign-service
+  DA -> OR : transfer-visit
+end
+OR -> Queue : визит попадает в целевую очередь
+Queue --> Doctor : визит доступен для вызова
+@enduml

@@ -1,0 +1,40 @@
+@startuml
+skinparam backgroundColor #F8FAFC
+skinparam defaultFontName "DejaVu Sans"
+skinparam shadowing false
+skinparam ArrowColor #475569
+skinparam ArrowThickness 1.2
+skinparam activity {
+  BackgroundColor #FFFFFF
+  BorderColor #2563EB
+  FontColor #0F172A
+  StartColor #16A34A
+  EndColor #DC2626
+}
+skinparam note {
+  BackgroundColor #EFF6FF
+  BorderColor #93C5FD
+  FontColor #0F172A
+}
+title Процесс работы по зонам ответственности
+|Orchestra|
+start
+:Врач занимает рабочее место;
+:Публикует события посадки;
+|Doctor Assistant|
+:Коррелирует события;
+:Восстанавливает контекст врача;
+:Берет локальный кэш отделения;
+|Med-robot|
+:При включенном режиме выбирает оптимальную услугу и очередь;
+|Doctor Assistant|
+if (Ответ робота валиден?) then (да)
+  :Использует услугу и очередь робота;
+else (нет)
+  :Возвращается к локальному алгоритму;
+endif
+|Orchestra|
+:Назначение услуги визиту;
+:Перевод визита в целевую очередь;
+stop
+@enduml

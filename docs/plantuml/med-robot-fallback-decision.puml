@@ -1,0 +1,39 @@
+@startuml
+skinparam backgroundColor #F8FAFC
+skinparam defaultFontName "DejaVu Sans"
+skinparam shadowing false
+skinparam ArrowColor #475569
+skinparam ArrowThickness 1.2
+skinparam activity {
+  BackgroundColor #FFFFFF
+  BorderColor #2563EB
+  FontColor #0F172A
+  StartColor #16A34A
+  EndColor #DC2626
+}
+title Дерево решений при ответе med-robot
+start
+if (Интеграция с роботом включена?) then (да)
+  :Отправить непройденные serviceId;
+  if (REST-вызов успешен?) then (да)
+    if (serviceId и queueId заполнены?) then (да)
+      if (Услуга есть в маршруте визита?) then (да)
+        if (Очередь известна в кэше?) then (да)
+          :Принять выбор робота;
+        else (нет)
+          :Локальный fallback;
+        endif
+      else (нет)
+        :Локальный fallback;
+      endif
+    else (нет)
+      :Локальный fallback;
+    endif
+  else (нет)
+    :Локальный fallback или пустой результат;
+  endif
+else (нет)
+  :Только локальный алгоритм;
+endif
+stop
+@enduml

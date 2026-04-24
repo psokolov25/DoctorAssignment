@@ -1,23 +1,44 @@
 @startuml
+title Пересборка кэша отделения
+
+skinparam backgroundColor #F8FAFC
 skinparam shadowing false
 skinparam responseMessageBelowArrow true
-skinparam maxMessageSize 180
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 14
+skinparam sequence {
+  ArrowColor #334155
+  ArrowThickness 1.3
+  LifeLineBorderColor #94A3B8
+  LifeLineBackgroundColor #E2E8F0
+  ParticipantBackgroundColor #DCFCE7
+  ParticipantBorderColor #16A34A
+  ParticipantFontColor #0F172A
+}
+skinparam NoteBackgroundColor #E0F2FE
+skinparam NoteBorderColor #0284C7
+skinparam maxMessageSize 230
 
 autonumber
-participant "StartupEvent / PollingReconciliationJob" as T
-participant "OrchestraDataCacheUpdateService" as U
-participant "BranchCacheUpdater" as B
-participant "OrchestraMetadataGateway" as G
-participant "OrchestraDataCacheContainer" as C
+participant "Старт сервиса или расписание\n`StartupEvent` / `PollingReconciliationJob`" as T
+participant "Координатор обновления\n`OrchestraDataCacheUpdateService`" as U
+participant "Сборщик кэша\n`BranchCacheUpdater`" as B
+participant "Справочники Orchestra\n`OrchestraMetadataGateway`" as G
+participant "Активный кэш\n`OrchestraDataCacheContainer`" as C
 
-T -> U : refreshConfiguredBranches()
-U -> B : refresh(branchId)
-B -> G : get services
-G --> B : services
-B -> G : get queues / workProfiles / servicePoints
-G --> B : metadata
-B -> B : build new BranchAssignmentCache
-B -> C : replace(branchId, cache)
-C --> B : cache activated atomically
-B --> U : refresh summary
+T -> U : запросить обновление настроенных отделений
+U -> B : пересобрать кэш отделения
+B -> G : прочитать услуги
+G --> B : список услуг
+B -> G : прочитать очереди, профили и рабочие места
+G --> B : справочные данные отделения
+B -> B : построить новый `BranchAssignmentCache`
+B -> C : атомарно заменить кэш отделения
+C --> B : новый кэш активен
+B --> U : итог обновления
+
+note over B,C
+  Обработчики событий не читают «полусобранный» кэш:
+  сначала строится новый объект, затем ссылка заменяется атомарно.
+end note
 @enduml

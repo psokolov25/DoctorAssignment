@@ -1,25 +1,65 @@
 @startuml
-skinparam componentStyle rectangle
-skinparam shadowing false
-skinparam defaultTextAlignment center
+title Схема внедрения и эксплуатации
 
-node "Windows / Linux host" {
-  node "JVM 8" {
-    component "med-doctor-assignment-service\nMicronaut + Netty" as App
+skinparam backgroundColor #F8FAFC
+skinparam shadowing false
+skinparam componentStyle rectangle
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 14
+skinparam defaultTextAlignment center
+skinparam wrapWidth 240
+skinparam ArrowColor #334155
+skinparam ArrowThickness 1.4
+skinparam node {
+  BackgroundColor #FFFFFF
+  BorderColor #CBD5E1
+  FontColor #0F172A
+}
+skinparam component {
+  BackgroundColor #E0F2FE
+  BorderColor #0284C7
+  FontColor #0F172A
+}
+skinparam cloud {
+  BackgroundColor #F1F5F9
+  BorderColor #64748B
+  FontColor #0F172A
+}
+skinparam database {
+  BackgroundColor #FEF3C7
+  BorderColor #F59E0B
+  FontColor #0F172A
+}
+
+node "Сервер приложения\nWindows или Linux" as Host {
+  node "JVM 8" as Jvm {
+    component "Doctor Assistant\n`med-doctor-assignment-service`\nMicronaut + Netty" as App
   }
 }
 
-cloud "QMatic Orchestra 6" {
-  component "REST API" as Rest
-  component "qpevents/events\nSockJS / STOMP" as Events
+cloud "QMatic Orchestra 6" as Orchestra {
+  component "REST API\nсправочники и операции над визитами" as Rest
+  component "События рабочих мест\n`qpevents/events`\nSockJS / STOMP" as Events
 }
 
-database "Логи / мониторинг" as Logs
-actor "DevOps / Поддержка" as Ops
+cloud "med-robot" as Robot {
+  component "REST API выбора\nоптимальной услуги и очереди" as RobotApi
+}
 
-App --> Rest : metadata + visit workflow
-App --> Events : subscriptions / heartbeats
-App --> Logs : structured logs
-Ops --> App : config / restart / diagnostics
-Ops --> Logs : incident analysis
+database "Файловые логи\n`med-robot.log`\n`med-robot-http.log`\n`med-robot-busines.log`" as Logs
+actor "DevOps / поддержка" as Ops
+
+App --> Rest : чтение справочников и мутации визита
+App --> Events : подписка на события и heartbeat
+App --> RobotApi : опциональный запрос оптимального решения
+App --> Logs : структурированные диагностические записи
+Ops --> App : настройка, перезапуск, диагностика
+Ops --> Logs : разбор инцидентов
+
+legend right
+  Для отключения med-robot достаточно
+  `application.med-robot.enabled=false`.
+  Для режима только по расписанию выключается websocket
+  и включается `application.assignment.polling-enabled`.
+endlegend
 @enduml

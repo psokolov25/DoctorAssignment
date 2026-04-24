@@ -1,8 +1,7 @@
 # Med Doctor Assignment Service
 
 Сервис автоматически назначает визитам из очереди **«врач не назначен»** врача, который только что занял рабочее место в
-QMatic Orchestra 6, и переводит такие визиты в очередь соответствующей услуги. Решение ориентировано на сценарий *
-*автономных медосмотров**, где критично быстро раздать визиты по реальным врачам без ручного вмешательства оператора.
+QMatic Orchestra 6, и переводит такие визиты в очередь соответствующей услуги. Решение ориентировано на сценарий **автономных медосмотров**, где критично быстро раздать визиты по реальным врачам без ручного вмешательства оператора.
 
 ## 1. Для чего нужен сервис
 
@@ -10,8 +9,8 @@ QMatic Orchestra 6, и переводит такие визиты в очере�
 
 1. Врач входит на service point.
 2. Orchestra публикует связанный набор событий посадки: `USER_SERVICE_POINT_SESSION_START`, затем `SET_WORK_PROFILE`.
-   Сервис коррелирует их по `staffTransactionId` и формирует внутренний trigger `USER_SESSION_READY`.
-   `SERVICE_POINT_OPEN` используется только как вспомогательный/диагностический сигнал и в боевой workflow по умолчанию
+   Сервис коррелирует их по `staffTransactionId` и формирует внутренний триггер `USER_SESSION_READY`.
+   `SERVICE_POINT_OPEN` используется только как вспомогательный/диагностический сигнал и в боевой рабочий процесс по умолчанию
    не запускает мутации.
 3. Сервис определяет branch, service point, врача и его work profile.
 4. По кэшу справочников определяет, какие услуги врач может обслуживать.
@@ -25,8 +24,8 @@ QMatic Orchestra 6, и переводит такие визиты в очере�
 
 - не зависеть от GUI Orchestra;
 - выдерживать повторные события и временные сетевые сбои;
-- продолжать работу даже при отказе websocket-канала за счет polling fallback;
-- не принимать решение на основе «живых» справочников при каждом событии, а работать через локальный branch cache.
+- продолжать работу даже при отказе websocket-канала за счет страхующего опроса по расписанию;
+- не принимать решение на основе «живых» справочников при каждом событии, а работать через локальный кэш отделения (`BranchAssignmentCache`).
 
 ## 2. Что входит в проект
 
@@ -49,7 +48,7 @@ src/main/java/com/qsystems/meddoctorassignment
 │   ├── orchestra          # Micronaut client + вспомогательные утилиты
 │   └── orchestra/dto      # DTO Orchestra
 ├── branchgetter           # стратегии выбора branch id для кэширования
-├── cache                  # контейнер кэшей и пересборка branch cache
+├── cache                  # контейнер кэшей и пересборка кэша отделения
 ├── cache/model            # модели кэша
 ├── cache/service          # сервис управления жизненным циклом кэша
 ├── config                 # конфигурационные свойства
@@ -58,16 +57,16 @@ src/main/java/com/qsystems/meddoctorassignment
 ├── domain/service/impl    # реализации доменных интерфейсов
 ├── event                  # обработка входящих событий Orchestra
 ├── model/event            # нормализованное представление входящих событий
-├── schedule               # polling fallback
+├── schedule               # страхующий опрос по расписанию
 ├── util                   # технические утилиты устойчивости
 └── websocket              # SockJS/STOMP клиент и разбор фреймов
 ```
 
 ## 3. Архитектура решения
 
-### 3.0. PlantUML-диаграммы проекта
+### 3.0. Диаграммы проекта
 
-Ниже добавлены диаграммы в двух видах:
+Ниже добавлены диаграммы в двух видах. Видимые SVG-файлы оформлены в едином стиле, выровнены, используют русские подписи и рассчитаны на чтение прямо из Markdown без искажения текста:
 
 - исходники PlantUML: `docs/plantuml/*.puml`;
 - заранее подготовленные SVG: `docs/diagrams/*.svg`.
@@ -76,7 +75,8 @@ src/main/java/com/qsystems/meddoctorassignment
 
 - читать архитектуру прямо в `README.md` без внешних плагинов;
 - редактировать диаграммы как код;
-- использовать SVG в документации, wiki и при внедрении.
+- использовать SVG в документации, wiki и при внедрении;
+- сохранять русскоязычные пояснения, оставляя программные имена только там, где нужно быстро сопоставить диаграмму с кодом.
 
 #### Общая архитектура сервиса
 
@@ -90,9 +90,9 @@ src/main/java/com/qsystems/meddoctorassignment
 
 Исходник: `docs/plantuml/assignment-sequence.puml`
 
-#### Перестройка branch cache
+#### Пересборка кэша отделения
 
-![Перестройка branch cache](docs/diagrams/cache-refresh-sequence.svg)
+![Пересборка кэша отделения](docs/diagrams/cache-refresh-sequence.svg)
 
 Исходник: `docs/plantuml/cache-refresh-sequence.puml`
 
@@ -102,7 +102,7 @@ src/main/java/com/qsystems/meddoctorassignment
 
 Исходник: `docs/plantuml/deployment-view.puml`
 
-### 3.1. Adapter layer
+### 3.1. Слой адаптеров
 
 `OrchestraMetadataGateway` и `OrchestraMetadataGatewayImpl` отвечают за чтение справочных сущностей Orchestra:
 
@@ -113,10 +113,10 @@ src/main/java/com/qsystems/meddoctorassignment
 - точки обслуживания.
 
 `VisitWorkflowGateway` отделен от чтения справочников, потому что операции над визитами в Orchestra часто зависят от
-конкретной инсталляции и набора доступных endpoint-ов. Для этого в проекте есть `ConfigurableVisitWorkflowGateway`,
+конкретной инсталляции и набора доступных REST-точек. Для этого в проекте есть `ConfigurableVisitWorkflowGateway`,
 который читает пути из `application.yml`.
 
-### 3.2. Cache layer
+### 3.2. Слой локального кэша
 
 `BranchAssignmentCache` — центральная модель, в которой для одного отделения собирается весь справочный срез, нужный
 алгоритму.
@@ -132,10 +132,10 @@ src/main/java/com/qsystems/meddoctorassignment
 - `unknownDoctorQueueId`
 - `lastUpdated`
 
-`BranchCacheUpdater` строит новый экземпляр branch cache полностью, а затем `OrchestraDataCacheContainer` атомарно
+`BranchCacheUpdater` строит новый экземпляр кэша отделения полностью, а затем `OrchestraDataCacheContainer` атомарно
 подменяет старый. Это важно для того, чтобы обработчик событий никогда не читал «полусобранный» кэш.
 
-### 3.3. Event-driven слой
+### 3.3. Событийный слой
 
 `WebSocketService` поднимает SockJS/STOMP подключение к Orchestra.
 
@@ -150,12 +150,12 @@ state machine вокруг посадки врача:
 
 1. `USER_SERVICE_POINT_SESSION_START` регистрирует pending-session;
 2. следующий `SET_WORK_PROFILE` с тем же `staffTransactionId` завершает корреляцию;
-3. сервис формирует внутренний trigger `USER_SESSION_READY`;
+3. сервис формирует внутренний триггер `USER_SESSION_READY`;
 4. только после этого восстанавливает `DoctorContext` и запускает доменный цикл назначения;
 5. если во время активной сессии приходит `SET_WORK_PROFILE`, который расширяет доступный набор услуг врача, сервис
-   может сформировать trigger `WORK_PROFILE_EXPANDED` и повторно обработать очередь «врач не назначен».
+   может сформировать триггер `WORK_PROFILE_EXPANDED` и повторно обработать очередь «врач не назначен».
 
-### 3.4. Domain layer
+### 3.4. Доменный слой
 
 `AutonomousMedicalExamAssignmentService` — главный оркестратор алгоритма.
 
@@ -170,18 +170,18 @@ state machine вокруг посадки врача:
 
 Благодаря этому бизнес-алгоритм можно дорабатывать локально, не переписывая websocket и кэширование.
 
-### 3.5. Resilience layer
+### 3.5. Слой устойчивости
 
 Для устойчивой работы добавлены:
 
 - `BranchLockManager` — не допускает конкурентную обработку одного branch несколькими потоками;
 - `EventDeduplicator` — подавляет повторы событий Orchestra;
 - `ProcessedVisitRegistry` — предотвращает повторную обработку одного визита в коротком окне времени;
-- `PollingReconciliationJob` — периодический fallback, если событие было потеряно или пришло в неудачный момент.
+- `PollingReconciliationJob` — периодический страхующий запуск, если событие было потеряно или пришло в неудачный момент.
 
 ## 4. Алгоритм назначения
 
-### 4.1. Восстановление doctor context
+### 4.1. Восстановление контекста врача
 
 `DefaultLoggedDoctorContextResolver` сначала берет поля напрямую из event payload:
 
@@ -193,7 +193,7 @@ state machine вокруг посадки врача:
 - `servicePointName`
 - `userName` / `user`
 
-Если часть полей отсутствует, включается fallback:
+Если часть полей отсутствует, включается безопасный поиск недостающих данных:
 
 1. поиск по `servicePointId` в runtime cache branch;
 2. поиск через `ServicePointContextGateway`;
@@ -201,7 +201,7 @@ state machine вокруг посадки врача:
 4. поиск по `staffId` через Orchestra.
 
 Если после этого ключевые поля не заполнены, обработка события завершается исключением — это правильное поведение,
-потому что сервис не должен делать догадки в критическом workflow.
+потому что сервис не должен делать догадки в критическом рабочем процессе.
 
 ### 4.2. Определение доступных услуг врача
 
@@ -219,7 +219,7 @@ state machine вокруг посадки врача:
 
 1. сначала учитывается `routeOrder` — приоритет имеет услуга, которая раньше стоит в маршруте визита;
 2. если маршрут не задает явного преимущества, используется `service-priority-by-key` из конфигурации;
-3. если и этого нет, применяется детерминированный fallback по `serviceId`.
+3. если и этого нет, применяется детерминированный резервный выбор по `serviceId`.
 
 Такая схема дает одновременно:
 
@@ -229,7 +229,7 @@ state machine вокруг посадки врача:
 
 ### 4.4. Исполнение решения
 
-`DefaultVisitAssignmentExecutor` делает ветвящийся workflow:
+`DefaultVisitAssignmentExecutor` делает ветвящийся рабочий процесс:
 
 1. optional recheck — все ли еще визит находится в очереди «врач не назначен»;
 2. если `currentVisitService` уже совпадает с выбранной услугой врача, executor пропускает redundant `assign-service` и
@@ -239,7 +239,7 @@ state machine вокруг посадки врача:
 5. optional post-check — действительно ли визит оказался в ожидаемой очереди.
 
 Перед началом цикла `AutonomousMedicalExamAssignmentService` теперь также умеет вызывать
-опциональный activation-step (`OperatorContextActivationGateway`). Он нужен для тех инсталляций,
+опциональный шаг активации (`activation-step`) (`OperatorContextActivationGateway`). Он нужен для тех инсталляций,
 где между событием «врач сел на рабочее место» и mutating REST необходим отдельный вызов,
 запускающий или привязывающий server-side session service point / operator context.
 
@@ -252,7 +252,7 @@ state machine вокруг посадки врача:
 
 ## 5. Подтвержденные и неподтвержденные API
 
-### 5.1. Подтвержденные endpoint-ы
+### 5.1. Подтвержденные REST-точки
 
 В проекте как подтвержденные используются:
 
@@ -264,9 +264,9 @@ state machine вокруг посадки врача:
 - `/rest/servicepoint/branches/{branchId}/workProfiles/{workProfileId}/queues`
 - `/rest/servicepoint/branches/{branchId}/queues/`
 
-### 5.2. Конфигурируемые visit endpoint-ы
+### 5.2. Конфигурируемые REST-точки рабочего процесса визита
 
-Кроме assign/transfer endpoint-ов проект теперь поддерживает и **отдельный activation-step**.
+Кроме REST-точек assign/transfer проект теперь поддерживает и **отдельный шаг активации (`activation-step`)**.
 Он задается через `application.assignment.activation.*` и по умолчанию выключен, потому что
 точный контракт REST-вызова активации зависит от конкретной инсталляции Orchestra.
 
@@ -295,7 +295,7 @@ state machine вокруг посадки врача:
 - `assign-service-path`
 - `transfer-visit-path`
 
-Это сделано намеренно: код не должен «угадывать» приватные endpoint-ы Orchestra.
+Это сделано намеренно: код не должен «угадывать» приватные REST-точки Orchestra.
 
 ## 6. Конфигурация
 
@@ -326,22 +326,22 @@ state machine вокруг посадки врача:
 - включение сервиса;
 - queue id очереди «врач не назначен»;
 - ограничение визитов на цикл;
-- polling cron;
+- cron-выражение для опроса по расписанию;
 - deduplication и processed TTL;
 - режим `dry-run`;
 - recheck перед переводом;
 - список разрешенных branch;
 - конфигурируемые приоритеты услуг;
-- пути для visit workflow endpoint-ов;
-- composite-trigger посадки (`user-service-point-session-start-trigger-enabled`, `user-session-settle-window-ms`);
-- trigger расширения профиля (`work-profile-expanded-trigger-enabled`);
+- пути для REST-точек рабочего процесса визита;
+- составной триггер посадки (`user-service-point-session-start-trigger-enabled`, `user-session-settle-window-ms`);
+- триггер расширения профиля (`work-profile-expanded-trigger-enabled`);
 - правила раннего завершения цикла при контекстных ошибках mutation;
-- настройки optional activation-step перед mutating REST.
+- настройки optional шаг активации (`activation-step`) перед mutating REST.
 
 Практически важные флаги:
 
-- `user-service-point-session-start-trigger-enabled` — основной безопасный trigger посадки;
-- `set-work-profile-trigger-enabled` — raw-trigger для `SET_WORK_PROFILE`, обычно выключен;
+- `user-service-point-session-start-trigger-enabled` — основной безопасный триггер посадки;
+- `set-work-profile-trigger-enabled` — сырой триггер для `SET_WORK_PROFILE`, обычно выключен;
 - `work-profile-expanded-trigger-enabled` — повторный запуск цикла, когда новый профиль дал врачу больше услуг;
 - `abort-cycle-on-forbidden-mutation` — не долбить Orchestra повторными PUT после первого контекстного отказа;
 - `treat-inactive-user-state-as-failure` / `treat-no-started-service-point-session-as-failure` — как интерпретировать
@@ -358,7 +358,7 @@ state machine вокруг посадки врача:
   старым локальным алгоритмом;
 - `fallback-to-local-on-empty-response=true` — ответ `null/null`, `0/0` или невалидная пара service/queue не блокирует
   назначение, если локальная схема смогла выбрать услугу;
-- `require-known-queue=true` — очередь из ответа med-robot должна быть известна branch cache;
+- `require-known-queue=true` — очередь из ответа med-robot должна быть известна кэш отделения;
 - `require-doctor-available-service=true` — строгий режим, в котором услуга из ответа med-robot должна входить в текущий
   рабочий профиль врача.
 
@@ -380,7 +380,7 @@ application:
     polling-cron: "0 */10 * * * ?"
 ```
 
-Подробный контракт, fallback-матрица и эксплуатационные режимы описаны в `MED_ROBOT_INTEGRATION.md`.
+Подробный контракт, матрица возврата к локальному алгоритму и эксплуатационные режимы описаны в `MED_ROBOT_INTEGRATION.md`.
 
 
 
@@ -428,11 +428,11 @@ java -jar target/med-doctor-assignment-service-*.jar
 
 ### 7.3. Наблюдаемый выигрыш по скорости
 
-По реальным логам проекта зафиксирован заметный выигрыш после введения composite-trigger, `transfer-only` и корректной
+По реальным логам проекта зафиксирован заметный выигрыш после введения составной триггер, `transfer-only` и корректной
 трактовки эффективного `assign`:
 
 - ранний сценарий `72 -> 4 -> transfer` отрабатывал примерно за **46 секунд**, потому что `transfer` происходил только в
-  следующем polling-цикле;
+  следующем цикле опроса по расписанию;
 - после последних правок тот же класс сценария начал отрабатывать примерно за **1.1 секунды** в одном цикле.
 
 Практический выигрыш — порядка **43x** для кейса «назначить услугу и сразу перевести визит».
@@ -443,30 +443,30 @@ java -jar target/med-doctor-assignment-service-*.jar
    Все нюансы websocket и REST должны оставаться в `websocket.*` и `adapter.*`.
 
 2. **Не читать справочники Orchestra на каждый event без необходимости.**
-   Для этого уже есть branch cache.
+   Для этого уже есть кэш отделения.
 
-3. **Не принимать решение без полного doctor context.**
+3. **Не принимать решение без полного контекста врача (`DoctorContext`).**
    Лучше завершить обработку ошибкой и записать понятный лог, чем назначить неверного врача.
 
 4. **Не убирать recheck/post-check без явной причины.**
    Эти шаги защищают от гонок между несколькими источниками обработки.
 
-5. **Не встраивать hardcode приватных endpoint-ов Orchestra в доменный код.**
+5. **Не встраивать жестко зашивать приватные REST-точки Orchestra в доменный код.**
    Все пути для визитов должны оставаться конфигурируемыми.
 
 ### 7.5. Главные точки расширения
 
 - новая логика сопоставления услуг — `DoctorServiceMatcher`
 - новый способ вычисления доступных врачу услуг — `DoctorAvailableServicesResolver`
-- новая реализация workflow над визитом — `VisitWorkflowGateway`
+- новая реализация рабочего процесса над визитом — `VisitWorkflowGateway`
 - дополнительные триггеры — `DoctorAssignmentEventHandler`
-- особая логика fallback lookup — `LoggedDoctorContextResolver`
+- особая логика резервного поиска — `LoggedDoctorContextResolver`
 
 ### 7.6. Что смотреть при ошибке `500` на assign-service
 
 Если в логах виден `500` на `POST /rest/entrypoint/.../visits/{visitId}/services/{serviceId}/`, нужно проверить:
 
-- соответствует ли endpoint конкретной инсталляции Orchestra;
+- соответствует ли REST-точка конкретной инсталляции Orchestra;
 - допустима ли смена услуги для данного состояния визита;
 - не завершена ли текущая услуга визита;
 - не требуется ли иной payload для назначения услуги;
@@ -494,7 +494,7 @@ java -jar target/med-doctor-assignment-service-*.jar
 ### 8.2. Типовые симптомы и интерпретация
 
 **Симптом:** кэш не прогревается.  
-Проверить доступность REST endpoint-ов справочников и корректность `branches-for-cache`.
+Проверить доступность REST-точек справочников и корректность `branches-for-cache`.
 
 **Симптом:** websocket не подключается.  
 Проверить `/qpevents/events/info`, логин/пароль, сетевую доступность, reverse proxy и heartbeat.
@@ -512,7 +512,7 @@ java -jar target/med-doctor-assignment-service-*.jar
 - не сработал ли путь `transfer-only` для already-assigned визита
 
 **Симптом:** сервис пытается назначить услугу, но получает `500`.  
-Проверить правильность visit endpoint-ов и допустимость операции на стороне Orchestra.
+Проверить правильность REST-точек рабочего процесса визита и допустимость операции на стороне Orchestra.
 
 **Симптом:** `assign-service` вернул `200`, но цикл все равно оборвался.  
 Проверить:
@@ -531,7 +531,7 @@ java -jar target/med-doctor-assignment-service-*.jar
 - staff id;
 - work profile id;
 - visit id;
-- полный URL проблемного endpoint-а;
+- полный URL проблемной REST-точки;
 - тело запроса;
 - тело ответа Orchestra;
 - фрагмент лога от `Start assignment cycle` до ошибки.
@@ -544,7 +544,7 @@ java -jar target/med-doctor-assignment-service-*.jar
 2. корректность mapping `service -> queue`;
 3. корректность mapping `workProfile -> queues`;
 4. факт публикации событий `USER_SERVICE_POINT_SESSION_START`, `SERVICE_POINT_OPEN` и `SET_WORK_PROFILE`;
-5. рабочие endpoint-ы для:
+5. рабочие REST-точки для:
     - чтения визитов очереди,
     - чтения визита по id,
     - чтения детального маршрута,
@@ -558,7 +558,7 @@ java -jar target/med-doctor-assignment-service-*.jar
 2. Проверить кэш и websocket.
 3. Проверить, что врачи распознаются корректно.
 4. Проверить, какие услуги выбираются для визитов.
-5. Согласовать реальные visit endpoint-ы.
+5. Согласовать реальные REST-точки рабочего процесса визита.
 6. Включить `dry-run=false` сначала на тестовом отделении.
 7. После подтверждения корректности постепенно расширять список `allowed-branches`.
 
@@ -571,13 +571,13 @@ java -jar target/med-doctor-assignment-service-*.jar
 - к Orchestra REST API;
 - к `/qpevents/events`;
 - к `/qpevents/events/info`;
-- к XHR streaming / XHR send endpoint-ам SockJS.
+- к XHR streaming / XHR send REST-точкам SockJS.
 
-### 10.2. Runtime endpoint-ы самого сервиса
+### 10.2. Runtime REST-точки самого сервиса
 
 Micronaut поднимает сервер на `micronaut.server.port`, по умолчанию в проекте — `8085`.
 
-Также доступны management endpoint-ы Micronaut, если они включены настройками/дефолтами окружения:
+Также доступны management REST-точки Micronaut, если они включены настройками/дефолтами окружения:
 
 - `/health`
 - `/info`
@@ -591,7 +591,7 @@ Micronaut поднимает сервер на `micronaut.server.port`, по у�
 - сервис не хранит состояние в БД;
 - кэш полностью в памяти процесса;
 - при рестарте кэш будет перестроен заново;
-- при недоступности websocket сервис продолжит работу через polling fallback;
+- при недоступности websocket сервис продолжит работу через страхующего опроса по расписанию;
 - при недоступности REST Orchestra сервис не сможет прогревать кэш и выполнять назначение.
 
 ### 10.4. Логирование
@@ -618,17 +618,20 @@ Micronaut поднимает сервер на `micronaut.server.port`, по у�
 В проекте есть модульные и интеграционные тесты для ключевых частей алгоритма:
 
 - дедупликация событий;
-- branch-level lock;
+- блокировка обработки на уровне отделения (`BranchLockManager`);
 - сопоставление услуг врачу;
-- восстановление doctor context;
-- JSON mapping визитов;
+- восстановление контекста врача (`DoctorContext`);
+- преобразование JSON визитов в доменную модель;
 - корреляция `USER_SERVICE_POINT_SESSION_START -> SET_WORK_PROFILE`;
-- trigger расширения профиля;
+- триггер расширения рабочего профиля;
 - `transfer-only` для уже назначенной услуги;
 - выбор оптимальной услуги и очереди через `med-robot`;
-- fallback на локальный алгоритм при ошибке или невалидном ответе `med-robot`;
-- включение и выключение polling-режима через `application.assignment.polling-enabled`;
-- эффективный `assign-service`, когда фактическое состояние визита важнее формального `userState`.
+- возврат к локальному алгоритму при ошибке или невалидном ответе `med-robot`;
+- включение и выключение режима опроса по расписанию через `application.assignment.polling-enabled`;
+- эффективный `assign-service`, когда фактическое состояние визита важнее формального `userState`;
+- REST-контракт клиента med-robot: базовый URL, путь и тело запроса;
+- фильтр Basic Auth для REST-вызовов med-robot;
+- читаемость UTF-8-документации и SVG/PlantUML-диаграмм.
 
 Тесты используют in-memory/fake gateway-реализации и подтверждают доменную логику независимо от реальной Orchestra.
 
@@ -636,9 +639,9 @@ Micronaut поднимает сервер на `micronaut.server.port`, по у�
 
 - [ ] Подтверждены branch id для rollout
 - [ ] Подтвержден `unknown-doctor-queue-id`
-- [ ] Подтверждены все visit endpoint-ы
+- [ ] Подтверждены все REST-точки рабочего процесса визита
 - [ ] Проверен websocket-доступ к `/qpevents/events`
-- [ ] Проверен прогрев branch cache
+- [ ] Проверен прогрев кэша отделения
 - [ ] Проверен `dry-run` сценарий на тестовом отделении
 - [ ] Подтвержден корректный выбор услуг врачам
 - [ ] Подтвержден успешный перевод визита в реальную очередь
@@ -676,4 +679,4 @@ Micronaut поднимает сервер на `micronaut.server.port`, по у�
 По реальным логам итоговый профиль врача может стабилизироваться через несколько десятков миллисекунд после
 `USER_SERVICE_POINT_SESSION_START`. Поэтому сервис по умолчанию не запускает assignment сразу на этом событии. Вместо
 этого он сохраняет pending-session по `staffTransactionId` и ждёт связанный `SET_WORK_PROFILE` в пределах окна
-`application.assignment.user-session-settle-window-ms`. Только после этой пары событий стартует mutating workflow.
+`application.assignment.user-session-settle-window-ms`. Только после этой пары событий стартует mutating workflow рабочего процесса.

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <!--
+      Тестовый профиль логирования намеренно приглушает ожидаемые stack trace.
+      Unit-тесты специально моделируют отказы REST, med-robot и mutating-контекста;
+      в зеленой сборке эти сценарии не должны выглядеть как аварийный инцидент.
+    -->
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{HH:mm:ss.SSS} %-5level %logger{40} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <logger name="com.qsystems.meddoctorassignment" level="WARN" />
+    <logger name="io.micronaut" level="WARN" />
+    <logger name="org.springframework" level="WARN" />
+
+    <root level="WARN">
+        <appender-ref ref="STDOUT" />
+    </root>
+</configuration>

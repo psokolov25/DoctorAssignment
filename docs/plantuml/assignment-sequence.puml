@@ -1,30 +1,65 @@
 @startuml
+title Последовательность назначения визита врачу
+
+skinparam backgroundColor #F8FAFC
 skinparam shadowing false
 skinparam responseMessageBelowArrow true
-skinparam maxMessageSize 180
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 14
+skinparam sequence {
+  ArrowColor #334155
+  ArrowThickness 1.3
+  LifeLineBorderColor #94A3B8
+  LifeLineBackgroundColor #E2E8F0
+  ParticipantBackgroundColor #E0F2FE
+  ParticipantBorderColor #0284C7
+  ParticipantFontColor #0F172A
+  ActorBackgroundColor #FFFFFF
+  ActorBorderColor #475569
+}
+skinparam NoteBackgroundColor #FEF3C7
+skinparam NoteBorderColor #F59E0B
+skinparam maxMessageSize 230
 
 autonumber
 actor "Orchestra" as O
-participant "StompSessionHandlerImpl" as S
-participant "DoctorAssignmentEventHandler" as H
-participant "AutonomousMedicalExamAssignmentService" as A
-participant "OrchestraDataCacheContainer" as C
-participant "VisitWorkflowGateway" as W
+participant "Прием события\n`StompSessionHandlerImpl`" as S
+participant "Корреляция посадки\n`DoctorAssignmentEventHandler`" as H
+participant "Цикл назначения\n`AutonomousMedicalExamAssignmentService`" as A
+participant "Кэш отделения\n`BranchAssignmentCache`" as C
+participant "Выбор услуги\n`MedRobotAwareDoctorServiceSelectionService`" as M
+participant "med-robot" as R
+participant "Мутации визита\n`VisitWorkflowGateway`" as W
 
-O -> S : SERVICE_POINT_OPEN / SET_WORK_PROFILE
-S -> H : handle(event)
-H -> H : deduplicate + resolve doctor context
-H -> A : process(context)
-A -> C : get branch cache
-C --> A : BranchAssignmentCache
-A -> W : get visits from unknown-doctor queue
-W --> A : visits
-loop по визитам
-  A -> W : get visit details
-  W --> A : route / unserved services
-  A -> A : match doctor service
-  A -> W : assign service to visit
-  A -> W : transfer visit to queue
+O -> S : событие посадки или смены профиля
+S -> H : `OrchestraEvent`
+H -> H : дедупликация и восстановление контекста врача
+H -> A : запустить цикл назначения
+A -> C : получить актуальный кэш отделения
+C --> A : справочники, очереди, рабочие профили
+A -> W : прочитать визиты из очереди «врач не назначен»
+W --> A : список ожидающих визитов
+
+loop каждый визит
+  A -> W : прочитать маршрут визита
+  W --> A : непройденные услуги
+  A -> M : выбрать услугу и очередь
+  M -> M : локальный предварительный выбор
+  alt med-robot включен
+    M -> R : отправить непройденные услуги визита
+    R --> M : вернуть `serviceId` и `queueId`
+    M -> M : проверить услугу, очередь и fallback-правила
+  else med-robot выключен
+    M -> M : использовать локальный результат
+  end
+  M --> A : итоговое решение
+  A -> W : назначить услугу визиту
+  A -> W : перевести визит в выбранную очередь
 end
-A --> H : processed count
+
+A --> H : количество обработанных визитов
+note over M,R
+  Все пояснения на диаграмме русские.
+  Программные имена оставлены только для быстрой навигации по коду.
+end note
 @enduml

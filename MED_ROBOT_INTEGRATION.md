@@ -11,7 +11,7 @@ Doctor Assistant может работать в двух режимах выбо
 
 ## REST-контракт med-robot
 
-По исходникам `med-robot-Revision2` используется следующий endpoint:
+По исходникам `med-robot-Revision2` используется следующая REST-точка:
 
 ```http
 POST /prorobot/optimalqueue/{branchId}/service/{serviceId}
@@ -35,7 +35,7 @@ Content-Type: application/json
 }
 ```
 
-Если med-robot вернул `null/null`, `0/0`, ошибку или недопустимую пару, поведение зависит от fallback-флагов.
+Если med-robot вернул `null/null`, `0/0`, ошибку или недопустимую пару, поведение зависит от флагов возврата к локальному алгоритму.
 
 ## Настройки application.yml
 
@@ -52,7 +52,7 @@ application:
     # Контракт из med-robot.
     optimal-service-path: /prorobot/optimalqueue/{branchId}/service/{serviceId}
 
-    # Опционально, если REST API med-robot закрыт Basic Auth.
+    # Опционально, если REST API med-robot закрыт базовой HTTP-авторизацией (Basic Auth).
     # username: robot
     # password: secret
 
@@ -67,7 +67,7 @@ application:
     # false — доверять med-robot как оптимизатору очереди отделения.
     require-doctor-available-service: false
 
-    # Проверять, что очередь из ответа med-robot есть в branch cache.
+    # Проверять, что очередь из ответа med-robot есть в кэш отделения.
     require-known-queue: true
 
   websocket:
@@ -107,7 +107,7 @@ application:
     polling-enabled: true
 ```
 
-Основной запуск идет по событиям Orchestra, polling остается страховкой от потерянных событий.
+Основной запуск идет по событиям Orchestra, опрос по расписанию остается страховкой от потерянных событий.
 
 ### Только события, без расписания
 
@@ -142,33 +142,33 @@ Doctor Assistant не подписывается на websocket-события, 
 - если `require-doctor-available-service=true`, услуга должна входить в доступные услуги текущего врача;
 - если `require-known-queue=true`, очередь должна присутствовать в кэше отделения.
 
-Если проверка не пройдена, используется fallback-логика.
+Если проверка не пройдена, используется логика возврата к локальному алгоритму.
 
 ## Измененные/добавленные компоненты
 
 - `MedRobotProperties` — настройки `application.med-robot`.
-- `MedRobotRestClient` — Micronaut REST-клиент к endpoint-у med-robot.
-- `MedRobotRestConfiguration` — опциональный Basic Auth filter.
+- `MedRobotRestClient` — Micronaut REST-клиент к REST-точке med-robot.
+- `MedRobotRestConfiguration` — опциональный фильтр базовой HTTP-авторизации (Basic Auth).
 - `MedRobotOptimalServiceGateway` / `MedRobotOptimalServiceGatewayImpl` — gateway-слой интеграции.
 - `DoctorServiceSelectionService` — доменная абстракция выбора услуги.
 - `MedRobotAwareDoctorServiceSelectionService` — wrapper над старым `DoctorServiceMatcher` с обращением к med-robot.
 - `AssignmentProperties.pollingEnabled` — отдельный флаг включения/отключения расписания.
 - `PollingReconciliationJob` — теперь проверяет `assignment.enabled` и `assignment.polling-enabled`.
-- `RuntimeConfigurationLogger` — на старте пишет эффективные флаги med-robot и polling.
+- `RuntimeConfigurationLogger` — на старте пишет эффективные флаги med-robot и опроса по расписанию.
 
-## Fallback-матрица
+## Матрица возврата к локальному алгоритму
 
 | Ситуация | Настройка | Поведение |
 | --- | --- | --- |
 | `application.med-robot.enabled=false` | не требуется | med-robot не вызывается, работает старый локальный алгоритм. |
-| Локальный алгоритм не нашел предварительную услугу | не требуется | med-robot не вызывается, потому что в path endpoint-а нужен текущий `serviceId`. |
+| Локальный алгоритм не нашел предварительную услугу | не требуется | med-robot не вызывается, потому что в path REST-точки нужен текущий `serviceId`. |
 | med-robot вернул HTTP/сетевую ошибку | `fallback-to-local-on-error=true` | используется локально выбранная услуга и очередь. |
 | med-robot вернул HTTP/сетевую ошибку | `fallback-to-local-on-error=false` | визит не назначается в этом цикле. |
 | med-robot вернул `null/null`, `0/0` или неполную пару | `fallback-to-local-on-empty-response=true` | используется локально выбранная услуга и очередь. |
 | med-robot вернул `null/null`, `0/0` или неполную пару | `fallback-to-local-on-empty-response=false` | визит не назначается в этом цикле. |
 | med-robot вернул услугу, которой нет в непройденном маршруте визита | `fallback-to-local-on-empty-response=true` | используется локально выбранная услуга и очередь. |
-| med-robot вернул очередь, которой нет в кэше отделения | `require-known-queue=true` | результат med-robot отклоняется, дальше применяется fallback-логика. |
-| med-robot вернул услугу вне доступных услуг текущего врача | `require-doctor-available-service=true` | результат med-robot отклоняется, дальше применяется fallback-логика. |
+| med-robot вернул очередь, которой нет в кэше отделения | `require-known-queue=true` | результат med-robot отклоняется, дальше применяется логика возврата к локальному алгоритму. |
+| med-robot вернул услугу вне доступных услуг текущего врача | `require-doctor-available-service=true` | результат med-robot отклоняется, дальше применяется логика возврата к локальному алгоритму. |
 
 ## Детерминированность запроса
 
@@ -180,9 +180,12 @@ Doctor Assistant передает в med-robot не исходный `HashSet`, 
 
 Интеграция закрыта следующими группами тестов:
 
-- `MedRobotAwareDoctorServiceSelectionServiceTest` — unit-тесты локального/robot выбора, fallback-режимов, валидации
+- `MedRobotAwareDoctorServiceSelectionServiceTest` — unit-тесты локального/robot выбора и режимов возврата к локальному алгоритму, валидации
   неизвестной очереди, проверки услуги вне маршрута и строгого режима `require-doctor-available-service`;
-- `AutonomousMedicalExamAssignmentServiceTest` — end-to-end доменного цикла назначения с med-robot и fallback при
+- `AutonomousMedicalExamAssignmentServiceTest` — сквозные тесты доменного цикла назначения с med-robot и возврат к локальному алгоритму при
   ошибке робота;
 - `MedRobotPropertiesTest` — безопасные значения по умолчанию для `application.med-robot`;
-- `PollingReconciliationJobTest` — явное включение/выключение расписания через `application.assignment.polling-enabled`.
+- `PollingReconciliationJobTest` — явное включение/выключение расписания через `application.assignment.polling-enabled`;
+- `MedRobotRestClientContractTest` — фиксация REST-контракта клиента med-robot;
+- `MedRobotRestConfigurationTest` — проверка Basic Auth фильтра для REST-вызовов med-robot;
+- `DocumentationAssetsTest` — контроль UTF-8, русских подписей и единого визуального стиля диаграмм.

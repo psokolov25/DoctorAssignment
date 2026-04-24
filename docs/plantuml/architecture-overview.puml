@@ -1,32 +1,83 @@
 @startuml
-skinparam componentStyle rectangle
+' Диаграмма держится в русскоязычном виде: программные имена оставлены только там,
+' где они помогают быстро сопоставить документацию с исходным кодом.
+title Общая архитектура Doctor Assistant и med-robot
+
+skinparam backgroundColor #F8FAFC
 skinparam shadowing false
+skinparam componentStyle rectangle
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 14
 skinparam defaultTextAlignment center
-skinparam wrapWidth 220
-skinparam maxMessageSize 180
+skinparam wrapWidth 260
+skinparam maxMessageSize 220
+skinparam ArrowColor #334155
+skinparam ArrowThickness 1.4
+skinparam package {
+  BackgroundColor #FFFFFF
+  BorderColor #CBD5E1
+  FontColor #0F172A
+}
+skinparam component {
+  BackgroundColor #E0F2FE
+  BorderColor #0284C7
+  FontColor #0F172A
+}
+skinparam database {
+  BackgroundColor #DCFCE7
+  BorderColor #16A34A
+  FontColor #0F172A
+}
+skinparam cloud {
+  BackgroundColor #F1F5F9
+  BorderColor #64748B
+  FontColor #0F172A
+}
+skinparam actor {
+  BorderColor #475569
+  FontColor #0F172A
+}
 
 actor "Врач" as Doctor
+
 cloud "QMatic Orchestra 6" as Orchestra {
-  component "REST API" as Rest
-  component "SockJS / STOMP события" as Ws
+  component "События рабочих мест\nSockJS / STOMP\n`USER_SERVICE_POINT_SESSION_START`\n`SET_WORK_PROFILE`" as Events
+  component "REST API Orchestra\nсправочники, визиты, очереди" as OrchestraRest
 }
 
-package "med-doctor-assignment-service" {
-  component "WebSocketService\nStompSessionHandlerImpl" as Websocket
-  component "DoctorAssignmentEventHandler" as EventHandler
-  component "AutonomousMedicalExamAssignmentService" as Assignment
-  component "BranchCacheUpdater" as CacheUpdater
-  component "OrchestraDataCacheContainer" as CacheContainer
-  component "ConfigurableVisitWorkflowGateway" as Workflow
+package "Doctor Assistant\n`med-doctor-assignment-service`" as DoctorAssistant {
+  component "Прием событий\n`WebSocketService`\n`StompSessionHandlerImpl`" as WsClient
+  component "Нормализация и корреляция\n`DoctorAssignmentEventHandler`" as Handler
+  component "Доменный цикл назначения\n`AutonomousMedicalExamAssignmentService`" as Assignment
+  component "Выбор услуги\nлокальный алгоритм + med-robot\n`MedRobotAwareDoctorServiceSelectionService`" as Selector
+  component "Выполнение мутаций визита\n`ConfigurableVisitWorkflowGateway`" as Workflow
+  component "Периодическая сверка\n`PollingReconciliationJob`" as Polling
+  database "Локальный кэш отделения\n`BranchAssignmentCache`" as Cache
+  component "Пересборка кэша\n`BranchCacheUpdater`" as CacheUpdater
 }
 
-Doctor --> Orchestra
-Ws --> Websocket : SERVICE_POINT_OPEN / SET_WORK_PROFILE
-Websocket --> EventHandler : OrchestraEvent
-EventHandler --> Assignment : process(context)
-Assignment --> CacheContainer : branch cache
-Assignment --> Workflow : assign / transfer visit
-CacheUpdater --> Rest : read metadata
-CacheUpdater --> CacheContainer : replace branch cache
-Workflow --> Rest : visit workflow REST
+cloud "med-robot" as MedRobot {
+  component "Оптимальная услуга и очередь\n`POST /prorobot/optimalqueue/{branchId}/service/{serviceId}`" as RobotApi
+}
+
+Doctor --> Orchestra : входит на рабочее место
+Events --> WsClient : события посадки врача
+WsClient --> Handler : нормализованное событие
+Handler --> Assignment : контекст врача
+Polling --> Assignment : плановый запуск при включенном расписании
+Assignment --> Cache : читает справочники и runtime-состояние
+Assignment --> Selector : выбирает услугу и очередь
+Selector --> RobotApi : опционально уточняет решение
+Selector --> Assignment : итоговая пара `serviceId` / `queueId`
+Assignment --> Workflow : назначить услугу и перевести визит
+Workflow --> OrchestraRest : mutating REST-вызовы
+CacheUpdater --> OrchestraRest : читает справочники
+CacheUpdater --> Cache : атомарно заменяет кэш
+
+legend right
+  <b>Принцип:</b> события запускают цикл назначения,
+  но решение принимается по локальному кэшу.
+  med-robot подключается только при включенном
+  `application.med-robot.enabled`.
+endlegend
 @enduml

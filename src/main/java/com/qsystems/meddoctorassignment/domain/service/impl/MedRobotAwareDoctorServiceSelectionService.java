@@ -75,21 +75,10 @@ public class MedRobotAwareDoctorServiceSelectionService implements DoctorService
           visitDetails,
           doctorAvailableServices,
           branchCache,
-          localSelection,
+          local,
           unservedServiceIds);
     } catch (Exception exception) {
-      log.error(
-          "Med-robot optimal service request failed for branch={} currentService={} visit={}: {}",
-          Integer.valueOf(branchCache.getBranchId()),
-          Integer.valueOf(local.getServiceId()),
-          Long.valueOf(visitDetails.getId()),
-          exception.getMessage(),
-          exception);
-      if (medRobotProperties.isFallbackToLocalOnError()) {
-        log.warn("Fallback to local service selection for visit {} after med-robot error", visitDetails.getId());
-        return localSelection;
-      }
-      return Optional.empty();
+      return fallbackAfterRobotError(visitDetails, branchCache, localSelection, local, exception);
     }
   }
 
@@ -98,7 +87,7 @@ public class MedRobotAwareDoctorServiceSelectionService implements DoctorService
       VisitDetails visitDetails,
       Set<Integer> doctorAvailableServices,
       BranchAssignmentCache branchCache,
-      Optional<SelectedDoctorService> localSelection,
+      SelectedDoctorService localSelection,
       Set<Integer> unservedServiceIds) {
     if (response == null || !response.hasSelectedServiceAndQueue()) {
       log.warn(
@@ -142,20 +131,42 @@ public class MedRobotAwareDoctorServiceSelectionService implements DoctorService
         Integer.valueOf(queueId),
         Long.valueOf(visitDetails.getId()),
         routeOrder,
-        Integer.valueOf(localSelection.get().getServiceId()),
-        Integer.valueOf(localSelection.get().getTargetQueueId()));
+        Integer.valueOf(localSelection.getServiceId()),
+        Integer.valueOf(localSelection.getTargetQueueId()));
     return Optional.of(
         new SelectedDoctorService(
             serviceId,
             queueId,
             routeOrder,
-            "med-robot-current-service-" + localSelection.get().getServiceId()));
+            "med-robot-current-service-" + localSelection.getServiceId()));
+  }
+
+  private Optional<SelectedDoctorService> fallbackAfterRobotError(
+      VisitDetails visitDetails,
+      BranchAssignmentCache branchCache,
+      Optional<SelectedDoctorService> localSelection,
+      SelectedDoctorService local,
+      Exception exception) {
+    log.error(
+        "Med-robot optimal service request failed for branch={} currentService={} visit={}: {}",
+        Integer.valueOf(branchCache.getBranchId()),
+        Integer.valueOf(local.getServiceId()),
+        Long.valueOf(visitDetails.getId()),
+        exception.getMessage(),
+        exception);
+    if (medRobotProperties.isFallbackToLocalOnError()) {
+      log.warn(
+          "Fallback to local service selection for visit {} after med-robot error",
+          Long.valueOf(visitDetails.getId()));
+      return localSelection;
+    }
+    return Optional.empty();
   }
 
   private Optional<SelectedDoctorService> fallbackOnEmptyResponse(
-      Optional<SelectedDoctorService> localSelection) {
+      SelectedDoctorService localSelection) {
     if (medRobotProperties.isFallbackToLocalOnEmptyResponse()) {
-      return localSelection;
+      return Optional.of(localSelection);
     }
     return Optional.empty();
   }

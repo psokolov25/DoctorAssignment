@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="720" viewBox="0 0 1200 720" role="img" aria-label="Последовательность плановой reconciliation-обработки">
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L9,3 z" fill="#334155"/>
+    </marker>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="130%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#94A3B8" flood-opacity="0.25"/>
+    </filter>
+  </defs>
+  <rect width="100%" height="100%" fill="#F8FAFC"/>
+  <text x="600.0" y="42" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="24" font-weight="700" fill="#0F172A">Последовательность плановой reconciliation-обработки</text>
+  <rect x="30" y="78" width="150" height="58" rx="16" fill="#E0F2FE" stroke="#0284C7" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="105.0" y="102" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="15" font-weight="700" fill="#0F172A">Планировщик</text>
+  <text x="105.0" y="120" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="15" font-weight="700" fill="#0F172A">Micronaut</text>
+  <line x1="105" y1="136" x2="105" y2="650" stroke="#94A3B8" stroke-dasharray="6 6" stroke-width="1.3"/>
+  <rect x="225" y="78" width="150" height="58" rx="16" fill="#E0F2FE" stroke="#0284C7" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="300.0" y="102" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="15" font-weight="700" fill="#0F172A">Polling</text>
+  <text x="300.0" y="120" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="15" font-weight="700" fill="#0F172A">Reconciliation</text>
+  <line x1="300" y1="136" x2="300" y2="650" stroke="#94A3B8" stroke-dasharray="6 6" stroke-width="1.3"/>
+  <rect x="425" y="78" width="150" height="58" rx="16" fill="#E0F2FE" stroke="#0284C7" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="500.0" y="102" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="15" font-weight="700" fill="#0F172A">Настройки</text>
+  <text x="500.0" y="120" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="15" font-weight="700" fill="#0F172A">назначения</text>
+  <line x1="500" y1="136" x2="500" y2="650" stroke="#94A3B8" stroke-dasharray="6 6" stroke-width="1.3"/>
+  <rect x="625" y="78" width="150" height="58" rx="16" fill="#E0F2FE" stroke="#0284C7" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="700.0" y="102" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="15" font-weight="700" fill="#0F172A">Контейнер</text>
+  <text x="700.0" y="120" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="15" font-weight="700" fill="#0F172A">кэша</text>
+  <line x1="700" y1="136" x2="700" y2="650" stroke="#94A3B8" stroke-dasharray="6 6" stroke-width="1.3"/>
+  <rect x="830" y="78" width="150" height="58" rx="16" fill="#E0F2FE" stroke="#0284C7" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="905.0" y="102" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="15" font-weight="700" fill="#0F172A">Branch</text>
+  <text x="905.0" y="120" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="15" font-weight="700" fill="#0F172A">Lock</text>
+  <line x1="905" y1="136" x2="905" y2="650" stroke="#94A3B8" stroke-dasharray="6 6" stroke-width="1.3"/>
+  <rect x="1015" y="78" width="150" height="58" rx="16" fill="#E0F2FE" stroke="#0284C7" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="1090.0" y="102" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="15" font-weight="700" fill="#0F172A">Цикл</text>
+  <text x="1090.0" y="120" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="15" font-weight="700" fill="#0F172A">назначения</text>
+  <line x1="1090" y1="136" x2="1090" y2="650" stroke="#94A3B8" stroke-dasharray="6 6" stroke-width="1.3"/>
+  <line x1="105" y1="170" x2="300" y2="170" stroke="#334155" stroke-width="1.35" marker-end="url(#arrow)"/>
+  <rect x="44.5" y="147" width="316" height="19" rx="7" fill="#F8FAFC" opacity="0.97"/>
+  <text x="202.5" y="161" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="12" fill="#0F172A">запуск по cron</text>
+  <line x1="300" y1="220" x2="500" y2="220" stroke="#334155" stroke-width="1.35" marker-end="url(#arrow)"/>
+  <rect x="242.0" y="197" width="316" height="19" rx="7" fill="#F8FAFC" opacity="0.97"/>
+  <text x="400.0" y="211" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="12" fill="#0F172A">проверить enabled и polling-enabled</text>
+  <line x1="500" y1="270" x2="300" y2="270" stroke="#334155" stroke-width="1.35" stroke-dasharray="6 6" marker-end="url(#arrow)"/>
+  <rect x="242.0" y="247" width="316" height="19" rx="7" fill="#F8FAFC" opacity="0.97"/>
+  <text x="400.0" y="261" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="12" fill="#0F172A">режим разрешен</text>
+  <line x1="300" y1="320" x2="700" y2="320" stroke="#334155" stroke-width="1.35" marker-end="url(#arrow)"/>
+  <rect x="342.0" y="297" width="316" height="19" rx="7" fill="#F8FAFC" opacity="0.97"/>
+  <text x="500.0" y="311" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="12" fill="#0F172A">получить актуальные кэши отделений</text>
+  <line x1="700" y1="370" x2="300" y2="370" stroke="#334155" stroke-width="1.35" stroke-dasharray="6 6" marker-end="url(#arrow)"/>
+  <rect x="342.0" y="347" width="316" height="19" rx="7" fill="#F8FAFC" opacity="0.97"/>
+  <text x="500.0" y="361" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="12" fill="#0F172A">рабочие места с активными врачами</text>
+  <line x1="300" y1="420" x2="905" y2="420" stroke="#334155" stroke-width="1.35" marker-end="url(#arrow)"/>
+  <rect x="444.5" y="397" width="316" height="19" rx="7" fill="#F8FAFC" opacity="0.97"/>
+  <text x="602.5" y="411" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="12" fill="#0F172A">занять branch</text>
+  <line x1="905" y1="470" x2="300" y2="470" stroke="#334155" stroke-width="1.35" stroke-dasharray="6 6" marker-end="url(#arrow)"/>
+  <rect x="444.5" y="447" width="316" height="19" rx="7" fill="#F8FAFC" opacity="0.97"/>
+  <text x="602.5" y="461" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="12" fill="#0F172A">branch свободен</text>
+  <line x1="300" y1="520" x2="1090" y2="520" stroke="#334155" stroke-width="1.35" marker-end="url(#arrow)"/>
+  <rect x="537.0" y="497" width="316" height="19" rx="7" fill="#F8FAFC" opacity="0.97"/>
+  <text x="695.0" y="511" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="12" fill="#0F172A">запустить цикл с TriggerSource.POLLING</text>
+  <line x1="1090" y1="570" x2="300" y2="570" stroke="#334155" stroke-width="1.35" stroke-dasharray="6 6" marker-end="url(#arrow)"/>
+  <rect x="537.0" y="547" width="316" height="19" rx="7" fill="#F8FAFC" opacity="0.97"/>
+  <text x="695.0" y="561" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="12" fill="#0F172A">обработанные визиты</text>
+  <rect x="70" y="610" width="310" height="70" rx="16" fill="#FEE2E2" stroke="#EF4444" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="225.0" y="634" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="15" font-weight="700" fill="#0F172A">Если расписание выключено</text>
+  <text x="225.0" y="660" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="13" fill="#334155">job завершается без чтения визитов</text>
+  <rect x="760" y="610" width="350" height="70" rx="16" fill="#FEF3C7" stroke="#F59E0B" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="935.0" y="634" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="15" font-weight="700" fill="#0F172A">Если branch занят событием</text>
+  <text x="935.0" y="660" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="13" fill="#334155">плановая обработка пропускает дубль и</text>
+</svg>

@@ -84,17 +84,41 @@ src/main/java/com/qsystems/meddoctorassignment
 
 Исходник: `docs/plantuml/architecture-overview.puml`
 
+#### Диаграмма пакетов и направлений зависимостей
+
+![Диаграмма пакетов и направлений зависимостей](docs/diagrams/package-dependency-map.svg)
+
+Исходник: `docs/plantuml/package-dependency-map.puml`
+
+#### Диаграмма классов доменного контура назначения
+
+![Диаграмма классов доменного контура назначения](docs/diagrams/domain-class-diagram.svg)
+
+Исходник: `docs/plantuml/domain-class-diagram.puml`
+
 #### Последовательность назначения визита врачу
 
 ![Последовательность назначения визита врачу](docs/diagrams/assignment-sequence.svg)
 
 Исходник: `docs/plantuml/assignment-sequence.puml`
 
+#### Подробная последовательность выбора через med-robot
+
+![Подробная последовательность выбора через med-robot](docs/diagrams/med-robot-selection-sequence.svg)
+
+Исходник: `docs/plantuml/med-robot-selection-sequence.puml`
+
 #### Пересборка кэша отделения
 
 ![Пересборка кэша отделения](docs/diagrams/cache-refresh-sequence.svg)
 
 Исходник: `docs/plantuml/cache-refresh-sequence.puml`
+
+#### Последовательность плановой reconciliation-обработки
+
+![Последовательность плановой reconciliation-обработки](docs/diagrams/polling-reconciliation-sequence.svg)
+
+Исходник: `docs/plantuml/polling-reconciliation-sequence.puml`
 
 #### Схема внедрения и эксплуатации
 

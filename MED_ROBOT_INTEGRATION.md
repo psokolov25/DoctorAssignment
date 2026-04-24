@@ -45,6 +45,12 @@ Content-Type: application/json
 |---|---|
 | `docs/diagrams/architecture-overview.svg` | общую архитектуру Doctor Assistant, Orchestra и med-robot |
 | `docs/diagrams/assignment-sequence.svg` | последовательность назначения визита врачу |
+| `docs/diagrams/cache-refresh-sequence.svg` | пересборку локального кэша отделения перед принятием решений |
+| `docs/diagrams/deployment-view.svg` | схему внедрения Doctor Assistant рядом с Orchestra и med-robot |
+| `docs/diagrams/med-robot-selection-sequence.svg` | детальную последовательность локального предварительного выбора, REST-вызова med-robot, проверок ответа и fallback |
+| `docs/diagrams/polling-reconciliation-sequence.svg` | плановую reconciliation-обработку по cron и защиту от конкуренции с event-driven циклом |
+| `docs/diagrams/domain-class-diagram.svg` | ключевые классы доменного контура назначения и их связи |
+| `docs/diagrams/package-dependency-map.svg` | пакеты сервиса и допустимые направления зависимостей между ними |
 | `docs/diagrams/orchestration-swimlane.svg` | распределение ответственности между Orchestra, Doctor Assistant и med-robot |
 | `docs/diagrams/visit-lifecycle-state.svg` | состояния визита от очереди «врач не назначен» до готовности к вызову |
 | `docs/diagrams/med-robot-fallback-decision.svg` | дерево решений при ответе med-robot и возврате к локальному алгоритму |
@@ -207,4 +213,4 @@ Doctor Assistant передает в med-robot не исходный `HashSet`, 
 - `PollingReconciliationJobTest` — явное включение/выключение расписания через `application.assignment.polling-enabled`;
 - `MedRobotRestClientContractTest` — фиксация REST-контракта клиента med-robot;
 - `MedRobotRestConfigurationTest` — проверка Basic Auth фильтра для REST-вызовов med-robot;
-- `DocumentationAssetsTest` — контроль UTF-8, русских подписей и единого визуального стиля диаграмм.
+- `DocumentationAssetsTest` — контроль UTF-8, русских подписей, единого визуального стиля диаграмм, наличия SVG/PUML-файлов и ссылок на них из `README.md` и документа по med-robot.

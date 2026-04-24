@@ -13,20 +13,24 @@ import org.junit.jupiter.api.Test;
 /** Проверяет, что документационные диаграммы читаемы и не содержат искаженного текста. */
 public class DocumentationAssetsTest {
 
-  private static final List<String> DIAGRAM_NAMES =
+  private static final List<DiagramAsset> DIAGRAMS =
       Arrays.asList(
-          "architecture-overview",
-          "assignment-sequence",
-          "cache-refresh-sequence",
-          "deployment-view",
-          "orchestration-swimlane",
-          "visit-lifecycle-state",
-          "med-robot-fallback-decision",
-          "operation-modes-map",
-          "data-contract-map",
-          "failure-recovery-flow",
-          "rest-mutation-flow",
-          "observability-checklist");
+          diagram("architecture-overview", "Общая архитектура"),
+          diagram("package-dependency-map", "Диаграмма пакетов и направлений зависимостей"),
+          diagram("domain-class-diagram", "Диаграмма классов доменного контура назначения"),
+          diagram("assignment-sequence", "Последовательность назначения"),
+          diagram("med-robot-selection-sequence", "Подробная последовательность выбора через med-robot"),
+          diagram("cache-refresh-sequence", "Пересборка кэша"),
+          diagram("polling-reconciliation-sequence", "Последовательность плановой reconciliation-обработки"),
+          diagram("deployment-view", "Схема внедрения"),
+          diagram("orchestration-swimlane", "Процесс работы по зонам ответственности"),
+          diagram("visit-lifecycle-state", "Состояния визита"),
+          diagram("med-robot-fallback-decision", "Дерево решений"),
+          diagram("operation-modes-map", "Карта режимов запуска"),
+          diagram("data-contract-map", "Карта данных и REST-контракта"),
+          diagram("failure-recovery-flow", "Отказы и восстановление"),
+          diagram("rest-mutation-flow", "REST-мутации Orchestra"),
+          diagram("observability-checklist", "Наблюдаемость и эксплуатационная проверка"));
 
   private static final List<Path> TEXT_DOCUMENTATION_FILES =
       Arrays.asList(Paths.get("README.md"), Paths.get("MED_ROBOT_INTEGRATION.md"));
@@ -43,8 +47,8 @@ public class DocumentationAssetsTest {
 
   @Test
   void plantumlDiagramsUseRussianExplanationsAndSharedVisualStyle() throws IOException {
-    for (String diagramName : DIAGRAM_NAMES) {
-      Path file = Paths.get("docs/plantuml/" + diagramName + ".puml");
+    for (DiagramAsset diagram : DIAGRAMS) {
+      Path file = diagram.plantumlPath();
       String text = new String(Files.readAllBytes(file), StandardCharsets.UTF_8);
       Assertions.assertTrue(text.contains("DejaVu Sans"), "Не задан читаемый шрифт: " + file);
       Assertions.assertTrue(text.contains("#F8FAFC"), "Не задан общий фон диаграммы: " + file);
@@ -54,37 +58,46 @@ public class DocumentationAssetsTest {
 
   @Test
   void svgDiagramsContainReadableRussianTitles() throws IOException {
-    assertContains(Paths.get("docs/diagrams/architecture-overview.svg"), "Общая архитектура");
-    assertContains(Paths.get("docs/diagrams/assignment-sequence.svg"), "Последовательность назначения");
-    assertContains(Paths.get("docs/diagrams/cache-refresh-sequence.svg"), "Пересборка кэша");
-    assertContains(Paths.get("docs/diagrams/deployment-view.svg"), "Схема внедрения");
-    assertContains(Paths.get("docs/diagrams/orchestration-swimlane.svg"), "Процесс работы по зонам ответственности");
-    assertContains(Paths.get("docs/diagrams/visit-lifecycle-state.svg"), "Состояния визита");
-    assertContains(Paths.get("docs/diagrams/med-robot-fallback-decision.svg"), "Дерево решений");
-    assertContains(Paths.get("docs/diagrams/operation-modes-map.svg"), "Карта режимов запуска");
-    assertContains(Paths.get("docs/diagrams/data-contract-map.svg"), "Карта данных и REST-контракта");
-    assertContains(Paths.get("docs/diagrams/failure-recovery-flow.svg"), "Отказы и восстановление");
-    assertContains(Paths.get("docs/diagrams/rest-mutation-flow.svg"), "REST-мутации Orchestra");
-    assertContains(Paths.get("docs/diagrams/observability-checklist.svg"), "Наблюдаемость и эксплуатационная проверка");
+    for (DiagramAsset diagram : DIAGRAMS) {
+      assertContains(diagram.svgPath(), diagram.expectedSvgTitle);
+    }
   }
 
   @Test
-  void readmeReferencesAllPreparedSvgDiagrams() throws IOException {
+  void readmeReferencesAllPreparedDiagramsAndSources() throws IOException {
     String readme = new String(Files.readAllBytes(Paths.get("README.md")), StandardCharsets.UTF_8);
-    for (String diagramName : DIAGRAM_NAMES) {
-      String svgPath = "docs/diagrams/" + diagramName + ".svg";
-      String pumlPath = "docs/plantuml/" + diagramName + ".puml";
-      Assertions.assertTrue(readme.contains(svgPath), "README.md не ссылается на SVG: " + svgPath);
-      Assertions.assertTrue(readme.contains(pumlPath), "README.md не ссылается на PlantUML: " + pumlPath);
+    assertDocumentationReferencesAllPreparedDiagrams("README.md", readme);
+  }
+
+  @Test
+  void medRobotGuideReferencesAllPreparedDiagrams() throws IOException {
+    String guide =
+        new String(Files.readAllBytes(Paths.get("MED_ROBOT_INTEGRATION.md")), StandardCharsets.UTF_8);
+    for (DiagramAsset diagram : DIAGRAMS) {
+      Assertions.assertTrue(
+          guide.contains(diagram.svgPath().toString().replace('\\', '/')),
+          "MED_ROBOT_INTEGRATION.md не ссылается на SVG: " + diagram.svgPath());
+    }
+  }
+
+  private static void assertDocumentationReferencesAllPreparedDiagrams(
+      String documentName, String documentText) {
+    for (DiagramAsset diagram : DIAGRAMS) {
+      String svgPath = diagram.svgPath().toString().replace('\\', '/');
+      String pumlPath = diagram.plantumlPath().toString().replace('\\', '/');
+      Assertions.assertTrue(
+          documentText.contains(svgPath), documentName + " не ссылается на SVG: " + svgPath);
+      Assertions.assertTrue(
+          documentText.contains(pumlPath), documentName + " не ссылается на PlantUML: " + pumlPath);
     }
   }
 
   private static List<Path> allDocumentationFiles() {
     java.util.ArrayList<Path> files = new java.util.ArrayList<Path>();
     files.addAll(TEXT_DOCUMENTATION_FILES);
-    for (String diagramName : DIAGRAM_NAMES) {
-      files.add(Paths.get("docs/plantuml/" + diagramName + ".puml"));
-      files.add(Paths.get("docs/diagrams/" + diagramName + ".svg"));
+    for (DiagramAsset diagram : DIAGRAMS) {
+      files.add(diagram.plantumlPath());
+      files.add(diagram.svgPath());
     }
     return files;
   }
@@ -104,5 +117,27 @@ public class DocumentationAssetsTest {
       }
     }
     return false;
+  }
+
+  private static DiagramAsset diagram(String name, String expectedSvgTitle) {
+    return new DiagramAsset(name, expectedSvgTitle);
+  }
+
+  private static final class DiagramAsset {
+    private final String name;
+    private final String expectedSvgTitle;
+
+    private DiagramAsset(String name, String expectedSvgTitle) {
+      this.name = name;
+      this.expectedSvgTitle = expectedSvgTitle;
+    }
+
+    private Path plantumlPath() {
+      return Paths.get("docs/plantuml/" + name + ".puml");
+    }
+
+    private Path svgPath() {
+      return Paths.get("docs/diagrams/" + name + ".svg");
+    }
   }
 }

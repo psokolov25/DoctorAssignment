@@ -1,0 +1,67 @@
+@startuml
+title Диаграмма пакетов и направлений зависимостей
+
+skinparam backgroundColor #F8FAFC
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 14
+skinparam defaultTextAlignment center
+skinparam wrapWidth 260
+skinparam packageStyle rectangle
+skinparam ArrowColor #334155
+skinparam ArrowThickness 1.3
+skinparam package {
+  BackgroundColor #FFFFFF
+  BorderColor #CBD5E1
+  FontColor #0F172A
+}
+skinparam component {
+  BackgroundColor #E0F2FE
+  BorderColor #0284C7
+  FontColor #0F172A
+}
+skinparam note {
+  BackgroundColor #FEF3C7
+  BorderColor #F59E0B
+}
+
+package "Корневой пакет\n`com.qsystems.meddoctorassignment`" as Root {
+  package "config\nнастройки application.yml" as Config
+  package "event\nприем и корреляция событий" as Event
+  package "websocket\nSockJS/STOMP клиент" as Websocket
+  package "schedule\nплановая сверка" as Schedule
+  package "cache\nкэш справочников отделения" as Cache
+  package "domain.model\nдоменные модели" as DomainModel
+  package "domain.service\nконтракты бизнес-логики" as DomainService
+  package "domain.service.impl\nреализация алгоритмов" as DomainImpl
+  package "adapter.gateway\nпорты интеграции" as Gateway
+  package "adapter.gateway.impl\nREST-реализации портов" as GatewayImpl
+  package "adapter.orchestra\nклиент Orchestra" as Orchestra
+  package "adapter.medrobot\nклиент med-robot" as MedRobot
+  package "util\nзащита от дублей и конкуренции" as Util
+  package "diagnostics\nстартовая диагностика" as Diagnostics
+}
+
+Websocket --> Event : передает нормализованные события
+Event --> DomainService : запускает цикл назначения
+Schedule --> DomainService : запускает страхующий цикл
+DomainService --> DomainImpl : использует реализации
+DomainImpl --> DomainModel : читает модели визита и выбора
+DomainImpl --> Cache : работает с локальным срезом справочников
+DomainImpl --> Gateway : вызывает интеграционные порты
+GatewayImpl --> Orchestra : REST-вызовы Orchestra
+GatewayImpl --> MedRobot : REST-вызовы med-robot
+Cache --> Gateway : читает справочники через порты
+Event --> Util : дедупликация событий
+Schedule --> Util : защита branch от конкуренции
+Diagnostics --> Config : пишет эффективные настройки
+Diagnostics --> Cache : показывает состояние кэша
+Config ..> Websocket : включает/выключает события
+Config ..> Schedule : включает/выключает расписание
+Config ..> MedRobot : настраивает URL и Basic Auth
+
+note bottom
+  Направление стрелок показывает допустимый поток зависимостей.
+  Доменный слой не зависит от конкретного REST-клиента Orchestra или med-robot.
+end note
+@enduml

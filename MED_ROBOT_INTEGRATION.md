@@ -155,3 +155,34 @@ Doctor Assistant не подписывается на websocket-события, 
 - `AssignmentProperties.pollingEnabled` — отдельный флаг включения/отключения расписания.
 - `PollingReconciliationJob` — теперь проверяет `assignment.enabled` и `assignment.polling-enabled`.
 - `RuntimeConfigurationLogger` — на старте пишет эффективные флаги med-robot и polling.
+
+## Fallback-матрица
+
+| Ситуация | Настройка | Поведение |
+| --- | --- | --- |
+| `application.med-robot.enabled=false` | не требуется | med-robot не вызывается, работает старый локальный алгоритм. |
+| Локальный алгоритм не нашел предварительную услугу | не требуется | med-robot не вызывается, потому что в path endpoint-а нужен текущий `serviceId`. |
+| med-robot вернул HTTP/сетевую ошибку | `fallback-to-local-on-error=true` | используется локально выбранная услуга и очередь. |
+| med-robot вернул HTTP/сетевую ошибку | `fallback-to-local-on-error=false` | визит не назначается в этом цикле. |
+| med-robot вернул `null/null`, `0/0` или неполную пару | `fallback-to-local-on-empty-response=true` | используется локально выбранная услуга и очередь. |
+| med-robot вернул `null/null`, `0/0` или неполную пару | `fallback-to-local-on-empty-response=false` | визит не назначается в этом цикле. |
+| med-robot вернул услугу, которой нет в непройденном маршруте визита | `fallback-to-local-on-empty-response=true` | используется локально выбранная услуга и очередь. |
+| med-robot вернул очередь, которой нет в кэше отделения | `require-known-queue=true` | результат med-robot отклоняется, дальше применяется fallback-логика. |
+| med-robot вернул услугу вне доступных услуг текущего врача | `require-doctor-available-service=true` | результат med-robot отклоняется, дальше применяется fallback-логика. |
+
+## Детерминированность запроса
+
+Doctor Assistant передает в med-robot не исходный `HashSet`, а отсортированный набор service id. Это не меняет семантику
+контракта, потому что med-robot принимает множество услуг, но делает логи и тесты повторяемыми: один и тот же визит
+формирует одинаковое тело запроса `[301, 302, 303]` и одинаковый диагностический вывод.
+
+## Тестовое покрытие
+
+Интеграция закрыта следующими группами тестов:
+
+- `MedRobotAwareDoctorServiceSelectionServiceTest` — unit-тесты локального/robot выбора, fallback-режимов, валидации
+  неизвестной очереди, проверки услуги вне маршрута и строгого режима `require-doctor-available-service`;
+- `AutonomousMedicalExamAssignmentServiceTest` — end-to-end доменного цикла назначения с med-robot и fallback при
+  ошибке робота;
+- `MedRobotPropertiesTest` — безопасные значения по умолчанию для `application.med-robot`;
+- `PollingReconciliationJobTest` — явное включение/выключение расписания через `application.assignment.polling-enabled`.

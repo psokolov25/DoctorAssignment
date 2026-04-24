@@ -10,9 +10,9 @@ import com.qsystems.meddoctorassignment.domain.model.VisitUnservedService;
 import com.qsystems.meddoctorassignment.domain.service.DoctorServiceMatcher;
 import com.qsystems.meddoctorassignment.domain.service.DoctorServiceSelectionService;
 import jakarta.inject.Singleton;
-import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
+import java.util.TreeSet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -70,7 +70,13 @@ public class MedRobotAwareDoctorServiceSelectionService implements DoctorService
       MedRobotOptimalServiceResponse response =
           medRobotGateway.selectOptimalService(
               branchCache.getBranchId(), local.getServiceId(), unservedServiceIds);
-      return toSelection(response, visitDetails, doctorAvailableServices, branchCache, localSelection);
+      return toSelection(
+          response,
+          visitDetails,
+          doctorAvailableServices,
+          branchCache,
+          localSelection,
+          unservedServiceIds);
     } catch (Exception exception) {
       log.error(
           "Med-robot optimal service request failed for branch={} currentService={} visit={}: {}",
@@ -92,7 +98,8 @@ public class MedRobotAwareDoctorServiceSelectionService implements DoctorService
       VisitDetails visitDetails,
       Set<Integer> doctorAvailableServices,
       BranchAssignmentCache branchCache,
-      Optional<SelectedDoctorService> localSelection) {
+      Optional<SelectedDoctorService> localSelection,
+      Set<Integer> unservedServiceIds) {
     if (response == null || !response.hasSelectedServiceAndQueue()) {
       log.warn(
           "Med-robot did not select service/queue for visit {}. serviceId={} queueId={}",
@@ -104,7 +111,7 @@ public class MedRobotAwareDoctorServiceSelectionService implements DoctorService
 
     int serviceId = response.getServiceId().intValue();
     int queueId = response.getQueueId().intValue();
-    if (!resolveUnservedServiceIds(visitDetails, branchCache).contains(Integer.valueOf(serviceId))) {
+    if (!unservedServiceIds.contains(Integer.valueOf(serviceId))) {
       log.warn(
           "Med-robot returned service {} that is absent in visit {} unserved route",
           Integer.valueOf(serviceId),
@@ -155,7 +162,9 @@ public class MedRobotAwareDoctorServiceSelectionService implements DoctorService
 
   private Set<Integer> resolveUnservedServiceIds(
       VisitDetails visitDetails, BranchAssignmentCache branchCache) {
-    Set<Integer> result = new HashSet<Integer>();
+    // TreeSet нужен не для бизнес-логики, а для детерминированности:
+    // одинаковый визит должен формировать одинаковый JSON-массив и одинаковую строку в логах/тестах.
+    Set<Integer> result = new TreeSet<Integer>();
     if (visitDetails == null || visitDetails.getUnservedServices() == null) {
       return result;
     }

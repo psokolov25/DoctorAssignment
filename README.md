@@ -347,6 +347,43 @@ state machine вокруг посадки врача:
 - `treat-inactive-user-state-as-failure` / `treat-no-started-service-point-session-as-failure` — как интерпретировать
   server-side user state в ответах `assign-service`.
 
+### 6.4. Блок `application.med-robot`
+
+Управляет опциональной интеграцией с внешним сервисом `med-robot`:
+
+- `enabled=false` — полностью старая схема выбора услуги без обращения к роботу;
+- `enabled=true` — локальный алгоритм выбирает предварительную текущую услугу, затем Doctor Assistant вызывает
+  `POST /prorobot/optimalqueue/{branchId}/service/{serviceId}` и передает JSON-массив id непройденных услуг визита;
+- `fallback-to-local-on-error=true` — при сетевой/HTTP-ошибке med-robot цикл не останавливается, а продолжает работу
+  старым локальным алгоритмом;
+- `fallback-to-local-on-empty-response=true` — ответ `null/null`, `0/0` или невалидная пара service/queue не блокирует
+  назначение, если локальная схема смогла выбрать услугу;
+- `require-known-queue=true` — очередь из ответа med-robot должна быть известна branch cache;
+- `require-doctor-available-service=true` — строгий режим, в котором услуга из ответа med-robot должна входить в текущий
+  рабочий профиль врача.
+
+Пример включения med-robot с расписанием раз в 10 минут и без websocket-событий:
+
+```yaml
+application:
+  med-robot:
+    enabled: true
+    url: http://med-robot:8082
+    optimal-service-path: /prorobot/optimalqueue/{branchId}/service/{serviceId}
+    fallback-to-local-on-error: true
+    fallback-to-local-on-empty-response: true
+    require-known-queue: true
+  websocket:
+    enabled: false
+  assignment:
+    polling-enabled: true
+    polling-cron: "0 */10 * * * ?"
+```
+
+Подробный контракт, fallback-матрица и эксплуатационные режимы описаны в `MED_ROBOT_INTEGRATION.md`.
+
+
+
 ## 7. Руководство для разработчиков
 
 ### 7.1. Сценарий локального запуска
@@ -363,7 +400,7 @@ mvn clean package
 java -jar target/med-doctor-assignment-service-*.jar
 ```
 
-### 6.4. Текущие интеграционные инварианты
+### 7.2. Текущие интеграционные инварианты
 
 Ниже перечислены правила, которые уже подтверждены живыми прогонами и заложены в код:
 
@@ -389,7 +426,7 @@ java -jar target/med-doctor-assignment-service-*.jar
    Если Orchestra уже сменила `currentVisitService` на нужную услугу, сервис продолжает `transfer`, даже если
    `userState` выглядит как неидеальный серверный контекст.
 
-### 6.5. Наблюдаемый выигрыш по скорости
+### 7.3. Наблюдаемый выигрыш по скорости
 
 По реальным логам проекта зафиксирован заметный выигрыш после введения composite-trigger, `transfer-only` и корректной
 трактовки эффективного `assign`:
@@ -400,7 +437,7 @@ java -jar target/med-doctor-assignment-service-*.jar
 
 Практический выигрыш — порядка **43x** для кейса «назначить услугу и сразу перевести визит».
 
-### 7.2. Что важно понимать при доработке
+### 7.4. Что важно понимать при доработке
 
 1. **Не смешивать доменную логику и транспорт.**
    Все нюансы websocket и REST должны оставаться в `websocket.*` и `adapter.*`.
@@ -417,7 +454,7 @@ java -jar target/med-doctor-assignment-service-*.jar
 5. **Не встраивать hardcode приватных endpoint-ов Orchestra в доменный код.**
    Все пути для визитов должны оставаться конфигурируемыми.
 
-### 7.3. Главные точки расширения
+### 7.5. Главные точки расширения
 
 - новая логика сопоставления услуг — `DoctorServiceMatcher`
 - новый способ вычисления доступных врачу услуг — `DoctorAvailableServicesResolver`
@@ -425,7 +462,7 @@ java -jar target/med-doctor-assignment-service-*.jar
 - дополнительные триггеры — `DoctorAssignmentEventHandler`
 - особая логика fallback lookup — `LoggedDoctorContextResolver`
 
-### 7.4. Что смотреть при ошибке `500` на assign-service
+### 7.6. Что смотреть при ошибке `500` на assign-service
 
 Если в логах виден `500` на `POST /rest/entrypoint/.../visits/{visitId}/services/{serviceId}/`, нужно проверить:
 
@@ -588,6 +625,9 @@ Micronaut поднимает сервер на `micronaut.server.port`, по у�
 - корреляция `USER_SERVICE_POINT_SESSION_START -> SET_WORK_PROFILE`;
 - trigger расширения профиля;
 - `transfer-only` для уже назначенной услуги;
+- выбор оптимальной услуги и очереди через `med-robot`;
+- fallback на локальный алгоритм при ошибке или невалидном ответе `med-robot`;
+- включение и выключение polling-режима через `application.assignment.polling-enabled`;
 - эффективный `assign-service`, когда фактическое состояние визита важнее формального `userState`.
 
 Тесты используют in-memory/fake gateway-реализации и подтверждают доменную логику независимо от реальной Orchestra.

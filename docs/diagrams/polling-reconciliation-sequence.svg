@@ -1,70 +1,74 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="720" viewBox="0 0 1200 720" role="img" aria-label="Последовательность плановой reconciliation-обработки">
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1180" height="540" viewBox="0 0 1180 540">
   <defs>
-    <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
-      <path d="M0,0 L0,6 L9,3 z" fill="#334155"/>
+    <marker id="arrow" markerWidth="12" markerHeight="10" refX="10" refY="5" orient="auto" markerUnits="strokeWidth">
+      <path d="M 1 1 L 10 5 L 1 9" fill="none" stroke="#334155" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
     </marker>
-    <filter id="shadow" x="-10%" y="-10%" width="120%" height="130%">
-      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#94A3B8" flood-opacity="0.25"/>
+    <marker id="triangle" markerWidth="14" markerHeight="12" refX="12" refY="6" orient="auto" markerUnits="strokeWidth">
+      <path d="M 1 6 L 12 1 L 12 11 Z" fill="#F8FAFC" stroke="#334155" stroke-width="1.5"/>
+    </marker>
+    <marker id="green-dot" markerWidth="10" markerHeight="10" refX="5" refY="5" orient="auto">
+      <circle cx="5" cy="5" r="4" fill="#16A34A"/>
+    </marker>
+    <filter id="card-shadow" x="-15%" y="-15%" width="130%" height="130%">
+      <feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="#94A3B8" flood-opacity="0.16"/>
     </filter>
   </defs>
-  <rect width="100%" height="100%" fill="#F8FAFC"/>
-  <text x="600.0" y="42" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="24" font-weight="700" fill="#0F172A">Последовательность плановой reconciliation-обработки</text>
-  <rect x="30" y="78" width="150" height="58" rx="16" fill="#E0F2FE" stroke="#0284C7" stroke-width="1.5" filter="url(#shadow)"/>
-  <text x="105.0" y="102" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="15" font-weight="700" fill="#0F172A">Планировщик</text>
-  <text x="105.0" y="120" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="15" font-weight="700" fill="#0F172A">Micronaut</text>
-  <line x1="105" y1="136" x2="105" y2="650" stroke="#94A3B8" stroke-dasharray="6 6" stroke-width="1.3"/>
-  <rect x="225" y="78" width="150" height="58" rx="16" fill="#E0F2FE" stroke="#0284C7" stroke-width="1.5" filter="url(#shadow)"/>
-  <text x="300.0" y="102" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="15" font-weight="700" fill="#0F172A">Polling</text>
-  <text x="300.0" y="120" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="15" font-weight="700" fill="#0F172A">Reconciliation</text>
-  <line x1="300" y1="136" x2="300" y2="650" stroke="#94A3B8" stroke-dasharray="6 6" stroke-width="1.3"/>
-  <rect x="425" y="78" width="150" height="58" rx="16" fill="#E0F2FE" stroke="#0284C7" stroke-width="1.5" filter="url(#shadow)"/>
-  <text x="500.0" y="102" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="15" font-weight="700" fill="#0F172A">Настройки</text>
-  <text x="500.0" y="120" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="15" font-weight="700" fill="#0F172A">назначения</text>
-  <line x1="500" y1="136" x2="500" y2="650" stroke="#94A3B8" stroke-dasharray="6 6" stroke-width="1.3"/>
-  <rect x="625" y="78" width="150" height="58" rx="16" fill="#E0F2FE" stroke="#0284C7" stroke-width="1.5" filter="url(#shadow)"/>
-  <text x="700.0" y="102" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="15" font-weight="700" fill="#0F172A">Контейнер</text>
-  <text x="700.0" y="120" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="15" font-weight="700" fill="#0F172A">кэша</text>
-  <line x1="700" y1="136" x2="700" y2="650" stroke="#94A3B8" stroke-dasharray="6 6" stroke-width="1.3"/>
-  <rect x="830" y="78" width="150" height="58" rx="16" fill="#E0F2FE" stroke="#0284C7" stroke-width="1.5" filter="url(#shadow)"/>
-  <text x="905.0" y="102" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="15" font-weight="700" fill="#0F172A">Branch</text>
-  <text x="905.0" y="120" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="15" font-weight="700" fill="#0F172A">Lock</text>
-  <line x1="905" y1="136" x2="905" y2="650" stroke="#94A3B8" stroke-dasharray="6 6" stroke-width="1.3"/>
-  <rect x="1015" y="78" width="150" height="58" rx="16" fill="#E0F2FE" stroke="#0284C7" stroke-width="1.5" filter="url(#shadow)"/>
-  <text x="1090.0" y="102" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="15" font-weight="700" fill="#0F172A">Цикл</text>
-  <text x="1090.0" y="120" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="15" font-weight="700" fill="#0F172A">назначения</text>
-  <line x1="1090" y1="136" x2="1090" y2="650" stroke="#94A3B8" stroke-dasharray="6 6" stroke-width="1.3"/>
-  <line x1="105" y1="170" x2="300" y2="170" stroke="#334155" stroke-width="1.35" marker-end="url(#arrow)"/>
-  <rect x="44.5" y="147" width="316" height="19" rx="7" fill="#F8FAFC" opacity="0.97"/>
-  <text x="202.5" y="161" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="12" fill="#0F172A">запуск по cron</text>
-  <line x1="300" y1="220" x2="500" y2="220" stroke="#334155" stroke-width="1.35" marker-end="url(#arrow)"/>
-  <rect x="242.0" y="197" width="316" height="19" rx="7" fill="#F8FAFC" opacity="0.97"/>
-  <text x="400.0" y="211" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="12" fill="#0F172A">проверить enabled и polling-enabled</text>
-  <line x1="500" y1="270" x2="300" y2="270" stroke="#334155" stroke-width="1.35" stroke-dasharray="6 6" marker-end="url(#arrow)"/>
-  <rect x="242.0" y="247" width="316" height="19" rx="7" fill="#F8FAFC" opacity="0.97"/>
-  <text x="400.0" y="261" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="12" fill="#0F172A">режим разрешен</text>
-  <line x1="300" y1="320" x2="700" y2="320" stroke="#334155" stroke-width="1.35" marker-end="url(#arrow)"/>
-  <rect x="342.0" y="297" width="316" height="19" rx="7" fill="#F8FAFC" opacity="0.97"/>
-  <text x="500.0" y="311" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="12" fill="#0F172A">получить актуальные кэши отделений</text>
-  <line x1="700" y1="370" x2="300" y2="370" stroke="#334155" stroke-width="1.35" stroke-dasharray="6 6" marker-end="url(#arrow)"/>
-  <rect x="342.0" y="347" width="316" height="19" rx="7" fill="#F8FAFC" opacity="0.97"/>
-  <text x="500.0" y="361" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="12" fill="#0F172A">рабочие места с активными врачами</text>
-  <line x1="300" y1="420" x2="905" y2="420" stroke="#334155" stroke-width="1.35" marker-end="url(#arrow)"/>
-  <rect x="444.5" y="397" width="316" height="19" rx="7" fill="#F8FAFC" opacity="0.97"/>
-  <text x="602.5" y="411" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="12" fill="#0F172A">занять branch</text>
-  <line x1="905" y1="470" x2="300" y2="470" stroke="#334155" stroke-width="1.35" stroke-dasharray="6 6" marker-end="url(#arrow)"/>
-  <rect x="444.5" y="447" width="316" height="19" rx="7" fill="#F8FAFC" opacity="0.97"/>
-  <text x="602.5" y="461" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="12" fill="#0F172A">branch свободен</text>
-  <line x1="300" y1="520" x2="1090" y2="520" stroke="#334155" stroke-width="1.35" marker-end="url(#arrow)"/>
-  <rect x="537.0" y="497" width="316" height="19" rx="7" fill="#F8FAFC" opacity="0.97"/>
-  <text x="695.0" y="511" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="12" fill="#0F172A">запустить цикл с TriggerSource.POLLING</text>
-  <line x1="1090" y1="570" x2="300" y2="570" stroke="#334155" stroke-width="1.35" stroke-dasharray="6 6" marker-end="url(#arrow)"/>
-  <rect x="537.0" y="547" width="316" height="19" rx="7" fill="#F8FAFC" opacity="0.97"/>
-  <text x="695.0" y="561" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="12" fill="#0F172A">обработанные визиты</text>
-  <rect x="70" y="610" width="310" height="70" rx="16" fill="#FEE2E2" stroke="#EF4444" stroke-width="1.5" filter="url(#shadow)"/>
-  <text x="225.0" y="634" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="15" font-weight="700" fill="#0F172A">Если расписание выключено</text>
-  <text x="225.0" y="660" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="13" fill="#334155">job завершается без чтения визитов</text>
-  <rect x="760" y="610" width="350" height="70" rx="16" fill="#FEF3C7" stroke="#F59E0B" stroke-width="1.5" filter="url(#shadow)"/>
-  <text x="935.0" y="634" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="15" font-weight="700" fill="#0F172A">Если branch занят событием</text>
-  <text x="935.0" y="660" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="13" fill="#334155">плановая обработка пропускает дубль и</text>
+  <rect x="0" y="0" width="1180" height="540" fill="#F8FAFC"/>
+  <text x="590.0" y="34" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="21" font-weight="700" fill="#111827">Последовательность плановой reconciliation-обработки</text>
+<rect x="80" y="70" width="120" height="54" rx="8" ry="8" fill="#FFFFFF" stroke="#0369A1" stroke-width="1.5"/>
+<rect x="80" y="70" width="120" height="28" rx="8" ry="8" fill="#E0F2FE" stroke="#0369A1" stroke-width="1.5"/>
+<rect x="80" y="90" width="120" height="8" fill="#E0F2FE" stroke="none"/>
+<text x="140.0" y="88" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="700" fill="#111827" style=""><tspan x="140.0" dy="0">@Scheduled</tspan></text>
+<rect x="250" y="70" width="120" height="54" rx="8" ry="8" fill="#FFFFFF" stroke="#0369A1" stroke-width="1.5"/>
+<rect x="250" y="70" width="120" height="28" rx="8" ry="8" fill="#E0F2FE" stroke="#0369A1" stroke-width="1.5"/>
+<rect x="250" y="90" width="120" height="8" fill="#E0F2FE" stroke="none"/>
+<text x="310.0" y="88" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="700" fill="#111827" style=""><tspan x="310.0" dy="0">Polling</tspan></text>
+<text x="310.0" y="109" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#4B5563" style=""><tspan x="310.0" dy="0">job</tspan></text>
+<rect x="420" y="70" width="120" height="54" rx="8" ry="8" fill="#FFFFFF" stroke="#0369A1" stroke-width="1.5"/>
+<rect x="420" y="70" width="120" height="28" rx="8" ry="8" fill="#E0F2FE" stroke="#0369A1" stroke-width="1.5"/>
+<rect x="420" y="90" width="120" height="8" fill="#E0F2FE" stroke="none"/>
+<text x="480.0" y="88" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="700" fill="#111827" style=""><tspan x="480.0" dy="0">Assignment</tspan></text>
+<text x="480.0" y="109" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#4B5563" style=""><tspan x="480.0" dy="0">properties</tspan></text>
+<rect x="590" y="70" width="120" height="54" rx="8" ry="8" fill="#FFFFFF" stroke="#0369A1" stroke-width="1.5"/>
+<rect x="590" y="70" width="120" height="28" rx="8" ry="8" fill="#E0F2FE" stroke="#0369A1" stroke-width="1.5"/>
+<rect x="590" y="90" width="120" height="8" fill="#E0F2FE" stroke="none"/>
+<text x="650.0" y="88" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="700" fill="#111827" style=""><tspan x="650.0" dy="0">Cache</tspan></text>
+<text x="650.0" y="109" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#4B5563" style=""><tspan x="650.0" dy="0">container</tspan></text>
+<rect x="760" y="70" width="120" height="54" rx="8" ry="8" fill="#FFFFFF" stroke="#0369A1" stroke-width="1.5"/>
+<rect x="760" y="70" width="120" height="28" rx="8" ry="8" fill="#E0F2FE" stroke="#0369A1" stroke-width="1.5"/>
+<rect x="760" y="90" width="120" height="8" fill="#E0F2FE" stroke="none"/>
+<text x="820.0" y="88" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="700" fill="#111827" style=""><tspan x="820.0" dy="0">Branch</tspan></text>
+<text x="820.0" y="109" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#4B5563" style=""><tspan x="820.0" dy="0">lock</tspan></text>
+<rect x="930" y="70" width="120" height="54" rx="8" ry="8" fill="#FFFFFF" stroke="#0369A1" stroke-width="1.5"/>
+<rect x="930" y="70" width="120" height="28" rx="8" ry="8" fill="#E0F2FE" stroke="#0369A1" stroke-width="1.5"/>
+<rect x="930" y="90" width="120" height="8" fill="#E0F2FE" stroke="none"/>
+<text x="990.0" y="88" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="700" fill="#111827" style=""><tspan x="990.0" dy="0">Assignment</tspan></text>
+<text x="990.0" y="109" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#4B5563" style=""><tspan x="990.0" dy="0">cycle</tspan></text>
+<line x1="140.0" y1="125" x2="140.0" y2="430" stroke="#CBD5E1" stroke-width="1.2" stroke-linecap="round" stroke-dasharray="6 5"/>
+<line x1="310.0" y1="125" x2="310.0" y2="430" stroke="#CBD5E1" stroke-width="1.2" stroke-linecap="round" stroke-dasharray="6 5"/>
+<line x1="480.0" y1="125" x2="480.0" y2="430" stroke="#CBD5E1" stroke-width="1.2" stroke-linecap="round" stroke-dasharray="6 5"/>
+<line x1="650.0" y1="125" x2="650.0" y2="430" stroke="#CBD5E1" stroke-width="1.2" stroke-linecap="round" stroke-dasharray="6 5"/>
+<line x1="820.0" y1="125" x2="820.0" y2="430" stroke="#CBD5E1" stroke-width="1.2" stroke-linecap="round" stroke-dasharray="6 5"/>
+<line x1="990.0" y1="125" x2="990.0" y2="430" stroke="#CBD5E1" stroke-width="1.2" stroke-linecap="round" stroke-dasharray="6 5"/>
+<line x1="140.0" y1="155" x2="310.0" y2="155" stroke="#334155" stroke-width="1.35" stroke-linecap="round" marker-end="url(#arrow)"/>
+<text x="225.0" y="148" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" font-weight="400" fill="#4B5563" style=""><tspan x="225.0" dy="0">cron</tspan></text>
+<line x1="310.0" y1="190" x2="480.0" y2="190" stroke="#334155" stroke-width="1.35" stroke-linecap="round" marker-end="url(#arrow)"/>
+<text x="395.0" y="183" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" font-weight="400" fill="#4B5563" style=""><tspan x="395.0" dy="0">enabled + polling</tspan></text>
+<line x1="480.0" y1="220" x2="310.0" y2="220" stroke="#334155" stroke-width="1.35" stroke-linecap="round" stroke-dasharray="6 5" marker-end="url(#arrow)"/>
+<text x="395.0" y="213" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" font-weight="400" fill="#4B5563" style=""><tspan x="395.0" dy="0">effective flags</tspan></text>
+<rect x="130" y="245" width="870" height="150" rx="4" ry="4" fill="none" stroke="#CBD5E1" stroke-width="1.1"/>
+<text x="145" y="263" text-anchor="start" font-family="Segoe UI, Arial, sans-serif" font-size="10" font-weight="600" fill="#4B5563" style=""><tspan x="145" dy="0">opt: расписание включено / loop: активные рабочие места</tspan></text>
+<line x1="310.0" y1="290" x2="650.0" y2="290" stroke="#334155" stroke-width="1.35" stroke-linecap="round" marker-end="url(#arrow)"/>
+<text x="480.0" y="283" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" font-weight="400" fill="#4B5563" style=""><tspan x="480.0" dy="0">актуальные кэши</tspan></text>
+<line x1="650.0" y1="320" x2="310.0" y2="320" stroke="#334155" stroke-width="1.35" stroke-linecap="round" stroke-dasharray="6 5" marker-end="url(#arrow)"/>
+<text x="480.0" y="313" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" font-weight="400" fill="#4B5563" style=""><tspan x="480.0" dy="0">BranchAssignmentCache[]</tspan></text>
+<line x1="310.0" y1="350" x2="820.0" y2="350" stroke="#334155" stroke-width="1.35" stroke-linecap="round" marker-end="url(#arrow)"/>
+<text x="565.0" y="343" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" font-weight="400" fill="#4B5563" style=""><tspan x="565.0" dy="0">занять branch</tspan></text>
+<line x1="820.0" y1="380" x2="310.0" y2="380" stroke="#334155" stroke-width="1.35" stroke-linecap="round" stroke-dasharray="6 5" marker-end="url(#arrow)"/>
+<text x="565.0" y="373" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" font-weight="400" fill="#4B5563" style=""><tspan x="565.0" dy="0">branch свободен</tspan></text>
+<line x1="310.0" y1="410" x2="990.0" y2="410" stroke="#334155" stroke-width="1.35" stroke-linecap="round" marker-end="url(#arrow)"/>
+<text x="650.0" y="403" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" font-weight="400" fill="#4B5563" style=""><tspan x="650.0" dy="0">TriggerSource=POLLING</tspan></text>
+<rect x="210" y="455" width="720" height="38" rx="7" ry="7" fill="#FEF3C7" stroke="#B45309" stroke-width="1.2" filter="url(#card-shadow)"/>
+<text x="224" y="479" text-anchor="start" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="400" fill="#111827" style=""><tspan x="224" dy="0">Reconciliation закрывает потерянные события, сетевые разрывы и позднее появление визитов в очереди.</tspan></text>
 </svg>

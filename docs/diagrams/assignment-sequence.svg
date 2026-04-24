@@ -1,28 +1,95 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1320" height="870" viewBox="0 0 1320 870" role="img" aria-labelledby="title desc">
-  <title id="title">Последовательность назначения визита врачу</title>
-  <desc id="desc">Пошаговая схема выбора услуги и очереди с опциональным обращением к med-robot.</desc>
-  <defs><marker id="arrow" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto"><path d="M0,0 L10,4 L0,8 z" fill="#334155"/></marker></defs>
-  <rect width="1320" height="870" fill="#F8FAFC"/>
-  <style>text{font-family:'DejaVu Sans',Arial,sans-serif;fill:#0F172A}.title{font-size:28px;font-weight:700}.step{font-size:15px;font-weight:700}.small{font-size:13px}.box{stroke-width:1.7;rx:14}.blue{fill:#E0F2FE;stroke:#0284C7}.green{fill:#DCFCE7;stroke:#16A34A}.violet{fill:#EDE9FE;stroke:#7C3AED}.amber{fill:#FEF3C7;stroke:#D97706}.rose{fill:#FFE4E6;stroke:#E11D48}.gray{fill:#F1F5F9;stroke:#64748B}.line{stroke:#334155;stroke-width:2;fill:none;marker-end:url(#arrow)}.bad{stroke:#E11D48;stroke-width:2;fill:none;marker-end:url(#arrow)}</style>
-  <text class="title" x="40" y="48">Последовательность назначения визита врачу</text>
-  <g transform="translate(60 95)">
-    <rect class="box gray" x="0" y="0" width="310" height="92" rx="14"/><text class="step" x="155" y="28" text-anchor="middle">1. Событие Orchestra</text><text class="small" x="155" y="54" text-anchor="middle">посадка врача или смена профиля</text>
-    <rect class="box blue" x="430" y="0" width="310" height="92" rx="14"/><text class="step" x="585" y="28" text-anchor="middle">2. Корреляция</text><text class="small" x="585" y="54" text-anchor="middle">дедупликация и DoctorContext</text>
-    <rect class="box green" x="860" y="0" width="310" height="92" rx="14"/><text class="step" x="1015" y="28" text-anchor="middle">3. Кэш отделения</text><text class="small" x="1015" y="54" text-anchor="middle">справочники и runtime-состояние</text>
-    <path class="line" d="M310 46 L430 46"/><path class="line" d="M740 46 L860 46"/>
-
-    <rect class="box blue" x="0" y="165" width="310" height="105" rx="14"/><text class="step" x="155" y="195" text-anchor="middle">4. Очередь «врач не назначен»</text><text class="small" x="155" y="222" text-anchor="middle">чтение ожидающих визитов</text>
-    <rect class="box blue" x="430" y="165" width="310" height="105" rx="14"/><text class="step" x="585" y="195" text-anchor="middle">5. Маршрут визита</text><text class="small" x="585" y="222" text-anchor="middle">непройденные услуги</text>
-    <rect class="box amber" x="860" y="165" width="310" height="105" rx="14"/><text class="step" x="1015" y="195" text-anchor="middle">6. Локальный выбор</text><text class="small" x="1015" y="222" text-anchor="middle">предварительный serviceId</text>
-    <path class="line" d="M1015 92 C1015 125 155 125 155 165"/><path class="line" d="M310 217 L430 217"/><path class="line" d="M740 217 L860 217"/>
-
-    <rect class="box violet" x="0" y="345" width="310" height="118" rx="14"/><text class="step" x="155" y="377" text-anchor="middle">7. Запрос med-robot</text><text class="small" x="155" y="404" text-anchor="middle">набор непройденных услуг</text><text class="small" x="155" y="425" text-anchor="middle">[301, 302, 303]</text>
-    <rect class="box violet" x="430" y="345" width="310" height="118" rx="14"/><text class="step" x="585" y="377" text-anchor="middle">8. Проверка ответа</text><text class="small" x="585" y="404" text-anchor="middle">услуга в маршруте, очередь известна</text><text class="small" x="585" y="425" text-anchor="middle">строгий режим — услуга доступна врачу</text>
-    <rect class="box rose" x="860" y="345" width="310" height="118" rx="14"/><text class="step" x="1015" y="377" text-anchor="middle">9. Возврат к локальному алгоритму</text><text class="small" x="1015" y="404" text-anchor="middle">при ошибке или недопустимой паре</text>
-    <path class="line" d="M1015 270 C1015 320 155 305 155 345"/><path class="line" d="M310 404 L430 404"/><path class="bad" d="M740 404 L860 404"/>
-
-    <rect class="box green" x="215" y="540" width="360" height="112" rx="14"/><text class="step" x="395" y="572" text-anchor="middle">10. Исполнение решения</text><text class="small" x="395" y="600" text-anchor="middle">assign-service при необходимости</text><text class="small" x="395" y="621" text-anchor="middle">transfer-visit в целевую очередь</text>
-    <rect class="box gray" x="725" y="540" width="360" height="112" rx="14"/><text class="step" x="905" y="572" text-anchor="middle">11. Завершение цикла</text><text class="small" x="905" y="600" text-anchor="middle">фиксируется результат</text><text class="small" x="905" y="621" text-anchor="middle">следующий визит обрабатывается отдельно</text>
-    <path class="line" d="M585 463 C585 505 395 505 395 540"/><path class="line" d="M1015 463 C1015 510 395 500 395 540"/><path class="line" d="M575 596 L725 596"/>
-  </g>
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1180" height="610" viewBox="0 0 1180 610">
+  <defs>
+    <marker id="arrow" markerWidth="12" markerHeight="10" refX="10" refY="5" orient="auto" markerUnits="strokeWidth">
+      <path d="M 1 1 L 10 5 L 1 9" fill="none" stroke="#334155" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+    <marker id="triangle" markerWidth="14" markerHeight="12" refX="12" refY="6" orient="auto" markerUnits="strokeWidth">
+      <path d="M 1 6 L 12 1 L 12 11 Z" fill="#F8FAFC" stroke="#334155" stroke-width="1.5"/>
+    </marker>
+    <marker id="green-dot" markerWidth="10" markerHeight="10" refX="5" refY="5" orient="auto">
+      <circle cx="5" cy="5" r="4" fill="#16A34A"/>
+    </marker>
+    <filter id="card-shadow" x="-15%" y="-15%" width="130%" height="130%">
+      <feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="#94A3B8" flood-opacity="0.16"/>
+    </filter>
+  </defs>
+  <rect x="0" y="0" width="1180" height="610" fill="#F8FAFC"/>
+  <text x="590.0" y="34" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="21" font-weight="700" fill="#111827">Последовательность назначения визита врачу</text>
+<rect x="45" y="70" width="108" height="54" rx="8" ry="8" fill="#FFFFFF" stroke="#0369A1" stroke-width="1.5"/>
+<rect x="45" y="70" width="108" height="28" rx="8" ry="8" fill="#E0F2FE" stroke="#0369A1" stroke-width="1.5"/>
+<rect x="45" y="90" width="108" height="8" fill="#E0F2FE" stroke="none"/>
+<text x="99.0" y="88" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="700" fill="#111827" style=""><tspan x="99.0" dy="0">Orchestra</tspan></text>
+<rect x="185" y="70" width="108" height="54" rx="8" ry="8" fill="#FFFFFF" stroke="#0369A1" stroke-width="1.5"/>
+<rect x="185" y="70" width="108" height="28" rx="8" ry="8" fill="#E0F2FE" stroke="#0369A1" stroke-width="1.5"/>
+<rect x="185" y="90" width="108" height="8" fill="#E0F2FE" stroke="none"/>
+<text x="239.0" y="88" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="700" fill="#111827" style=""><tspan x="239.0" dy="0">STOMP</tspan></text>
+<text x="239.0" y="109" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#4B5563" style=""><tspan x="239.0" dy="0">handler</tspan></text>
+<rect x="325" y="70" width="108" height="54" rx="8" ry="8" fill="#FFFFFF" stroke="#0369A1" stroke-width="1.5"/>
+<rect x="325" y="70" width="108" height="28" rx="8" ry="8" fill="#E0F2FE" stroke="#0369A1" stroke-width="1.5"/>
+<rect x="325" y="90" width="108" height="8" fill="#E0F2FE" stroke="none"/>
+<text x="379.0" y="88" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="700" fill="#111827" style=""><tspan x="379.0" dy="0">Event</tspan></text>
+<text x="379.0" y="109" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#4B5563" style=""><tspan x="379.0" dy="0">handler</tspan></text>
+<rect x="465" y="70" width="108" height="54" rx="8" ry="8" fill="#FFFFFF" stroke="#0369A1" stroke-width="1.5"/>
+<rect x="465" y="70" width="108" height="28" rx="8" ry="8" fill="#E0F2FE" stroke="#0369A1" stroke-width="1.5"/>
+<rect x="465" y="90" width="108" height="8" fill="#E0F2FE" stroke="none"/>
+<text x="519.0" y="88" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="700" fill="#111827" style=""><tspan x="519.0" dy="0">Assignment</tspan></text>
+<text x="519.0" y="109" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#4B5563" style=""><tspan x="519.0" dy="0">cycle</tspan></text>
+<rect x="605" y="70" width="108" height="54" rx="8" ry="8" fill="#FFFFFF" stroke="#0369A1" stroke-width="1.5"/>
+<rect x="605" y="70" width="108" height="28" rx="8" ry="8" fill="#E0F2FE" stroke="#0369A1" stroke-width="1.5"/>
+<rect x="605" y="90" width="108" height="8" fill="#E0F2FE" stroke="none"/>
+<text x="659.0" y="88" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="700" fill="#111827" style=""><tspan x="659.0" dy="0">Branch</tspan></text>
+<text x="659.0" y="109" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#4B5563" style=""><tspan x="659.0" dy="0">cache</tspan></text>
+<rect x="745" y="70" width="108" height="54" rx="8" ry="8" fill="#FFFFFF" stroke="#0369A1" stroke-width="1.5"/>
+<rect x="745" y="70" width="108" height="28" rx="8" ry="8" fill="#E0F2FE" stroke="#0369A1" stroke-width="1.5"/>
+<rect x="745" y="90" width="108" height="8" fill="#E0F2FE" stroke="none"/>
+<text x="799.0" y="88" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="700" fill="#111827" style=""><tspan x="799.0" dy="0">Selection</tspan></text>
+<rect x="885" y="70" width="108" height="54" rx="8" ry="8" fill="#FFFFFF" stroke="#0369A1" stroke-width="1.5"/>
+<rect x="885" y="70" width="108" height="28" rx="8" ry="8" fill="#E0F2FE" stroke="#0369A1" stroke-width="1.5"/>
+<rect x="885" y="90" width="108" height="8" fill="#E0F2FE" stroke="none"/>
+<text x="939.0" y="88" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="700" fill="#111827" style=""><tspan x="939.0" dy="0">Visit</tspan></text>
+<text x="939.0" y="109" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#4B5563" style=""><tspan x="939.0" dy="0">workflow</tspan></text>
+<rect x="1025" y="70" width="108" height="54" rx="8" ry="8" fill="#FFFFFF" stroke="#0369A1" stroke-width="1.5"/>
+<rect x="1025" y="70" width="108" height="28" rx="8" ry="8" fill="#E0F2FE" stroke="#0369A1" stroke-width="1.5"/>
+<rect x="1025" y="90" width="108" height="8" fill="#E0F2FE" stroke="none"/>
+<text x="1079.0" y="88" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="700" fill="#111827" style=""><tspan x="1079.0" dy="0">med-robot</tspan></text>
+<line x1="99.0" y1="125" x2="99.0" y2="520" stroke="#CBD5E1" stroke-width="1.2" stroke-linecap="round" stroke-dasharray="6 5"/>
+<line x1="239.0" y1="125" x2="239.0" y2="520" stroke="#CBD5E1" stroke-width="1.2" stroke-linecap="round" stroke-dasharray="6 5"/>
+<line x1="379.0" y1="125" x2="379.0" y2="520" stroke="#CBD5E1" stroke-width="1.2" stroke-linecap="round" stroke-dasharray="6 5"/>
+<line x1="519.0" y1="125" x2="519.0" y2="520" stroke="#CBD5E1" stroke-width="1.2" stroke-linecap="round" stroke-dasharray="6 5"/>
+<line x1="659.0" y1="125" x2="659.0" y2="520" stroke="#CBD5E1" stroke-width="1.2" stroke-linecap="round" stroke-dasharray="6 5"/>
+<line x1="799.0" y1="125" x2="799.0" y2="520" stroke="#CBD5E1" stroke-width="1.2" stroke-linecap="round" stroke-dasharray="6 5"/>
+<line x1="939.0" y1="125" x2="939.0" y2="520" stroke="#CBD5E1" stroke-width="1.2" stroke-linecap="round" stroke-dasharray="6 5"/>
+<line x1="1079.0" y1="125" x2="1079.0" y2="520" stroke="#CBD5E1" stroke-width="1.2" stroke-linecap="round" stroke-dasharray="6 5"/>
+<line x1="99.0" y1="155" x2="239.0" y2="155" stroke="#334155" stroke-width="1.35" stroke-linecap="round" marker-end="url(#arrow)"/>
+<text x="169.0" y="148" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" font-weight="400" fill="#4B5563" style=""><tspan x="169.0" dy="0">событие посадки / профиля</tspan></text>
+<line x1="239.0" y1="190" x2="379.0" y2="190" stroke="#334155" stroke-width="1.35" stroke-linecap="round" marker-end="url(#arrow)"/>
+<text x="309.0" y="183" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" font-weight="400" fill="#4B5563" style=""><tspan x="309.0" dy="0">OrchestraEvent</tspan></text>
+<path d="M 379.0 215 L 417.0 215 L 417.0 248 L 379.0 248" fill="none" stroke="#334155" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<text x="431.0" y="228" text-anchor="start" font-family="Segoe UI, Arial, sans-serif" font-size="10" font-weight="400" fill="#4B5563" style=""><tspan x="431.0" dy="0">дедупликация</tspan></text>
+<text x="431.0" y="244" text-anchor="start" font-family="Segoe UI, Arial, sans-serif" font-size="10" font-weight="400" fill="#4B5563" style=""><tspan x="431.0" dy="0">корреляция</tspan></text>
+<line x1="379.0" y1="275" x2="519.0" y2="275" stroke="#334155" stroke-width="1.35" stroke-linecap="round" marker-end="url(#arrow)"/>
+<text x="449.0" y="268" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" font-weight="400" fill="#4B5563" style=""><tspan x="449.0" dy="0">USER_SESSION_READY</tspan></text>
+<line x1="519.0" y1="310" x2="659.0" y2="310" stroke="#334155" stroke-width="1.35" stroke-linecap="round" marker-end="url(#arrow)"/>
+<text x="589.0" y="303" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" font-weight="400" fill="#4B5563" style=""><tspan x="589.0" dy="0">получить кэш</tspan></text>
+<line x1="659.0" y1="340" x2="519.0" y2="340" stroke="#334155" stroke-width="1.35" stroke-linecap="round" stroke-dasharray="6 5" marker-end="url(#arrow)"/>
+<text x="589.0" y="333" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" font-weight="400" fill="#4B5563" style=""><tspan x="589.0" dy="0">справочники + runtime</tspan></text>
+<line x1="519.0" y1="375" x2="939.0" y2="375" stroke="#334155" stroke-width="1.35" stroke-linecap="round" marker-end="url(#arrow)"/>
+<text x="729.0" y="368" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" font-weight="400" fill="#4B5563" style=""><tspan x="729.0" dy="0">визиты unknown-doctor</tspan></text>
+<line x1="939.0" y1="405" x2="519.0" y2="405" stroke="#334155" stroke-width="1.35" stroke-linecap="round" stroke-dasharray="6 5" marker-end="url(#arrow)"/>
+<text x="729.0" y="398" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" font-weight="400" fill="#4B5563" style=""><tspan x="729.0" dy="0">кандидаты</tspan></text>
+<rect x="50" y="425" width="980" height="82" rx="4" ry="4" fill="none" stroke="#CBD5E1" stroke-width="1.1"/>
+<text x="62" y="441" text-anchor="start" font-family="Segoe UI, Arial, sans-serif" font-size="10" font-weight="600" fill="#4B5563" style=""><tspan x="62" dy="0">loop: каждый визит</tspan></text>
+<line x1="519.0" y1="455" x2="939.0" y2="455" stroke="#334155" stroke-width="1.35" stroke-linecap="round" marker-end="url(#arrow)"/>
+<text x="729.0" y="448" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" font-weight="400" fill="#4B5563" style=""><tspan x="729.0" dy="0">маршрут визита</tspan></text>
+<line x1="939.0" y1="480" x2="519.0" y2="480" stroke="#334155" stroke-width="1.35" stroke-linecap="round" stroke-dasharray="6 5" marker-end="url(#arrow)"/>
+<text x="729.0" y="473" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" font-weight="400" fill="#4B5563" style=""><tspan x="729.0" dy="0">непройденные услуги</tspan></text>
+<line x1="519.0" y1="505" x2="799.0" y2="505" stroke="#334155" stroke-width="1.35" stroke-linecap="round" marker-end="url(#arrow)"/>
+<text x="659.0" y="498" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" font-weight="400" fill="#4B5563" style=""><tspan x="659.0" dy="0">выбрать услугу</tspan></text>
+<line x1="799.0" y1="530" x2="1079.0" y2="530" stroke="#334155" stroke-width="1.35" stroke-linecap="round" marker-end="url(#arrow)"/>
+<text x="939.0" y="523" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" font-weight="400" fill="#4B5563" style=""><tspan x="939.0" dy="0">POST /optimalqueue</tspan></text>
+<line x1="1079.0" y1="555" x2="799.0" y2="555" stroke="#334155" stroke-width="1.35" stroke-linecap="round" stroke-dasharray="6 5" marker-end="url(#arrow)"/>
+<text x="939.0" y="548" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" font-weight="400" fill="#4B5563" style=""><tspan x="939.0" dy="0">serviceId + queueId</tspan></text>
+<rect x="120" y="545" width="390" height="38" rx="7" ry="7" fill="#FEF3C7" stroke="#B45309" stroke-width="1.2" filter="url(#card-shadow)"/>
+<text x="134" y="569" text-anchor="start" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="400" fill="#111827" style=""><tspan x="134" dy="0">Заголовки lifeline сокращены; подписи стрелок прозрачные и не имеют белой подложки.</tspan></text>
 </svg>

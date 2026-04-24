@@ -1,38 +1,104 @@
 @startuml
+title Карта данных и REST-контракта med-robot
+
+' Единый профиль диаграмм документации Doctor Assistant.
+' Акцент: аккуратная business/UML-нотация, прозрачные подписи стрелок,
+' ровная сетка, короткие технические подписи и читаемый шрифт без засечек.
 skinparam backgroundColor #F8FAFC
-skinparam defaultFontName "DejaVu Sans"
 skinparam shadowing false
-skinparam ArrowColor #475569
-skinparam rectangle {
+skinparam defaultFontName "Segoe UI"
+skinparam defaultFontSize 13
+skinparam defaultTextAlignment center
+skinparam wrapWidth 170
+skinparam maxMessageSize 120
+skinparam linetype ortho
+skinparam ArrowColor #334155
+skinparam ArrowThickness 1.2
+skinparam packageStyle rectangle
+skinparam componentStyle uml2
+skinparam classAttributeIconSize 0
+skinparam handwritten false
+skinparam RoundCorner 6
+skinparam nodesep 38
+skinparam ranksep 46
+skinparam package {
   BackgroundColor #FFFFFF
-  BorderColor #2563EB
-  FontColor #0F172A
-  RoundCorner 14
+  BorderColor #7C3AED
+  FontColor #111827
+}
+skinparam component {
+  BackgroundColor #E0F2FE
+  BorderColor #0369A1
+  FontColor #111827
+}
+skinparam interface {
+  BackgroundColor #F8FAFC
+  BorderColor #64748B
+  FontColor #111827
+}
+skinparam database {
+  BackgroundColor #DCFCE7
+  BorderColor #15803D
+  FontColor #111827
+}
+skinparam artifact {
+  BackgroundColor #FEF3C7
+  BorderColor #B45309
+  FontColor #111827
+}
+skinparam node {
+  BackgroundColor #FFFFFF
+  BorderColor #64748B
+  FontColor #111827
 }
 skinparam note {
-  BackgroundColor #EFF6FF
-  BorderColor #93C5FD
-  FontColor #0F172A
+  BackgroundColor #FEF3C7
+  BorderColor #B45309
+  FontColor #111827
 }
-title Карта данных и REST-контракта med-robot
-rectangle "Doctor Assistant" as DA {
-  rectangle "Непройденные услуги визита\nSet<Long> serviceIds" as Unserved
-  rectangle "Текущая услуга-кандидат\nserviceId из локального выбора" as Current
+skinparam actor {
+  BorderColor #475569
+  FontColor #111827
 }
-rectangle "med-robot REST API" as MR {
-  rectangle "POST /prorobot/optimalqueue/{branchId}/service/{serviceId}" as Endpoint
-  rectangle "Тело запроса: отсортированный список serviceId" as Body
-  rectangle "Ответ: serviceId + queueId" as Response
+skinparam sequence {
+  ArrowColor #334155
+  ArrowThickness 1.2
+  LifeLineBorderColor #CBD5E1
+  LifeLineBackgroundColor transparent
+  ParticipantBackgroundColor #E0F2FE
+  ParticipantBorderColor #0369A1
+  ParticipantFontColor #111827
+  GroupBorderColor #94A3B8
+  GroupBackgroundColor transparent
+  GroupFontColor #334155
+  BoxBackgroundColor transparent
+  BoxBorderColor #CBD5E1
 }
-rectangle "Проверка ответа" as Validate {
-  rectangle "услуга есть в маршруте" as V1
-  rectangle "очередь есть в кэше" as V2
-  rectangle "при строгом режиме услуга доступна врачу" as V3
+skinparam responseMessageBelowArrow true
+
+left to right direction
+package "Doctor Assistant" {
+  artifact "Непройденные услуги\nSet<Long> serviceIds" as services
+  artifact "Кандидат\nserviceId локального выбора" as candidate
 }
-Unserved --> Body
-Current --> Endpoint
-Endpoint --> Response
-Response --> V1
-Response --> V2
-Response --> V3
+package "med-robot REST API" {
+  interface "POST /optimalqueue\npath params" as endpoint
+  artifact "Request body\n[301, 302, 303]" as request
+  artifact "Response\n{serviceId, queueId}" as response
+}
+package "Проверка ответа" {
+  component "Маршрут визита\nserviceId допустим" <<validation>> as route
+  component "Кэш очередей\nqueueId известен" <<validation>> as queue
+  component "Профиль врача\nстрогий режим" <<validation>> as doctor
+}
+services ..> request : body
+candidate ..> endpoint : path
+endpoint ..> response
+response ..> route : validate
+response ..> queue : validate
+response ..> doctor : validate
+note bottom
+  Запрос формируется из отсортированного набора serviceId:
+  это делает логи и тесты повторяемыми.
+end note
 @enduml

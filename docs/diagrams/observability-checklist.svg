@@ -1,23 +1,78 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1120" height="620" viewBox="0 0 1120 620" role="img" aria-label="Наблюдаемость и эксплуатационная проверка">
-  <defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L0,6 L9,3 z" fill="#64748B"/></marker></defs>
-  <rect width="100%" height="100%" rx="24" fill="#F8FAFC"/>
-  <text x="40" y="58" font-family="DejaVu Sans, Arial, sans-serif" font-size="30" font-weight="700" fill="#0F172A">Наблюдаемость и эксплуатационная проверка</text>
-  <text x="40" y="92" font-family="DejaVu Sans, Arial, sans-serif" font-size="16" fill="#475569">Документационная диаграмма: русские пояснения, аккуратное выравнивание и читаемые подписи.</text>
-  <rect x="70" y="140" width="455" height="74" rx="18" fill="#DBEAFE" stroke="#2563EB" stroke-width="1.3"/>
-  <text x="94" y="184" font-family="DejaVu Sans, Arial, sans-serif" font-size="18" font-weight="600" fill="#0F172A">лог конфигурации без секретов</text>
-  <path d="M 525 177 C 560 177, 555 177, 590 177" fill="none" stroke="#64748B" stroke-width="2" marker-end="url(#arrow)"/>
-  <rect x="590" y="140" width="455" height="74" rx="18" fill="#E0F2FE" stroke="#2563EB" stroke-width="1.3"/>
-  <text x="614" y="184" font-family="DejaVu Sans, Arial, sans-serif" font-size="18" font-weight="600" fill="#0F172A">пересборка кэша</text>
-  <path d="M 817 214 C 817 250, 297 250, 297 284" fill="none" stroke="#64748B" stroke-width="2" marker-end="url(#arrow)"/>
-  <rect x="70" y="284" width="455" height="74" rx="18" fill="#DCFCE7" stroke="#2563EB" stroke-width="1.3"/>
-  <text x="94" y="328" font-family="DejaVu Sans, Arial, sans-serif" font-size="18" font-weight="600" fill="#0F172A">источник запуска</text>
-  <path d="M 525 321 C 560 321, 555 321, 590 321" fill="none" stroke="#64748B" stroke-width="2" marker-end="url(#arrow)"/>
-  <rect x="590" y="284" width="455" height="74" rx="18" fill="#FEF3C7" stroke="#2563EB" stroke-width="1.3"/>
-  <text x="614" y="328" font-family="DejaVu Sans, Arial, sans-serif" font-size="18" font-weight="600" fill="#0F172A">fallback и итог цикла</text>
-  <path d="M 817 358 C 817 394, 297 394, 297 428" fill="none" stroke="#64748B" stroke-width="2" marker-end="url(#arrow)"/>
-  <rect x="70" y="428" width="455" height="74" rx="18" fill="#FCE7F3" stroke="#2563EB" stroke-width="1.3"/>
-  <text x="94" y="472" font-family="DejaVu Sans, Arial, sans-serif" font-size="18" font-weight="600" fill="#0F172A">понятные причины решений в журнале</text>
-  <rect x="590" y="428" width="455" height="74" rx="18" fill="#EDE9FE" stroke="#2563EB" stroke-width="1.3"/>
-  <text x="614" y="462" font-family="DejaVu Sans, Arial, sans-serif" font-size="17" font-weight="600" fill="#0F172A">Итог: прозрачный процесс,</text>
-  <text x="614" y="486" font-family="DejaVu Sans, Arial, sans-serif" font-size="17" font-weight="600" fill="#0F172A">контролируемый fallback и журналируемые решения</text>
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1180" height="580" viewBox="0 0 1180 580">
+  <defs>
+    <marker id="arrow" markerWidth="12" markerHeight="10" refX="10" refY="5" orient="auto" markerUnits="strokeWidth">
+      <path d="M 1 1 L 10 5 L 1 9" fill="none" stroke="#334155" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+    <marker id="triangle" markerWidth="14" markerHeight="12" refX="12" refY="6" orient="auto" markerUnits="strokeWidth">
+      <path d="M 1 6 L 12 1 L 12 11 Z" fill="#F8FAFC" stroke="#334155" stroke-width="1.5"/>
+    </marker>
+    <marker id="green-dot" markerWidth="10" markerHeight="10" refX="5" refY="5" orient="auto">
+      <circle cx="5" cy="5" r="4" fill="#16A34A"/>
+    </marker>
+    <filter id="card-shadow" x="-15%" y="-15%" width="130%" height="130%">
+      <feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="#94A3B8" flood-opacity="0.16"/>
+    </filter>
+  </defs>
+  <rect x="0" y="0" width="1180" height="580" fill="#F8FAFC"/>
+  <text x="590.0" y="34" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="21" font-weight="700" fill="#111827">Наблюдаемость и эксплуатационная проверка</text>
+<rect x="100" y="120" width="160" height="62" rx="8" ry="8" fill="#FFFFFF" stroke="#0369A1" stroke-width="1.5" filter="url(#card-shadow)"/>
+<rect x="100" y="120" width="160" height="28" rx="8" ry="8" fill="#E0F2FE" stroke="#0369A1" stroke-width="1.5"/>
+<rect x="100" y="140" width="160" height="8" fill="#E0F2FE" stroke="none"/>
+<text x="180.0" y="133" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="9" font-weight="400" fill="#6B7280" style=""><tspan x="180.0" dy="0">«log point»</tspan></text>
+<text x="180.0" y="150" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="700" fill="#111827" style=""><tspan x="180.0" dy="0">Старт службы</tspan></text>
+<text x="180.0" y="170" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#4B5563" style=""><tspan x="180.0" dy="0">версия, маркер</tspan></text>
+<rect x="330" y="120" width="160" height="62" rx="8" ry="8" fill="#FFFFFF" stroke="#0369A1" stroke-width="1.5" filter="url(#card-shadow)"/>
+<rect x="330" y="120" width="160" height="28" rx="8" ry="8" fill="#E0F2FE" stroke="#0369A1" stroke-width="1.5"/>
+<rect x="330" y="140" width="160" height="8" fill="#E0F2FE" stroke="none"/>
+<text x="410.0" y="133" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="9" font-weight="400" fill="#6B7280" style=""><tspan x="410.0" dy="0">«log point»</tspan></text>
+<text x="410.0" y="150" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="700" fill="#111827" style=""><tspan x="410.0" dy="0">Конфигурация</tspan></text>
+<text x="410.0" y="170" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#4B5563" style=""><tspan x="410.0" dy="0">без секретов</tspan></text>
+<rect x="560" y="120" width="160" height="62" rx="8" ry="8" fill="#FFFFFF" stroke="#0369A1" stroke-width="1.5" filter="url(#card-shadow)"/>
+<rect x="560" y="120" width="160" height="28" rx="8" ry="8" fill="#E0F2FE" stroke="#0369A1" stroke-width="1.5"/>
+<rect x="560" y="140" width="160" height="8" fill="#E0F2FE" stroke="none"/>
+<text x="640.0" y="133" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="9" font-weight="400" fill="#6B7280" style=""><tspan x="640.0" dy="0">«log point»</tspan></text>
+<text x="640.0" y="150" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="700" fill="#111827" style=""><tspan x="640.0" dy="0">Пересборка кэша</tspan></text>
+<text x="640.0" y="170" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#4B5563" style=""><tspan x="640.0" dy="0">результат по branch</tspan></text>
+<rect x="790" y="120" width="160" height="62" rx="8" ry="8" fill="#FFFFFF" stroke="#0369A1" stroke-width="1.5" filter="url(#card-shadow)"/>
+<rect x="790" y="120" width="160" height="28" rx="8" ry="8" fill="#E0F2FE" stroke="#0369A1" stroke-width="1.5"/>
+<rect x="790" y="140" width="160" height="8" fill="#E0F2FE" stroke="none"/>
+<text x="870.0" y="133" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="9" font-weight="400" fill="#6B7280" style=""><tspan x="870.0" dy="0">«log point»</tspan></text>
+<text x="870.0" y="150" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="700" fill="#111827" style=""><tspan x="870.0" dy="0">Источник запуска</tspan></text>
+<text x="870.0" y="170" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#4B5563" style=""><tspan x="870.0" dy="0">event / polling</tspan></text>
+<rect x="100" y="270" width="160" height="62" rx="8" ry="8" fill="#FFFFFF" stroke="#0369A1" stroke-width="1.5" filter="url(#card-shadow)"/>
+<rect x="100" y="270" width="160" height="28" rx="8" ry="8" fill="#E0F2FE" stroke="#0369A1" stroke-width="1.5"/>
+<rect x="100" y="290" width="160" height="8" fill="#E0F2FE" stroke="none"/>
+<text x="180.0" y="283" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="9" font-weight="400" fill="#6B7280" style=""><tspan x="180.0" dy="0">«log point»</tspan></text>
+<text x="180.0" y="300" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="700" fill="#111827" style=""><tspan x="180.0" dy="0">Выбор услуги</tspan></text>
+<text x="180.0" y="320" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#4B5563" style=""><tspan x="180.0" dy="0">local / med-robot</tspan></text>
+<rect x="330" y="270" width="160" height="62" rx="8" ry="8" fill="#FFFFFF" stroke="#0369A1" stroke-width="1.5" filter="url(#card-shadow)"/>
+<rect x="330" y="270" width="160" height="28" rx="8" ry="8" fill="#E0F2FE" stroke="#0369A1" stroke-width="1.5"/>
+<rect x="330" y="290" width="160" height="8" fill="#E0F2FE" stroke="none"/>
+<text x="410.0" y="283" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="9" font-weight="400" fill="#6B7280" style=""><tspan x="410.0" dy="0">«log point»</tspan></text>
+<text x="410.0" y="300" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="700" fill="#111827" style=""><tspan x="410.0" dy="0">Мутации Orchestra</tspan></text>
+<text x="410.0" y="320" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#4B5563" style=""><tspan x="410.0" dy="0">assign / transfer</tspan></text>
+<rect x="560" y="270" width="160" height="62" rx="8" ry="8" fill="#FFFFFF" stroke="#0369A1" stroke-width="1.5" filter="url(#card-shadow)"/>
+<rect x="560" y="270" width="160" height="28" rx="8" ry="8" fill="#E0F2FE" stroke="#0369A1" stroke-width="1.5"/>
+<rect x="560" y="290" width="160" height="8" fill="#E0F2FE" stroke="none"/>
+<text x="640.0" y="283" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="9" font-weight="400" fill="#6B7280" style=""><tspan x="640.0" dy="0">«log point»</tspan></text>
+<text x="640.0" y="300" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="700" fill="#111827" style=""><tspan x="640.0" dy="0">Итог цикла</tspan></text>
+<text x="640.0" y="320" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#4B5563" style=""><tspan x="640.0" dy="0">processed / skipped</tspan></text>
+<line x1="260" y1="151" x2="330" y2="151" stroke="#334155" stroke-width="1.35" stroke-linecap="round" marker-end="url(#arrow)"/>
+<line x1="490" y1="151" x2="560" y2="151" stroke="#334155" stroke-width="1.35" stroke-linecap="round" marker-end="url(#arrow)"/>
+<line x1="720" y1="151" x2="790" y2="151" stroke="#334155" stroke-width="1.35" stroke-linecap="round" marker-end="url(#arrow)"/>
+<path d="M 950 151 L 950 225 L 180 225 L 180 270" fill="none" stroke="#334155" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<line x1="260" y1="301" x2="330" y2="301" stroke="#334155" stroke-width="1.35" stroke-linecap="round" marker-end="url(#arrow)"/>
+<line x1="490" y1="301" x2="560" y2="301" stroke="#334155" stroke-width="1.35" stroke-linecap="round" marker-end="url(#arrow)"/>
+<rect x="760" y="350" width="235" height="115" rx="6" ry="6" fill="#FFFFFF" stroke="#B45309" stroke-width="1.5" filter="url(#card-shadow)"/>
+<path d="M 973 350 L 995 372 L 973 372 Z" fill="#FEF3C7" stroke="#B45309" stroke-width="1.2"/>
+<rect x="760" y="350" width="235" height="28" rx="6" ry="6" fill="#FEF3C7" stroke="#B45309" stroke-width="1.5"/>
+<rect x="760" y="370" width="235" height="8" fill="#FEF3C7" stroke="none"/>
+<text x="877.5" y="363" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="9" font-weight="400" fill="#6B7280" style=""><tspan x="877.5" dy="0">«artifact»</tspan></text>
+<text x="877.5" y="380" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="700" fill="#111827" style=""><tspan x="877.5" dy="0">Проверить в журнале</tspan></text>
+<text x="877.5" y="402" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#4B5563" style=""><tspan x="877.5" dy="0">branchId</tspan><tspan x="877.5" dy="16">servicePointId</tspan><tspan x="877.5" dy="16">staffId</tspan><tspan x="877.5" dy="16">triggerSource</tspan><tspan x="877.5" dy="16">fallbackReason, targetQueueId</tspan></text>
+<path d="M 720 301 L 760 390" fill="none" stroke="#334155" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<text x="748" y="344" text-anchor="start" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#4B5563" style=""><tspan x="748" dy="0">контекст</tspan></text>
+<rect x="105" y="455" width="570" height="52" rx="7" ry="7" fill="#FEF3C7" stroke="#B45309" stroke-width="1.2" filter="url(#card-shadow)"/>
+<text x="119" y="479" text-anchor="start" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="400" fill="#111827" style=""><tspan x="119" dy="0">По одному циклу должно быть понятно: что запустило обработку, какой врач восстановлен,</tspan><tspan x="119" dy="17">почему выбрана услуга, был ли fallback и какая очередь стала целевой.</tspan></text>
 </svg>

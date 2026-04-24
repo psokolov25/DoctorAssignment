@@ -50,7 +50,7 @@ public class DocumentationAssetsTest {
     for (DiagramAsset diagram : DIAGRAMS) {
       Path file = diagram.plantumlPath();
       String text = new String(Files.readAllBytes(file), StandardCharsets.UTF_8);
-      Assertions.assertTrue(text.contains("DejaVu Sans"), "Не задан читаемый шрифт: " + file);
+      Assertions.assertTrue(text.contains("Segoe UI"), "Не задан актуальный читаемый шрифт: " + file);
       Assertions.assertTrue(text.contains("#F8FAFC"), "Не задан общий фон диаграммы: " + file);
       Assertions.assertTrue(containsCyrillic(text), "Диаграмма должна содержать русские пояснения: " + file);
     }

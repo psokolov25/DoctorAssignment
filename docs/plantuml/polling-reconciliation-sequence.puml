@@ -1,58 +1,105 @@
 @startuml
 title Последовательность плановой reconciliation-обработки
 
+' Единый профиль диаграмм документации Doctor Assistant.
+' Акцент: аккуратная business/UML-нотация, прозрачные подписи стрелок,
+' ровная сетка, короткие технические подписи и читаемый шрифт без засечек.
 skinparam backgroundColor #F8FAFC
 skinparam shadowing false
-skinparam responseMessageBelowArrow true
-skinparam defaultFontName "DejaVu Sans"
-skinparam defaultFontSize 14
+skinparam defaultFontName "Segoe UI"
+skinparam defaultFontSize 13
 skinparam defaultTextAlignment center
-skinparam wrapWidth 260
-skinparam maxMessageSize 230
+skinparam wrapWidth 170
+skinparam maxMessageSize 120
+skinparam linetype ortho
+skinparam ArrowColor #334155
+skinparam ArrowThickness 1.2
+skinparam packageStyle rectangle
+skinparam componentStyle uml2
+skinparam classAttributeIconSize 0
+skinparam handwritten false
+skinparam RoundCorner 6
+skinparam nodesep 38
+skinparam ranksep 46
+skinparam package {
+  BackgroundColor #FFFFFF
+  BorderColor #7C3AED
+  FontColor #111827
+}
+skinparam component {
+  BackgroundColor #E0F2FE
+  BorderColor #0369A1
+  FontColor #111827
+}
+skinparam interface {
+  BackgroundColor #F8FAFC
+  BorderColor #64748B
+  FontColor #111827
+}
+skinparam database {
+  BackgroundColor #DCFCE7
+  BorderColor #15803D
+  FontColor #111827
+}
+skinparam artifact {
+  BackgroundColor #FEF3C7
+  BorderColor #B45309
+  FontColor #111827
+}
+skinparam node {
+  BackgroundColor #FFFFFF
+  BorderColor #64748B
+  FontColor #111827
+}
+skinparam note {
+  BackgroundColor #FEF3C7
+  BorderColor #B45309
+  FontColor #111827
+}
+skinparam actor {
+  BorderColor #475569
+  FontColor #111827
+}
 skinparam sequence {
   ArrowColor #334155
-  ArrowThickness 1.3
-  LifeLineBorderColor #94A3B8
-  LifeLineBackgroundColor #E2E8F0
+  ArrowThickness 1.2
+  LifeLineBorderColor #CBD5E1
+  LifeLineBackgroundColor transparent
   ParticipantBackgroundColor #E0F2FE
-  ParticipantBorderColor #0284C7
-  ParticipantFontColor #0F172A
+  ParticipantBorderColor #0369A1
+  ParticipantFontColor #111827
+  GroupBorderColor #94A3B8
+  GroupBackgroundColor transparent
+  GroupFontColor #334155
+  BoxBackgroundColor transparent
+  BoxBorderColor #CBD5E1
 }
-skinparam NoteBackgroundColor #DCFCE7
-skinparam NoteBorderColor #16A34A
+skinparam responseMessageBelowArrow true
 
-autonumber
-participant "Планировщик Micronaut\n`@Scheduled`" as Scheduler
-participant "Периодическая сверка\n`PollingReconciliationJob`" as Polling
-participant "Настройки назначения\n`AssignmentProperties`" as Props
-participant "Контейнер кэша\n`OrchestraDataCacheContainer`" as Container
-participant "Кэш отделения\n`BranchAssignmentCache`" as Cache
-participant "Цикл назначения\n`AutonomousMedicalExamAssignmentService`" as Cycle
-participant "Защита от конкуренции\n`BranchLockManager`" as Lock
+hide footbox
 
-Scheduler -> Polling : запуск по cron
-Polling -> Props : проверить `assignment.enabled` и `polling-enabled`
-alt расписание выключено
-  Polling --> Scheduler : завершить без обработки
-else расписание включено
-  Polling -> Container : получить все актуальные кэши отделений
-  Container --> Polling : набор `BranchAssignmentCache`
-  loop каждое рабочее место с активным врачом
-    Polling -> Cache : прочитать runtime-состояние service point
-    Cache --> Polling : branch, servicePoint, staff, workProfile
-    Polling -> Lock : занять branch на время обработки
-    alt branch свободен
-      Polling -> Cycle : запустить цикл с источником `POLLING`
-      Cycle --> Polling : количество обработанных визитов
-      Polling -> Lock : освободить branch
-    else branch уже обрабатывается событием
-      Polling --> Scheduler : пропустить дубль без ошибки
-    end
+participant "@Scheduled" as T
+participant "Polling\njob" as J
+participant "Assignment\nproperties" as P
+participant "Cache\ncontainer" as C
+participant "Branch\nlock" as L
+participant "Assignment\ncycle" as A
+T -> J : cron
+J -> P : enabled + polling
+P --> J : effective flags
+opt расписание включено
+  J -> C : актуальные кэши
+  C --> J : BranchAssignmentCache[]
+  loop активное рабочее место
+    J -> L : занять branch
+    L --> J : branch свободен
+    J -> A : TriggerSource=POLLING
+    A --> J : processed / skipped
+    J -> L : освободить branch
   end
 end
-
-note over Polling,Cycle
-  Reconciliation не заменяет событийную обработку.
-  Это страховка от потерянных событий, сетевых разрывов и позднего появления визитов.
+note over J,A
+  Reconciliation закрывает потерянные события, сетевые разрывы
+  и позднее появление визитов в очереди.
 end note
 @enduml

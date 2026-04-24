@@ -1,25 +1,94 @@
-@startmindmap
-skinparam backgroundColor #F8FAFC
-skinparam defaultFontName "DejaVu Sans"
-skinparam shadowing false
+@startuml
 title Карта режимов запуска обработки
-* Режимы запуска обработки
-** Событийный режим
-*** websocket.enabled=true
-*** assignment.polling-enabled=false
-*** минимальная задержка реакции
-** Регламентный режим
-*** websocket.enabled=false
-*** assignment.polling-enabled=true
-*** обработка по cron
-** Смешанный режим
-*** websocket.enabled=true
-*** assignment.polling-enabled=true
-*** события плюс страховочная сверка
-** Режим без робота
-*** application.med-robot.enabled=false
-*** используется старый локальный выбор
-** Режим с роботом
-*** application.med-robot.enabled=true
-*** робот выбирает услугу и очередь
-@endmindmap
+
+' Единый профиль диаграмм документации Doctor Assistant.
+' Акцент: аккуратная business/UML-нотация, прозрачные подписи стрелок,
+' ровная сетка, короткие технические подписи и читаемый шрифт без засечек.
+skinparam backgroundColor #F8FAFC
+skinparam shadowing false
+skinparam defaultFontName "Segoe UI"
+skinparam defaultFontSize 13
+skinparam defaultTextAlignment center
+skinparam wrapWidth 170
+skinparam maxMessageSize 120
+skinparam linetype ortho
+skinparam ArrowColor #334155
+skinparam ArrowThickness 1.2
+skinparam packageStyle rectangle
+skinparam componentStyle uml2
+skinparam classAttributeIconSize 0
+skinparam handwritten false
+skinparam RoundCorner 6
+skinparam nodesep 38
+skinparam ranksep 46
+skinparam package {
+  BackgroundColor #FFFFFF
+  BorderColor #7C3AED
+  FontColor #111827
+}
+skinparam component {
+  BackgroundColor #E0F2FE
+  BorderColor #0369A1
+  FontColor #111827
+}
+skinparam interface {
+  BackgroundColor #F8FAFC
+  BorderColor #64748B
+  FontColor #111827
+}
+skinparam database {
+  BackgroundColor #DCFCE7
+  BorderColor #15803D
+  FontColor #111827
+}
+skinparam artifact {
+  BackgroundColor #FEF3C7
+  BorderColor #B45309
+  FontColor #111827
+}
+skinparam node {
+  BackgroundColor #FFFFFF
+  BorderColor #64748B
+  FontColor #111827
+}
+skinparam note {
+  BackgroundColor #FEF3C7
+  BorderColor #B45309
+  FontColor #111827
+}
+skinparam actor {
+  BorderColor #475569
+  FontColor #111827
+}
+skinparam sequence {
+  ArrowColor #334155
+  ArrowThickness 1.2
+  LifeLineBorderColor #CBD5E1
+  LifeLineBackgroundColor transparent
+  ParticipantBackgroundColor #E0F2FE
+  ParticipantBorderColor #0369A1
+  ParticipantFontColor #111827
+  GroupBorderColor #94A3B8
+  GroupBackgroundColor transparent
+  GroupFontColor #334155
+  BoxBackgroundColor transparent
+  BoxBorderColor #CBD5E1
+}
+skinparam responseMessageBelowArrow true
+
+left to right direction
+package "application.yml\nкомбинация websocket, polling и med-robot" {
+  component "Событийный режим\nwebsocket=true\npolling=false" <<mode>> as eventMode
+  component "Регламентный режим\nwebsocket=false\npolling=true" <<mode>> as pollMode
+  component "Смешанный режим\nwebsocket=true\npolling=true" <<mode>> as mixed
+  component "Режим без робота\nmed-robot=false\nлокальный выбор" <<mode>> as noRobot
+  component "Режим с роботом\nmed-robot=true\nfallback enabled" <<mode>> as robotMode
+}
+eventMode ..> mixed : страховка
+pollMode ..> mixed : быстрый старт
+robotMode ..> noRobot : fallback
+note bottom
+  Для промышленной эксплуатации обычно включают смешанный режим:
+  websocket ускоряет реакцию, polling закрывает потери событий.
+end note
+@enduml

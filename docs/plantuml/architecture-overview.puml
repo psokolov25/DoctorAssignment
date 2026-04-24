@@ -1,83 +1,109 @@
 @startuml
-' Диаграмма держится в русскоязычном виде: программные имена оставлены только там,
-' где они помогают быстро сопоставить документацию с исходным кодом.
 title Общая архитектура Doctor Assistant и med-robot
 
+' Единый профиль диаграмм документации Doctor Assistant.
+' Акцент: аккуратная business/UML-нотация, прозрачные подписи стрелок,
+' ровная сетка, короткие технические подписи и читаемый шрифт без засечек.
 skinparam backgroundColor #F8FAFC
 skinparam shadowing false
-skinparam componentStyle rectangle
-skinparam defaultFontName "DejaVu Sans"
-skinparam defaultFontSize 14
+skinparam defaultFontName "Segoe UI"
+skinparam defaultFontSize 13
 skinparam defaultTextAlignment center
-skinparam wrapWidth 260
-skinparam maxMessageSize 220
+skinparam wrapWidth 170
+skinparam maxMessageSize 120
+skinparam linetype ortho
 skinparam ArrowColor #334155
-skinparam ArrowThickness 1.4
+skinparam ArrowThickness 1.2
+skinparam packageStyle rectangle
+skinparam componentStyle uml2
+skinparam classAttributeIconSize 0
+skinparam handwritten false
+skinparam RoundCorner 6
+skinparam nodesep 38
+skinparam ranksep 46
 skinparam package {
   BackgroundColor #FFFFFF
-  BorderColor #CBD5E1
-  FontColor #0F172A
+  BorderColor #7C3AED
+  FontColor #111827
 }
 skinparam component {
   BackgroundColor #E0F2FE
-  BorderColor #0284C7
-  FontColor #0F172A
+  BorderColor #0369A1
+  FontColor #111827
+}
+skinparam interface {
+  BackgroundColor #F8FAFC
+  BorderColor #64748B
+  FontColor #111827
 }
 skinparam database {
   BackgroundColor #DCFCE7
-  BorderColor #16A34A
-  FontColor #0F172A
+  BorderColor #15803D
+  FontColor #111827
 }
-skinparam cloud {
-  BackgroundColor #F1F5F9
+skinparam artifact {
+  BackgroundColor #FEF3C7
+  BorderColor #B45309
+  FontColor #111827
+}
+skinparam node {
+  BackgroundColor #FFFFFF
   BorderColor #64748B
-  FontColor #0F172A
+  FontColor #111827
+}
+skinparam note {
+  BackgroundColor #FEF3C7
+  BorderColor #B45309
+  FontColor #111827
 }
 skinparam actor {
   BorderColor #475569
-  FontColor #0F172A
+  FontColor #111827
 }
-
-actor "Врач" as Doctor
-
-cloud "QMatic Orchestra 6" as Orchestra {
-  component "События рабочих мест\nSockJS / STOMP\n`USER_SERVICE_POINT_SESSION_START`\n`SET_WORK_PROFILE`" as Events
-  component "REST API Orchestra\nсправочники, визиты, очереди" as OrchestraRest
+skinparam sequence {
+  ArrowColor #334155
+  ArrowThickness 1.2
+  LifeLineBorderColor #CBD5E1
+  LifeLineBackgroundColor transparent
+  ParticipantBackgroundColor #E0F2FE
+  ParticipantBorderColor #0369A1
+  ParticipantFontColor #111827
+  GroupBorderColor #94A3B8
+  GroupBackgroundColor transparent
+  GroupFontColor #334155
+  BoxBackgroundColor transparent
+  BoxBorderColor #CBD5E1
 }
+skinparam responseMessageBelowArrow true
 
-package "Doctor Assistant\n`med-doctor-assignment-service`" as DoctorAssistant {
-  component "Прием событий\n`WebSocketService`\n`StompSessionHandlerImpl`" as WsClient
-  component "Нормализация и корреляция\n`DoctorAssignmentEventHandler`" as Handler
-  component "Доменный цикл назначения\n`AutonomousMedicalExamAssignmentService`" as Assignment
-  component "Выбор услуги\nлокальный алгоритм + med-robot\n`MedRobotAwareDoctorServiceSelectionService`" as Selector
-  component "Выполнение мутаций визита\n`ConfigurableVisitWorkflowGateway`" as Workflow
-  component "Периодическая сверка\n`PollingReconciliationJob`" as Polling
-  database "Локальный кэш отделения\n`BranchAssignmentCache`" as Cache
-  component "Пересборка кэша\n`BranchCacheUpdater`" as CacheUpdater
+left to right direction
+
+node "QMatic Orchestra 6\nREST API справочников\nSockJS/STOMP события" <<external system>> as orchestra
+node "med-robot\nREST API выбора услуги и очереди" <<external service>> as robot
+artifact "Файловые журналы\nmed-robot.log\nhttp.log" as logs
+package "Doctor Assistant / service\nmed-doctor-assignment-service" as svc {
+  component "WebSocketService\nприем событий" as ws
+  component "EventHandler\nкорреляция сессии" as ev
+  component "PollingJob\nстрахующая сверка" as poll
+  component "AssignmentService\nдоменный цикл" as assign
+  database "BranchCache\nлокальный срез" as cache
+  component "SelectionService\nвыбор услуги" as sel
+  component "VisitWorkflowGateway\nassign / transfer" as flow
 }
+orchestra ..> ws : события
+ws ..> ev : event
+ev ..> assign : USER_SESSION_READY
+poll ..> assign : POLLING
+assign ..> cache : читает
+assign ..> sel : выбор
+sel ..> robot : POST /optimalqueue
+sel ..> assign : решение
+assign ..> flow : мутации
+flow ..> orchestra : REST Orchestra
+flow ..> logs : диагностика
 
-cloud "med-robot" as MedRobot {
-  component "Оптимальная услуга и очередь\n`POST /prorobot/optimalqueue/{branchId}/service/{serviceId}`" as RobotApi
-}
-
-Doctor --> Orchestra : входит на рабочее место
-Events --> WsClient : события посадки врача
-WsClient --> Handler : нормализованное событие
-Handler --> Assignment : контекст врача
-Polling --> Assignment : плановый запуск при включенном расписании
-Assignment --> Cache : читает справочники и runtime-состояние
-Assignment --> Selector : выбирает услугу и очередь
-Selector --> RobotApi : опционально уточняет решение
-Selector --> Assignment : итоговая пара `serviceId` / `queueId`
-Assignment --> Workflow : назначить услугу и перевести визит
-Workflow --> OrchestraRest : mutating REST-вызовы
-CacheUpdater --> OrchestraRest : читает справочники
-CacheUpdater --> Cache : атомарно заменяет кэш
-
-legend right
-  <b>Принцип:</b> события запускают цикл назначения,
-  но решение принимается по локальному кэшу.
-  med-robot подключается только при включенном
-  `application.med-robot.enabled`.
-endlegend
+note bottom of svc
+  События и расписание запускают один доменный цикл;
+  решение принимается по локальному кэшу.
+end note
 @enduml

@@ -1,71 +1,81 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="760" viewBox="0 0 1280 760" role="img" aria-label="Подробная последовательность выбора через med-robot">
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1180" height="565" viewBox="0 0 1180 565">
   <defs>
-    <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
-      <path d="M0,0 L0,6 L9,3 z" fill="#334155"/>
+    <marker id="arrow" markerWidth="12" markerHeight="10" refX="10" refY="5" orient="auto" markerUnits="strokeWidth">
+      <path d="M 1 1 L 10 5 L 1 9" fill="none" stroke="#334155" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
     </marker>
-    <filter id="shadow" x="-10%" y="-10%" width="120%" height="130%">
-      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#94A3B8" flood-opacity="0.25"/>
+    <marker id="triangle" markerWidth="14" markerHeight="12" refX="12" refY="6" orient="auto" markerUnits="strokeWidth">
+      <path d="M 1 6 L 12 1 L 12 11 Z" fill="#F8FAFC" stroke="#334155" stroke-width="1.5"/>
+    </marker>
+    <marker id="green-dot" markerWidth="10" markerHeight="10" refX="5" refY="5" orient="auto">
+      <circle cx="5" cy="5" r="4" fill="#16A34A"/>
+    </marker>
+    <filter id="card-shadow" x="-15%" y="-15%" width="130%" height="130%">
+      <feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="#94A3B8" flood-opacity="0.16"/>
     </filter>
   </defs>
-  <rect width="100%" height="100%" fill="#F8FAFC"/>
-  <text x="640.0" y="42" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="24" font-weight="700" fill="#0F172A">Подробная последовательность выбора через med-robot</text>
-  <rect x="25" y="78" width="150" height="58" rx="16" fill="#E0F2FE" stroke="#0284C7" stroke-width="1.5" filter="url(#shadow)"/>
-  <text x="100.0" y="102" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="15" font-weight="700" fill="#0F172A">Цикл</text>
-  <text x="100.0" y="120" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="15" font-weight="700" fill="#0F172A">назначения</text>
-  <line x1="100" y1="136" x2="100" y2="700" stroke="#94A3B8" stroke-dasharray="6 6" stroke-width="1.3"/>
-  <rect x="215" y="78" width="150" height="58" rx="16" fill="#E0F2FE" stroke="#0284C7" stroke-width="1.5" filter="url(#shadow)"/>
-  <text x="290.0" y="102" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="15" font-weight="700" fill="#0F172A">Маршрут</text>
-  <text x="290.0" y="120" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="15" font-weight="700" fill="#0F172A">визита</text>
-  <line x1="290" y1="136" x2="290" y2="700" stroke="#94A3B8" stroke-dasharray="6 6" stroke-width="1.3"/>
-  <rect x="405" y="78" width="150" height="58" rx="16" fill="#E0F2FE" stroke="#0284C7" stroke-width="1.5" filter="url(#shadow)"/>
-  <text x="480.0" y="102" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="15" font-weight="700" fill="#0F172A">Локальный</text>
-  <text x="480.0" y="120" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="15" font-weight="700" fill="#0F172A">подбор</text>
-  <line x1="480" y1="136" x2="480" y2="700" stroke="#94A3B8" stroke-dasharray="6 6" stroke-width="1.3"/>
-  <rect x="595" y="78" width="150" height="58" rx="16" fill="#E0F2FE" stroke="#0284C7" stroke-width="1.5" filter="url(#shadow)"/>
-  <text x="670.0" y="102" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="15" font-weight="700" fill="#0F172A">Выбор через</text>
-  <text x="670.0" y="120" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="15" font-weight="700" fill="#0F172A">med-robot</text>
-  <line x1="670" y1="136" x2="670" y2="700" stroke="#94A3B8" stroke-dasharray="6 6" stroke-width="1.3"/>
-  <rect x="785" y="78" width="150" height="58" rx="16" fill="#E0F2FE" stroke="#0284C7" stroke-width="1.5" filter="url(#shadow)"/>
-  <text x="860.0" y="102" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="15" font-weight="700" fill="#0F172A">REST-шлюз</text>
-  <line x1="860" y1="136" x2="860" y2="700" stroke="#94A3B8" stroke-dasharray="6 6" stroke-width="1.3"/>
-  <rect x="1005" y="78" width="150" height="58" rx="16" fill="#E0F2FE" stroke="#0284C7" stroke-width="1.5" filter="url(#shadow)"/>
-  <text x="1080.0" y="102" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="15" font-weight="700" fill="#0F172A">med-robot</text>
-  <line x1="1080" y1="136" x2="1080" y2="700" stroke="#94A3B8" stroke-dasharray="6 6" stroke-width="1.3"/>
-  <line x1="100" y1="170" x2="290" y2="170" stroke="#334155" stroke-width="1.35" marker-end="url(#arrow)"/>
-  <rect x="37.0" y="147" width="316" height="19" rx="7" fill="#F8FAFC" opacity="0.97"/>
-  <text x="195.0" y="161" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="12" fill="#0F172A">получить непройденные услуги</text>
-  <line x1="290" y1="218" x2="100" y2="218" stroke="#334155" stroke-width="1.35" stroke-dasharray="6 6" marker-end="url(#arrow)"/>
-  <rect x="37.0" y="195" width="316" height="19" rx="7" fill="#F8FAFC" opacity="0.97"/>
-  <text x="195.0" y="209" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="12" fill="#0F172A">вернуть VisitDetails</text>
-  <line x1="100" y1="266" x2="670" y2="266" stroke="#334155" stroke-width="1.35" marker-end="url(#arrow)"/>
-  <rect x="227.0" y="243" width="316" height="19" rx="7" fill="#F8FAFC" opacity="0.97"/>
-  <text x="385.0" y="257" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="12" fill="#0F172A">запросить итоговую услугу и очередь</text>
-  <line x1="670" y1="314" x2="480" y2="314" stroke="#334155" stroke-width="1.35" marker-end="url(#arrow)"/>
-  <rect x="417.0" y="291" width="316" height="19" rx="7" fill="#F8FAFC" opacity="0.97"/>
-  <text x="575.0" y="305" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="12" fill="#0F172A">локальный предварительный выбор</text>
-  <line x1="480" y1="362" x2="670" y2="362" stroke="#334155" stroke-width="1.35" stroke-dasharray="6 6" marker-end="url(#arrow)"/>
-  <rect x="417.0" y="339" width="316" height="19" rx="7" fill="#F8FAFC" opacity="0.97"/>
-  <text x="575.0" y="353" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="12" fill="#0F172A">локальная пара serviceId / queueId</text>
-  <line x1="670" y1="410" x2="860" y2="410" stroke="#334155" stroke-width="1.35" marker-end="url(#arrow)"/>
-  <rect x="607.0" y="387" width="316" height="19" rx="7" fill="#F8FAFC" opacity="0.97"/>
-  <text x="765.0" y="401" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="12" fill="#0F172A">branchId + currentService + список услуг</text>
-  <line x1="860" y1="458" x2="1080" y2="458" stroke="#334155" stroke-width="1.35" marker-end="url(#arrow)"/>
-  <rect x="812.0" y="435" width="316" height="19" rx="7" fill="#F8FAFC" opacity="0.97"/>
-  <text x="970.0" y="449" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="12" fill="#0F172A">POST /prorobot/optimalqueue/...</text>
-  <line x1="1080" y1="506" x2="860" y2="506" stroke="#334155" stroke-width="1.35" stroke-dasharray="6 6" marker-end="url(#arrow)"/>
-  <rect x="812.0" y="483" width="316" height="19" rx="7" fill="#F8FAFC" opacity="0.97"/>
-  <text x="970.0" y="497" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="12" fill="#0F172A">{ serviceId, queueId }</text>
-  <line x1="860" y1="554" x2="670" y2="554" stroke="#334155" stroke-width="1.35" stroke-dasharray="6 6" marker-end="url(#arrow)"/>
-  <rect x="607.0" y="531" width="316" height="19" rx="7" fill="#F8FAFC" opacity="0.97"/>
-  <text x="765.0" y="545" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="12" fill="#0F172A">ответ med-robot</text>
-  <line x1="670" y1="602" x2="100" y2="602" stroke="#334155" stroke-width="1.35" stroke-dasharray="6 6" marker-end="url(#arrow)"/>
-  <rect x="227.0" y="579" width="316" height="19" rx="7" fill="#F8FAFC" opacity="0.97"/>
-  <text x="385.0" y="593" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="12" fill="#0F172A">допустимый выбор или fallback</text>
-  <rect x="910" y="625" width="300" height="74" rx="16" fill="#DCFCE7" stroke="#16A34A" stroke-width="1.5" filter="url(#shadow)"/>
-  <text x="1060.0" y="649" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="15" font-weight="700" fill="#0F172A">Проверки ответа</text>
-  <text x="1060.0" y="675" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="13" fill="#334155">услуга есть в маршруте; очередь</text>
-  <rect x="70" y="625" width="330" height="74" rx="16" fill="#FEF3C7" stroke="#F59E0B" stroke-width="1.5" filter="url(#shadow)"/>
-  <text x="235.0" y="649" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="15" font-weight="700" fill="#0F172A">Результат</text>
-  <text x="235.0" y="675" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="13" fill="#334155">выбор med-robot, локальная пара или</text>
+  <rect x="0" y="0" width="1180" height="565" fill="#F8FAFC"/>
+  <text x="590.0" y="34" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="21" font-weight="700" fill="#111827">Подробная последовательность выбора через med-robot</text>
+<rect x="70" y="70" width="110" height="54" rx="8" ry="8" fill="#FFFFFF" stroke="#0369A1" stroke-width="1.5"/>
+<rect x="70" y="70" width="110" height="28" rx="8" ry="8" fill="#E0F2FE" stroke="#0369A1" stroke-width="1.5"/>
+<rect x="70" y="90" width="110" height="8" fill="#E0F2FE" stroke="none"/>
+<text x="125.0" y="88" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="700" fill="#111827" style=""><tspan x="125.0" dy="0">Цикл</tspan></text>
+<text x="125.0" y="109" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#4B5563" style=""><tspan x="125.0" dy="0">назначения</tspan></text>
+<rect x="250" y="70" width="110" height="54" rx="8" ry="8" fill="#FFFFFF" stroke="#0369A1" stroke-width="1.5"/>
+<rect x="250" y="70" width="110" height="28" rx="8" ry="8" fill="#E0F2FE" stroke="#0369A1" stroke-width="1.5"/>
+<rect x="250" y="90" width="110" height="8" fill="#E0F2FE" stroke="none"/>
+<text x="305.0" y="88" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="700" fill="#111827" style=""><tspan x="305.0" dy="0">Route</tspan></text>
+<text x="305.0" y="109" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#4B5563" style=""><tspan x="305.0" dy="0">analyzer</tspan></text>
+<rect x="430" y="70" width="110" height="54" rx="8" ry="8" fill="#FFFFFF" stroke="#0369A1" stroke-width="1.5"/>
+<rect x="430" y="70" width="110" height="28" rx="8" ry="8" fill="#E0F2FE" stroke="#0369A1" stroke-width="1.5"/>
+<rect x="430" y="90" width="110" height="8" fill="#E0F2FE" stroke="none"/>
+<text x="485.0" y="88" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="700" fill="#111827" style=""><tspan x="485.0" dy="0">Локальный</tspan></text>
+<text x="485.0" y="109" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#4B5563" style=""><tspan x="485.0" dy="0">подбор</tspan></text>
+<rect x="610" y="70" width="110" height="54" rx="8" ry="8" fill="#FFFFFF" stroke="#0369A1" stroke-width="1.5"/>
+<rect x="610" y="70" width="110" height="28" rx="8" ry="8" fill="#E0F2FE" stroke="#0369A1" stroke-width="1.5"/>
+<rect x="610" y="90" width="110" height="8" fill="#E0F2FE" stroke="none"/>
+<text x="665.0" y="88" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="700" fill="#111827" style=""><tspan x="665.0" dy="0">Robot-aware</tspan></text>
+<text x="665.0" y="109" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#4B5563" style=""><tspan x="665.0" dy="0">selection</tspan></text>
+<rect x="790" y="70" width="110" height="54" rx="8" ry="8" fill="#FFFFFF" stroke="#0369A1" stroke-width="1.5"/>
+<rect x="790" y="70" width="110" height="28" rx="8" ry="8" fill="#E0F2FE" stroke="#0369A1" stroke-width="1.5"/>
+<rect x="790" y="90" width="110" height="8" fill="#E0F2FE" stroke="none"/>
+<text x="845.0" y="88" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="700" fill="#111827" style=""><tspan x="845.0" dy="0">med-robot</tspan></text>
+<text x="845.0" y="109" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#4B5563" style=""><tspan x="845.0" dy="0">REST</tspan></text>
+<rect x="970" y="70" width="110" height="54" rx="8" ry="8" fill="#FFFFFF" stroke="#0369A1" stroke-width="1.5"/>
+<rect x="970" y="70" width="110" height="28" rx="8" ry="8" fill="#E0F2FE" stroke="#0369A1" stroke-width="1.5"/>
+<rect x="970" y="90" width="110" height="8" fill="#E0F2FE" stroke="none"/>
+<text x="1025.0" y="88" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="700" fill="#111827" style=""><tspan x="1025.0" dy="0">Валидация</tspan></text>
+<text x="1025.0" y="109" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#4B5563" style=""><tspan x="1025.0" dy="0">ответа</tspan></text>
+<line x1="125.0" y1="125" x2="125.0" y2="455" stroke="#CBD5E1" stroke-width="1.2" stroke-linecap="round" stroke-dasharray="6 5"/>
+<line x1="305.0" y1="125" x2="305.0" y2="455" stroke="#CBD5E1" stroke-width="1.2" stroke-linecap="round" stroke-dasharray="6 5"/>
+<line x1="485.0" y1="125" x2="485.0" y2="455" stroke="#CBD5E1" stroke-width="1.2" stroke-linecap="round" stroke-dasharray="6 5"/>
+<line x1="665.0" y1="125" x2="665.0" y2="455" stroke="#CBD5E1" stroke-width="1.2" stroke-linecap="round" stroke-dasharray="6 5"/>
+<line x1="845.0" y1="125" x2="845.0" y2="455" stroke="#CBD5E1" stroke-width="1.2" stroke-linecap="round" stroke-dasharray="6 5"/>
+<line x1="1025.0" y1="125" x2="1025.0" y2="455" stroke="#CBD5E1" stroke-width="1.2" stroke-linecap="round" stroke-dasharray="6 5"/>
+<line x1="125.0" y1="155" x2="305.0" y2="155" stroke="#334155" stroke-width="1.35" stroke-linecap="round" marker-end="url(#arrow)"/>
+<text x="215.0" y="148" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" font-weight="400" fill="#4B5563" style=""><tspan x="215.0" dy="0">получить непройденные услуги</tspan></text>
+<line x1="305.0" y1="185" x2="125.0" y2="185" stroke="#334155" stroke-width="1.35" stroke-linecap="round" stroke-dasharray="6 5" marker-end="url(#arrow)"/>
+<text x="215.0" y="178" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" font-weight="400" fill="#4B5563" style=""><tspan x="215.0" dy="0">VisitDetails</tspan></text>
+<line x1="125.0" y1="225" x2="665.0" y2="225" stroke="#334155" stroke-width="1.35" stroke-linecap="round" marker-end="url(#arrow)"/>
+<text x="395.0" y="218" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" font-weight="400" fill="#4B5563" style=""><tspan x="395.0" dy="0">итоговый выбор</tspan></text>
+<line x1="665.0" y1="265" x2="485.0" y2="265" stroke="#334155" stroke-width="1.35" stroke-linecap="round" marker-end="url(#arrow)"/>
+<text x="575.0" y="258" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" font-weight="400" fill="#4B5563" style=""><tspan x="575.0" dy="0">локальный выбор</tspan></text>
+<line x1="485.0" y1="295" x2="665.0" y2="295" stroke="#334155" stroke-width="1.35" stroke-linecap="round" stroke-dasharray="6 5" marker-end="url(#arrow)"/>
+<text x="575.0" y="288" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" font-weight="400" fill="#4B5563" style=""><tspan x="575.0" dy="0">serviceId + queueId</tspan></text>
+<rect x="600" y="318" width="440" height="95" rx="4" ry="4" fill="none" stroke="#CBD5E1" stroke-width="1.1"/>
+<text x="612" y="334" text-anchor="start" font-family="Segoe UI, Arial, sans-serif" font-size="10" font-weight="600" fill="#4B5563" style=""><tspan x="612" dy="0">opt: med-robot включен</tspan></text>
+<line x1="665.0" y1="355" x2="845.0" y2="355" stroke="#334155" stroke-width="1.35" stroke-linecap="round" marker-end="url(#arrow)"/>
+<text x="755.0" y="348" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" font-weight="400" fill="#4B5563" style=""><tspan x="755.0" dy="0">POST /optimalqueue</tspan></text>
+<line x1="845.0" y1="385" x2="665.0" y2="385" stroke="#334155" stroke-width="1.35" stroke-linecap="round" stroke-dasharray="6 5" marker-end="url(#arrow)"/>
+<text x="755.0" y="378" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" font-weight="400" fill="#4B5563" style=""><tspan x="755.0" dy="0">serviceId + queueId</tspan></text>
+<line x1="665.0" y1="415" x2="1025.0" y2="415" stroke="#334155" stroke-width="1.35" stroke-linecap="round" marker-end="url(#arrow)"/>
+<text x="845.0" y="408" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" font-weight="400" fill="#4B5563" style=""><tspan x="845.0" dy="0">проверить маршрут, очередь и профиль</tspan></text>
+<line x1="1025.0" y1="445" x2="665.0" y2="445" stroke="#334155" stroke-width="1.35" stroke-linecap="round" stroke-dasharray="6 5" marker-end="url(#arrow)"/>
+<text x="845.0" y="438" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" font-weight="400" fill="#4B5563" style=""><tspan x="845.0" dy="0">принято / fallback</tspan></text>
+<line x1="665.0" y1="485" x2="125.0" y2="485" stroke="#334155" stroke-width="1.35" stroke-linecap="round" stroke-dasharray="6 5" marker-end="url(#arrow)"/>
+<text x="395.0" y="478" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" font-weight="400" fill="#4B5563" style=""><tspan x="395.0" dy="0">выбранная пара или пусто</tspan></text>
+<rect x="90" y="500" width="440" height="38" rx="7" ry="7" fill="#FEF3C7" stroke="#B45309" stroke-width="1.2" filter="url(#card-shadow)"/>
+<text x="104" y="524" text-anchor="start" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="400" fill="#111827" style=""><tspan x="104" dy="0">Endpoint сокращен до имени метода; полный контракт остается в тексте документа.</tspan></text>
+<rect x="660" y="500" width="420" height="38" rx="7" ry="7" fill="#FEF3C7" stroke="#B45309" stroke-width="1.2" filter="url(#card-shadow)"/>
+<text x="674" y="524" text-anchor="start" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="400" fill="#111827" style=""><tspan x="674" dy="0">Fallback: ошибка запроса, неизвестная очередь или недоступная услуга.</tspan></text>
 </svg>

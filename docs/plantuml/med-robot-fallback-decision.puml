@@ -1,39 +1,103 @@
 @startuml
-skinparam backgroundColor #F8FAFC
-skinparam defaultFontName "DejaVu Sans"
-skinparam shadowing false
-skinparam ArrowColor #475569
-skinparam ArrowThickness 1.2
-skinparam activity {
-  BackgroundColor #FFFFFF
-  BorderColor #2563EB
-  FontColor #0F172A
-  StartColor #16A34A
-  EndColor #DC2626
-}
 title Дерево решений при ответе med-robot
+
+' Единый профиль диаграмм документации Doctor Assistant.
+' Акцент: аккуратная business/UML-нотация, прозрачные подписи стрелок,
+' ровная сетка, короткие технические подписи и читаемый шрифт без засечек.
+skinparam backgroundColor #F8FAFC
+skinparam shadowing false
+skinparam defaultFontName "Segoe UI"
+skinparam defaultFontSize 13
+skinparam defaultTextAlignment center
+skinparam wrapWidth 170
+skinparam maxMessageSize 120
+skinparam linetype ortho
+skinparam ArrowColor #334155
+skinparam ArrowThickness 1.2
+skinparam packageStyle rectangle
+skinparam componentStyle uml2
+skinparam classAttributeIconSize 0
+skinparam handwritten false
+skinparam RoundCorner 6
+skinparam nodesep 38
+skinparam ranksep 46
+skinparam package {
+  BackgroundColor #FFFFFF
+  BorderColor #7C3AED
+  FontColor #111827
+}
+skinparam component {
+  BackgroundColor #E0F2FE
+  BorderColor #0369A1
+  FontColor #111827
+}
+skinparam interface {
+  BackgroundColor #F8FAFC
+  BorderColor #64748B
+  FontColor #111827
+}
+skinparam database {
+  BackgroundColor #DCFCE7
+  BorderColor #15803D
+  FontColor #111827
+}
+skinparam artifact {
+  BackgroundColor #FEF3C7
+  BorderColor #B45309
+  FontColor #111827
+}
+skinparam node {
+  BackgroundColor #FFFFFF
+  BorderColor #64748B
+  FontColor #111827
+}
+skinparam note {
+  BackgroundColor #FEF3C7
+  BorderColor #B45309
+  FontColor #111827
+}
+skinparam actor {
+  BorderColor #475569
+  FontColor #111827
+}
+skinparam sequence {
+  ArrowColor #334155
+  ArrowThickness 1.2
+  LifeLineBorderColor #CBD5E1
+  LifeLineBackgroundColor transparent
+  ParticipantBackgroundColor #E0F2FE
+  ParticipantBorderColor #0369A1
+  ParticipantFontColor #111827
+  GroupBorderColor #94A3B8
+  GroupBackgroundColor transparent
+  GroupFontColor #334155
+  BoxBackgroundColor transparent
+  BoxBorderColor #CBD5E1
+}
+skinparam responseMessageBelowArrow true
+
 start
-if (Интеграция с роботом включена?) then (да)
-  :Отправить непройденные serviceId;
-  if (REST-вызов успешен?) then (да)
-    if (serviceId и queueId заполнены?) then (да)
-      if (Услуга есть в маршруте визита?) then (да)
-        if (Очередь известна в кэше?) then (да)
-          :Принять выбор робота;
-        else (нет)
-          :Локальный fallback;
-        endif
+:Локальный выбор
+получен;
+if (med-robot
+включен?) then (да)
+  if (Запрос
+успешен?) then (да)
+    if (serviceId
+в маршруте?) then (да)
+      if (queueId
+известен?) then (да)
+        :Принять результат
+serviceId + queueId;
+        stop
       else (нет)
-        :Локальный fallback;
       endif
     else (нет)
-      :Локальный fallback;
     endif
   else (нет)
-    :Локальный fallback или пустой результат;
   endif
-else (нет)
-  :Только локальный алгоритм;
 endif
+:Fallback
+локальный алгоритм;
 stop
 @enduml

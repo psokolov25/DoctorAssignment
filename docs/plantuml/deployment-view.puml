@@ -1,65 +1,98 @@
 @startuml
 title Схема внедрения и эксплуатации
 
+' Единый профиль диаграмм документации Doctor Assistant.
+' Акцент: аккуратная business/UML-нотация, прозрачные подписи стрелок,
+' ровная сетка, короткие технические подписи и читаемый шрифт без засечек.
 skinparam backgroundColor #F8FAFC
 skinparam shadowing false
-skinparam componentStyle rectangle
-skinparam defaultFontName "DejaVu Sans"
-skinparam defaultFontSize 14
+skinparam defaultFontName "Segoe UI"
+skinparam defaultFontSize 13
 skinparam defaultTextAlignment center
-skinparam wrapWidth 240
+skinparam wrapWidth 170
+skinparam maxMessageSize 120
+skinparam linetype ortho
 skinparam ArrowColor #334155
-skinparam ArrowThickness 1.4
-skinparam node {
+skinparam ArrowThickness 1.2
+skinparam packageStyle rectangle
+skinparam componentStyle uml2
+skinparam classAttributeIconSize 0
+skinparam handwritten false
+skinparam RoundCorner 6
+skinparam nodesep 38
+skinparam ranksep 46
+skinparam package {
   BackgroundColor #FFFFFF
-  BorderColor #CBD5E1
-  FontColor #0F172A
+  BorderColor #7C3AED
+  FontColor #111827
 }
 skinparam component {
   BackgroundColor #E0F2FE
-  BorderColor #0284C7
-  FontColor #0F172A
+  BorderColor #0369A1
+  FontColor #111827
 }
-skinparam cloud {
-  BackgroundColor #F1F5F9
+skinparam interface {
+  BackgroundColor #F8FAFC
   BorderColor #64748B
-  FontColor #0F172A
+  FontColor #111827
 }
 skinparam database {
+  BackgroundColor #DCFCE7
+  BorderColor #15803D
+  FontColor #111827
+}
+skinparam artifact {
   BackgroundColor #FEF3C7
-  BorderColor #F59E0B
-  FontColor #0F172A
+  BorderColor #B45309
+  FontColor #111827
 }
+skinparam node {
+  BackgroundColor #FFFFFF
+  BorderColor #64748B
+  FontColor #111827
+}
+skinparam note {
+  BackgroundColor #FEF3C7
+  BorderColor #B45309
+  FontColor #111827
+}
+skinparam actor {
+  BorderColor #475569
+  FontColor #111827
+}
+skinparam sequence {
+  ArrowColor #334155
+  ArrowThickness 1.2
+  LifeLineBorderColor #CBD5E1
+  LifeLineBackgroundColor transparent
+  ParticipantBackgroundColor #E0F2FE
+  ParticipantBorderColor #0369A1
+  ParticipantFontColor #111827
+  GroupBorderColor #94A3B8
+  GroupBackgroundColor transparent
+  GroupFontColor #334155
+  BoxBackgroundColor transparent
+  BoxBorderColor #CBD5E1
+}
+skinparam responseMessageBelowArrow true
 
-node "Сервер приложения\nWindows или Linux" as Host {
-  node "JVM 8" as Jvm {
-    component "Doctor Assistant\n`med-doctor-assignment-service`\nMicronaut + Netty" as App
+left to right direction
+node "QMatic Orchestra 6\nREST API\nqpevents/events\nSockJS/STOMP" <<node>> as orchestra
+node "Сервер приложения Windows/Linux" as server {
+  node "execution environment: JVM 8" as jvm {
+    artifact "med-doctor-assignment-service\nMicronaut + Netty\nWebSocket client, REST gateways" as app
   }
+  artifact "Файловые логи\nmed-robot.log\nhttp.log" as logs
 }
-
-cloud "QMatic Orchestra 6" as Orchestra {
-  component "REST API\nсправочники и операции над визитами" as Rest
-  component "События рабочих мест\n`qpevents/events`\nSockJS / STOMP" as Events
-}
-
-cloud "med-robot" as Robot {
-  component "REST API выбора\nоптимальной услуги и очереди" as RobotApi
-}
-
-database "Файловые логи\n`med-robot.log`\n`med-robot-http.log`\n`med-robot-busines.log`" as Logs
-actor "DevOps / поддержка" as Ops
-
-App --> Rest : чтение справочников и мутации визита
-App --> Events : подписка на события и heartbeat
-App --> RobotApi : опциональный запрос оптимального решения
-App --> Logs : структурированные диагностические записи
-Ops --> App : настройка, перезапуск, диагностика
-Ops --> Logs : разбор инцидентов
-
-legend right
-  Для отключения med-robot достаточно
-  `application.med-robot.enabled=false`.
-  Для режима только по расписанию выключается websocket
-  и включается `application.assignment.polling-enabled`.
-endlegend
+node "med-robot\nREST API выбора оптимального решения" <<external service>> as robot
+actor "DevOps / поддержка\nнастройка, перезапуск\nразбор инцидентов" as ops
+orchestra ..> app : REST/STOMP
+app ..> robot : опционально
+app ..> logs : пишет
+ops ..> logs : читает логи
+ops ..> app : администрирует
+note bottom of server
+  med-robot отключается флагом application.med-robot.enabled=false;
+  для polling-only выключается websocket.
+end note
 @enduml

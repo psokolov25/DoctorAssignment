@@ -1,6 +1,7 @@
 package com.qsystems.meddoctorassignment;
 
 import com.qsystems.meddoctorassignment.config.AssignmentProperties;
+import com.qsystems.meddoctorassignment.config.MissingRobotServiceAddFailureMode;
 import com.qsystems.meddoctorassignment.model.event.TriggerSource;
 import java.util.HashMap;
 import java.util.Map;
@@ -14,11 +15,23 @@ public class AssignmentPropertiesTest {
         AssignmentProperties properties = new AssignmentProperties();
         properties.setDefaultSourceEntryPointId(11);
 
-        Map<Integer, Integer> mapping = new HashMap<Integer, Integer>();
-        mapping.put(Integer.valueOf(6), Integer.valueOf(21));
+        Map<String, Integer> mapping = new HashMap<String, Integer>();
+        mapping.put("6", Integer.valueOf(21));
         properties.setSourceEntryPointIdByBranch(mapping);
 
         Assertions.assertEquals(Integer.valueOf(21), properties.resolveSourceEntryPointId(6));
+    }
+
+    @Test
+    void resolvesBranchSpecificSourceEntryPointIdFromTrimmedStringKey() {
+        AssignmentProperties properties = new AssignmentProperties();
+        properties.setDefaultSourceEntryPointId(11);
+
+        Map<String, Integer> mapping = new HashMap<String, Integer>();
+        mapping.put(" 1 ", Integer.valueOf(1));
+        properties.setSourceEntryPointIdByBranch(mapping);
+
+        Assertions.assertEquals(Integer.valueOf(1), properties.resolveSourceEntryPointId(1));
     }
 
     @Test
@@ -46,6 +59,8 @@ public class AssignmentPropertiesTest {
         Assertions.assertTrue(properties.isPollingEnabled());
         Assertions.assertEquals(2000L, properties.getUserSessionSettleWindowMs());
         Assertions.assertTrue(properties.isAbortCycleOnForbiddenMutation());
+        Assertions.assertTrue(properties.isAddMissingRobotServiceToVisit());
+        Assertions.assertEquals(MissingRobotServiceAddFailureMode.CONTINUE_WITH_ASSIGN, properties.getAddMissingRobotServiceFailureMode());
         Assertions.assertTrue(properties.isTreatInactiveUserStateAsFailure());
         Assertions.assertTrue(properties.isTreatNoStartedServicePointSessionAsFailure());
         Assertions.assertFalse(properties.getActivation().isEnabled());

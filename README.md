@@ -372,6 +372,7 @@ state machine вокруг посадки врача:
 - `visit-details-path`
 - `visit-by-id-path`
 - `assign-service-path`
+- `add-service-path`
 - `transfer-visit-path`
 
 Это сделано намеренно: код не должен «угадывать» приватные REST-точки Orchestra.
@@ -431,10 +432,17 @@ state machine вокруг посадки врача:
 Управляет опциональной интеграцией с внешним сервисом `med-robot`:
 
 - `enabled=false` — полностью старая схема выбора услуги без обращения к роботу;
-- `enabled=true` — локальный алгоритм выбирает предварительную текущую услугу, затем Doctor Assistant вызывает
-  `POST /prorobot/optimalqueue/{branchId}/service/{serviceId}` и передает JSON-массив id непройденных услуг визита;
-- `fallback-to-local-on-error=true` — при сетевой/HTTP-ошибке med-robot цикл не останавливается, а продолжает работу
-  старым локальным алгоритмом;
+- `enabled=true` — Doctor Assistant вызывает `POST /prorobot/optimalqueue/{branchId}/service/{serviceId}` после локального предварительного выбора; в режиме `TICKET_NUMBER_PLAIN_TEXT` вызов med-robot допускается и без локального совпадения услуги, если можно определить `serviceId` для path;
+- `request-body-mode=UNSERVED_SERVICE_IDS_JSON_ARRAY` — старый режим: `Content-Type: application/json`, тело запроса —
+  JSON-массив id непройденных услуг визита;
+- `request-body-mode=TICKET_NUMBER_PLAIN_TEXT` — новый режим: `Content-Type: text/plain`, тело запроса — строка номера
+  талона визита; этот режим использует номер талона как источник списка непройденных услуг на стороне med-robot и не блокируется отсутствием локального пересечения с маршрутом визита;
+- `plain-text-policy=default` — значение query-параметра `policy` для text/plain REST-точки med-robot;
+- `error-handling-mode=FALLBACK_TO_LOCAL` — при HTTP/сетевой/контрактной ошибке med-robot продолжить текущий визит старым локальным алгоритмом без робота;
+- `error-handling-mode=SKIP_VISIT` — при ошибке med-robot пропустить текущий визит в этом цикле и перейти к следующему визиту очереди;
+- `fallback-to-local-on-error=true/false` — deprecated-алиас старого boolean-свойства; для новых конфигураций используйте `error-handling-mode`;
+- `application.assignment.add-missing-robot-service-to-visit=true` — если med-robot в режиме `TICKET_NUMBER_PLAIN_TEXT` вернул услугу, которой нет в `unservedVisitServices` **и эта услуга не является текущей `currentVisitService`**, Doctor Assistant сначала вызывает Orchestra `POST /rest/entrypoint/branches/{branchId}/visits/{visitId}/services/{serviceId}/`, добавляет услугу в маршрут визита, а затем выполняет обычный `assign-service` и `transfer-visit`. Если med-robot вернул уже текущую услугу визита, дополнительный `add service to visit` не выполняется; сервис сразу идет по `transfer-only` ветке;
+- `application.assignment.add-missing-robot-service-failure-mode=CONTINUE_WITH_ASSIGN` — если Orchestra вернула ошибку на POST добавления отсутствующей услуги, сервис логирует сбой и продолжает assign/transfer; режимы `SKIP_VISIT` и `PROPAGATE_ERROR` позволяют соответственно пропустить визит или пробросить ошибку;
 - `fallback-to-local-on-empty-response=true` — ответ `null/null`, `0/0` или невалидная пара service/queue не блокирует
   назначение, если локальная схема смогла выбрать услугу;
 - `require-known-queue=true` — очередь из ответа med-robot должна быть известна кэш отделения;
@@ -449,13 +457,21 @@ application:
     enabled: true
     url: http://med-robot:8082
     optimal-service-path: /prorobot/optimalqueue/{branchId}/service/{serviceId}
-    fallback-to-local-on-error: true
+    request-body-mode: TICKET_NUMBER_PLAIN_TEXT
+    plain-text-policy: default
+    error-handling-mode: FALLBACK_TO_LOCAL
     fallback-to-local-on-empty-response: true
     require-known-queue: true
   websocket:
     enabled: false
   assignment:
     polling-enabled: true
+    add-missing-robot-service-to-visit: true
+    add-missing-robot-service-failure-mode: CONTINUE_WITH_ASSIGN
+    source-entry-point-id-by-branch:
+      "1": 1
+    experimental-endpoints:
+      add-service-path: /rest/entrypoint/branches/{branchId}/visits/{visitId}/services/{serviceOrigId}/
     polling-cron: "0 */10 * * * ?"
 ```
 

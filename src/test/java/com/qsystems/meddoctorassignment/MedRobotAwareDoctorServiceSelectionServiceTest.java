@@ -5,7 +5,9 @@ import com.qsystems.meddoctorassignment.adapter.medrobot.dto.MedRobotOptimalServ
 import com.qsystems.meddoctorassignment.adapter.orchestra.dto.TinyQueue;
 import com.qsystems.meddoctorassignment.cache.model.BranchAssignmentCache;
 import com.qsystems.meddoctorassignment.config.AssignmentProperties;
+import com.qsystems.meddoctorassignment.config.MedRobotErrorHandlingMode;
 import com.qsystems.meddoctorassignment.config.MedRobotProperties;
+import com.qsystems.meddoctorassignment.config.MedRobotRequestBodyMode;
 import com.qsystems.meddoctorassignment.domain.model.SelectedDoctorService;
 import com.qsystems.meddoctorassignment.domain.model.VisitDetails;
 import com.qsystems.meddoctorassignment.domain.model.VisitUnservedService;
@@ -64,6 +66,114 @@ public class MedRobotAwareDoctorServiceSelectionServiceTest {
   }
 
   @Test
+  void sendsTicketNumberAsPlainTextWhenConfigured() {
+    Fixture fixture = new Fixture();
+    fixture.properties.setEnabled(true);
+    fixture.properties.setRequestBodyMode(MedRobotRequestBodyMode.TICKET_NUMBER_PLAIN_TEXT);
+    fixture.properties.setPlainTextPolicy("priority");
+    fixture.gateway.response = response(302, 902);
+    VisitDetails visit = defaultVisit();
+    visit.setTicketNumber(" A-1001 ");
+
+    Optional<SelectedDoctorService> selected = fixture.select(visit);
+
+    Assertions.assertTrue(selected.isPresent());
+    Assertions.assertEquals(302, selected.get().getServiceId());
+    Assertions.assertEquals(902, selected.get().getTargetQueueId());
+    Assertions.assertEquals(1, fixture.gateway.callCount);
+    Assertions.assertEquals(7, fixture.gateway.lastBranchId);
+    Assertions.assertEquals(301, fixture.gateway.lastCurrentServiceId);
+    Assertions.assertEquals("A-1001", fixture.gateway.lastPlainTextBody);
+    Assertions.assertEquals("priority", fixture.gateway.lastPolicy);
+    Assertions.assertEquals("plain-text", fixture.gateway.lastMode);
+  }
+
+
+  @Test
+  void plainTextModeCallsMedRobotWhenLocalPreselectionIsAbsent() {
+    Fixture fixture = new Fixture();
+    fixture.properties.setEnabled(true);
+    fixture.properties.setRequestBodyMode(MedRobotRequestBodyMode.TICKET_NUMBER_PLAIN_TEXT);
+    fixture.gateway.response = response(302, 902);
+    VisitDetails visit =
+        new VisitDetails(
+            1002L,
+            900,
+            Arrays.asList(
+                new VisitUnservedService(302, null, 1)));
+    visit.setTicketNumber(" Щ010 ");
+
+    Optional<SelectedDoctorService> selected = fixture.select(visit);
+
+    Assertions.assertTrue(selected.isPresent());
+    Assertions.assertEquals(302, selected.get().getServiceId());
+    Assertions.assertEquals(902, selected.get().getTargetQueueId());
+    Assertions.assertEquals(1, fixture.gateway.callCount);
+    Assertions.assertEquals(301, fixture.gateway.lastCurrentServiceId);
+    Assertions.assertEquals("Щ010", fixture.gateway.lastPlainTextBody);
+    Assertions.assertEquals("plain-text", fixture.gateway.lastMode);
+  }
+
+  @Test
+  void plainTextModeUsesVisitCurrentServiceWhenLocalPreselectionIsAbsentAndCurrentServiceIsDoctorAvailable() {
+    Fixture fixture = new Fixture();
+    fixture.properties.setEnabled(true);
+    fixture.properties.setRequestBodyMode(MedRobotRequestBodyMode.TICKET_NUMBER_PLAIN_TEXT);
+    fixture.doctorAvailableServices.add(Integer.valueOf(117));
+    fixture.gateway.response = response(302, 902);
+    VisitDetails visit =
+        new VisitDetails(
+            1003L,
+            900,
+            Arrays.asList(
+                new VisitUnservedService(999, null, 1)));
+    visit.setCurrentServiceId(Integer.valueOf(117));
+    visit.setTicketNumber("Щ011");
+
+    Optional<SelectedDoctorService> selected = fixture.select(visit);
+
+    Assertions.assertTrue(selected.isPresent());
+    Assertions.assertEquals(302, selected.get().getServiceId());
+    Assertions.assertEquals(902, selected.get().getTargetQueueId());
+    Assertions.assertEquals(117, fixture.gateway.lastCurrentServiceId);
+    Assertions.assertEquals("Щ011", fixture.gateway.lastPlainTextBody);
+  }
+
+  @Test
+  void plainTextModeCallsMedRobotWhenVisitHasNoLocalUnservedServices() {
+    Fixture fixture = new Fixture();
+    fixture.properties.setEnabled(true);
+    fixture.properties.setRequestBodyMode(MedRobotRequestBodyMode.TICKET_NUMBER_PLAIN_TEXT);
+    fixture.gateway.response = response(302, 902);
+    VisitDetails visit = new VisitDetails(1004L, 900, new ArrayList<VisitUnservedService>());
+    visit.setTicketNumber("Р004");
+
+    Optional<SelectedDoctorService> selected = fixture.select(visit);
+
+    Assertions.assertTrue(selected.isPresent());
+    Assertions.assertEquals(302, selected.get().getServiceId());
+    Assertions.assertEquals(902, selected.get().getTargetQueueId());
+    Assertions.assertNull(selected.get().getRouteOrder());
+    Assertions.assertEquals(1, fixture.gateway.callCount);
+    Assertions.assertEquals("Р004", fixture.gateway.lastPlainTextBody);
+  }
+
+  @Test
+  void fallsBackToLocalSelectionWhenPlainTextModeHasNoTicketNumberAndFallbackIsEnabled() {
+    Fixture fixture = new Fixture();
+    fixture.properties.setEnabled(true);
+    fixture.properties.setRequestBodyMode(MedRobotRequestBodyMode.TICKET_NUMBER_PLAIN_TEXT);
+    fixture.gateway.response = response(302, 902);
+
+    Optional<SelectedDoctorService> selected = fixture.select(defaultVisit());
+
+    Assertions.assertTrue(selected.isPresent());
+    Assertions.assertEquals(301, selected.get().getServiceId());
+    Assertions.assertEquals(901, selected.get().getTargetQueueId());
+    Assertions.assertEquals(0, fixture.gateway.callCount);
+  }
+
+  @Test
   void fallsBackToLocalSelectionWhenRobotReturnsNullPair() {
     Fixture fixture = new Fixture();
     fixture.properties.setEnabled(true);
@@ -102,7 +212,19 @@ public class MedRobotAwareDoctorServiceSelectionServiceTest {
   }
 
   @Test
-  void returnsEmptyWhenRobotThrowsAndFallbackIsDisabled() {
+  void skipsVisitWhenRobotThrowsAndErrorHandlingModeIsSkipVisit() {
+    Fixture fixture = new Fixture();
+    fixture.properties.setEnabled(true);
+    fixture.properties.setErrorHandlingMode(MedRobotErrorHandlingMode.SKIP_VISIT);
+    fixture.gateway.failure = new IllegalStateException("robot unavailable");
+
+    Optional<SelectedDoctorService> selected = fixture.select(defaultVisit());
+
+    Assertions.assertFalse(selected.isPresent());
+  }
+
+  @Test
+  void fallbackToLocalOnErrorBooleanAliasStillMapsToSkipVisitWhenDisabled() {
     Fixture fixture = new Fixture();
     fixture.properties.setEnabled(true);
     fixture.properties.setFallbackToLocalOnError(false);
@@ -111,6 +233,7 @@ public class MedRobotAwareDoctorServiceSelectionServiceTest {
     Optional<SelectedDoctorService> selected = fixture.select(defaultVisit());
 
     Assertions.assertFalse(selected.isPresent());
+    Assertions.assertEquals(MedRobotErrorHandlingMode.SKIP_VISIT, fixture.properties.getErrorHandlingMode());
   }
 
   @Test
@@ -225,6 +348,9 @@ public class MedRobotAwareDoctorServiceSelectionServiceTest {
     private int lastBranchId;
     private int lastCurrentServiceId;
     private List<Integer> lastUnservedServiceIds = new ArrayList<Integer>();
+    private String lastPlainTextBody;
+    private String lastPolicy;
+    private String lastMode;
 
     @Override
     public MedRobotOptimalServiceResponse selectOptimalService(
@@ -233,6 +359,22 @@ public class MedRobotAwareDoctorServiceSelectionServiceTest {
       lastBranchId = branchId;
       lastCurrentServiceId = currentServiceId;
       lastUnservedServiceIds = new ArrayList<Integer>(unservedServiceIds);
+      lastMode = "json-array";
+      if (failure != null) {
+        throw failure;
+      }
+      return response;
+    }
+
+    @Override
+    public MedRobotOptimalServiceResponse selectOptimalServicePlainText(
+        int branchId, int currentServiceId, String plainTextBody, String policy) {
+      callCount++;
+      lastBranchId = branchId;
+      lastCurrentServiceId = currentServiceId;
+      lastPlainTextBody = plainTextBody;
+      lastPolicy = policy;
+      lastMode = "plain-text";
       if (failure != null) {
         throw failure;
       }

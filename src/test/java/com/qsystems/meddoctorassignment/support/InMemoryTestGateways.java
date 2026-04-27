@@ -15,6 +15,7 @@ import com.qsystems.meddoctorassignment.cache.model.ServicePointRuntimeState;
 import com.qsystems.meddoctorassignment.domain.exception.MutationContextException;
 import com.qsystems.meddoctorassignment.domain.model.VisitDetails;
 import com.qsystems.meddoctorassignment.domain.model.VisitSummary;
+import com.qsystems.meddoctorassignment.domain.model.VisitUnservedService;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -38,10 +39,12 @@ public class InMemoryTestGateways implements OrchestraMetadataGateway, ServicePo
     public final Map<Long, VisitSummary> visitById = new HashMap<Long, VisitSummary>();
     public final Map<String, MedRobotOptimalServiceResponse> medRobotResponses = new HashMap<String, MedRobotOptimalServiceResponse>();
     public final List<String> medRobotRequests = new ArrayList<String>();
+    public final List<String> medRobotPlainTextRequests = new ArrayList<String>();
 
     public boolean medRobotFail;
 
     public final List<String> activationOperations = new ArrayList<String>();
+    public final List<String> addedServiceOperations = new ArrayList<String>();
     public final List<String> assignedOperations = new ArrayList<String>();
     public final List<String> transferredOperations = new ArrayList<String>();
 
@@ -134,6 +137,20 @@ public class InMemoryTestGateways implements OrchestraMetadataGateway, ServicePo
     }
 
     @Override
+    public void addServiceToVisit(int branchId, long visitId, int serviceId) {
+        addedServiceOperations.add(branchId + "|" + visitId + "|" + serviceId);
+        VisitDetails details = visitDetailsById.get(visitId);
+        if (details != null) {
+            List<VisitUnservedService> existing = details.getUnservedServices();
+            List<VisitUnservedService> updated = existing != null
+                    ? new ArrayList<VisitUnservedService>(existing)
+                    : new ArrayList<VisitUnservedService>();
+            updated.add(new VisitUnservedService(Integer.valueOf(serviceId), null, null));
+            details.setUnservedServices(updated);
+        }
+    }
+
+    @Override
     public void assignServiceToVisit(int branchId, long visitId, int serviceId, int staffId, long servicePointId) {
         if (visitId == blockedAssignVisitId) {
             throw new MutationContextException("simulated inactive operator context for visit " + visitId);
@@ -158,6 +175,15 @@ public class InMemoryTestGateways implements OrchestraMetadataGateway, ServicePo
     @Override
     public MedRobotOptimalServiceResponse selectOptimalService(int branchId, int currentServiceId, java.util.Set<Integer> unservedServiceIds) {
         medRobotRequests.add(branchId + "|" + currentServiceId + "|" + new java.util.TreeSet<Integer>(unservedServiceIds));
+        if (medRobotFail) {
+            throw new IllegalStateException("simulated med-robot failure");
+        }
+        return medRobotResponses.get(branchId + "|" + currentServiceId);
+    }
+
+    @Override
+    public MedRobotOptimalServiceResponse selectOptimalServicePlainText(int branchId, int currentServiceId, String plainTextBody, String policy) {
+        medRobotPlainTextRequests.add(branchId + "|" + currentServiceId + "|" + plainTextBody + "|" + policy);
         if (medRobotFail) {
             throw new IllegalStateException("simulated med-robot failure");
         }

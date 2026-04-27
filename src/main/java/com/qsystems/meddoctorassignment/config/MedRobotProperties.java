@@ -28,6 +28,21 @@ public class MedRobotProperties {
   private String optimalServicePath = "/prorobot/optimalqueue/{branchId}/service/{serviceId}";
 
   /**
+   * Формат тела REST-запроса к med-robot.
+   *
+   * <p>По умолчанию используется старый контракт: JSON-массив идентификаторов непройденных
+   * услуг. Для второй REST-точки med-robot с {@code Content-Type: text/plain} нужно указать
+   * {@code TICKET_NUMBER_PLAIN_TEXT}; тогда в тело будет передан номер талона визита.</p>
+   */
+  private MedRobotRequestBodyMode requestBodyMode =
+      MedRobotRequestBodyMode.UNSERVED_SERVICE_IDS_JSON_ARRAY;
+
+  /**
+   * Значение query-параметра policy для text/plain REST-точки med-robot.
+   */
+  private String plainTextPolicy = "default";
+
+  /**
    * Имя пользователя для Basic Auth, если REST API med-robot закрыт авторизацией.
    */
   private String username;
@@ -38,9 +53,14 @@ public class MedRobotProperties {
   private String password;
 
   /**
-   * Возвращаться ли к локальному алгоритму, если med-robot недоступен или вернул ошибку.
+   * Действие при HTTP/сетевой/контрактной ошибке med-robot.
+   *
+   * <p>{@code FALLBACK_TO_LOCAL} продолжает обработку текущего визита по старой локальной
+   * схеме без робота. {@code SKIP_VISIT} пропускает текущий визит в этом цикле и переходит
+   * к следующему визиту очереди.
    */
-  private boolean fallbackToLocalOnError = true;
+  private MedRobotErrorHandlingMode errorHandlingMode =
+      MedRobotErrorHandlingMode.FALLBACK_TO_LOCAL;
 
   /**
    * Возвращаться ли к локальному алгоритму, если med-robot не смог выбрать услугу/очередь.
@@ -85,6 +105,26 @@ public class MedRobotProperties {
     this.optimalServicePath = optimalServicePath;
   }
 
+  public MedRobotRequestBodyMode getRequestBodyMode() {
+    return requestBodyMode;
+  }
+
+  public void setRequestBodyMode(MedRobotRequestBodyMode requestBodyMode) {
+    this.requestBodyMode =
+        requestBodyMode != null ? requestBodyMode : MedRobotRequestBodyMode.UNSERVED_SERVICE_IDS_JSON_ARRAY;
+  }
+
+  public String getPlainTextPolicy() {
+    return plainTextPolicy;
+  }
+
+  public void setPlainTextPolicy(String plainTextPolicy) {
+    this.plainTextPolicy =
+        plainTextPolicy != null && !plainTextPolicy.trim().isEmpty()
+            ? plainTextPolicy.trim()
+            : "default";
+  }
+
   public String getUsername() {
     return username;
   }
@@ -101,12 +141,34 @@ public class MedRobotProperties {
     this.password = password;
   }
 
-  public boolean isFallbackToLocalOnError() {
-    return fallbackToLocalOnError;
+  public MedRobotErrorHandlingMode getErrorHandlingMode() {
+    return errorHandlingMode;
   }
 
+  public void setErrorHandlingMode(MedRobotErrorHandlingMode errorHandlingMode) {
+    this.errorHandlingMode =
+        errorHandlingMode != null ? errorHandlingMode : MedRobotErrorHandlingMode.FALLBACK_TO_LOCAL;
+  }
+
+  /**
+   * Deprecated алиас старого boolean-свойства {@code fallback-to-local-on-error}.
+   *
+   * <p>Оставлен для обратной совместимости конфигураций: {@code true} соответствует
+   * {@code FALLBACK_TO_LOCAL}, {@code false} — {@code SKIP_VISIT}. Для новых конфигураций
+   * используйте {@code error-handling-mode}.
+   */
+  public boolean isFallbackToLocalOnError() {
+    return MedRobotErrorHandlingMode.FALLBACK_TO_LOCAL.equals(errorHandlingMode);
+  }
+
+  /**
+   * Deprecated алиас старого boolean-свойства {@code fallback-to-local-on-error}.
+   */
   public void setFallbackToLocalOnError(boolean fallbackToLocalOnError) {
-    this.fallbackToLocalOnError = fallbackToLocalOnError;
+    this.errorHandlingMode =
+        fallbackToLocalOnError
+            ? MedRobotErrorHandlingMode.FALLBACK_TO_LOCAL
+            : MedRobotErrorHandlingMode.SKIP_VISIT;
   }
 
   public boolean isFallbackToLocalOnEmptyResponse() {

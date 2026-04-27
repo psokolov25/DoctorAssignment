@@ -24,6 +24,12 @@ public interface VisitWorkflowGateway {
     VisitDetails getVisitDetails(int branchId, long visitId);
 
     /**
+     * Добавляет услугу в маршрут визита, если выбранная роботом услуга отсутствует
+     * среди непройденных услуг визита.
+     */
+    void addServiceToVisit(int branchId, long visitId, int serviceId);
+
+    /**
      * Назначает визиту услугу врача.
      */
     void assignServiceToVisit(int branchId, long visitId, int serviceId, int staffId, long servicePointId);

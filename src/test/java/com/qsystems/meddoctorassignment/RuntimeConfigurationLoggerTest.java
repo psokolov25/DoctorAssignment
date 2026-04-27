@@ -1,6 +1,7 @@
 package com.qsystems.meddoctorassignment;
 
 import com.qsystems.meddoctorassignment.config.AssignmentProperties;
+import com.qsystems.meddoctorassignment.config.MissingRobotServiceAddFailureMode;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -16,6 +17,8 @@ public class RuntimeConfigurationLoggerTest {
     Assertions.assertEquals(2000L, properties.getUserSessionSettleWindowMs());
     Assertions.assertFalse(properties.isServicePointOpenTriggerEnabled());
     Assertions.assertTrue(properties.isAbortCycleOnForbiddenMutation());
+    Assertions.assertTrue(properties.isAddMissingRobotServiceToVisit());
+    Assertions.assertEquals(MissingRobotServiceAddFailureMode.CONTINUE_WITH_ASSIGN, properties.getAddMissingRobotServiceFailureMode());
     Assertions.assertTrue(properties.isTreatInactiveUserStateAsFailure());
     Assertions.assertTrue(properties.isTreatNoStartedServicePointSessionAsFailure());
     Assertions.assertTrue(properties.isPollingEnabled());

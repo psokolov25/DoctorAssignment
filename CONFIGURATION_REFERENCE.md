@@ -1,0 +1,251 @@
+# Справочник конфигурации
+
+Документ описывает параметры `application.yml` для **Med Doctor Assignment Service**. Все параметры указываются в дереве `application.*`, если явно не сказано иное.
+
+## Micronaut
+
+| Параметр | Тип | Пример | Назначение |
+|---|---|---|---|
+| `micronaut.server.port` | number | `8085` | HTTP-порт самой службы |
+| `micronaut.http.client.read-timeout` | duration | `60000ms` | таймаут ожидания ответа REST-клиента |
+
+## `application.orchestra`
+
+| Параметр | Тип | Значение по умолчанию / пример | Назначение |
+|---|---|---|---|
+| `url` | URL | `http://192.168.7.135:8080` | базовый URL Orchestra без завершающего слэша |
+| `username` | string | `superadmin` | сервисная учетная запись Orchestra |
+| `password` | string | `***` | пароль сервисной учетной записи |
+| `common-rest-path` | path | `/rest` | общий base path подтвержденных REST endpoint-ов |
+| `configuration-rest-path` | path | `/qsystem/rest/config` | base path configuration API |
+| `branches-for-cache` | string | `"1"`, `"6,7"`, `"*"` | какие отделения прогревать в кэше |
+| `replay-mutation-cookies` | boolean | `false` | переиспользовать ли cookie, полученные на PUT/POST |
+
+### Рекомендации
+
+- Для production не храните пароль в jar. Передавайте его через внешний конфиг или секреты окружения.
+- `replay-mutation-cookies=false` оставлен по умолчанию, потому что в логах Orchestra повтор mutating-cookie приводил к 403.
+- Для GET-запросов cookie могут сохраняться и использоваться отдельно от mutating-запросов.
+
+## `application.med-robot`
+
+| Параметр | Тип | Значения | Назначение |
+|---|---|---|---|
+| `enabled` | boolean | `true`, `false` | включает внешний выбор услуги через med-robot |
+| `url` | URL | `http://192.168.7.135:8082` | базовый URL med-robot |
+| `optimal-service-path` | path template | `/prorobot/optimalqueue/{branchId}/service/{serviceId}` | endpoint выбора услуги |
+| `request-body-mode` | enum | `UNSERVED_SERVICE_IDS_JSON_ARRAY`, `TICKET_NUMBER_PLAIN_TEXT` | формат тела запроса |
+| `plain-text-policy` | string | `default` | query-параметр `policy` для plain text endpoint-а |
+| `username` | string | optional | Basic Auth user для med-robot |
+| `password` | string | optional | Basic Auth password для med-robot |
+| `error-handling-mode` | enum | `FALLBACK_TO_LOCAL`, `SKIP_VISIT` | что делать при ошибке med-robot |
+| `fallback-to-local-on-error` | boolean | deprecated | старый алиас для `error-handling-mode` |
+| `fallback-to-local-on-empty-response` | boolean | `true` | fallback к локальному выбору, если робот не выбрал услугу/очередь |
+| `require-doctor-available-service` | boolean | `false` | требовать, чтобы услуга робота входила в услуги врача |
+| `require-known-queue` | boolean | `true` | требовать, чтобы очередь робота была известна branch cache |
+
+### `request-body-mode`
+
+| Значение | HTTP-заголовки | Body | Особенность |
+|---|---|---|---|
+| `UNSERVED_SERVICE_IDS_JSON_ARRAY` | `Content-Type: application/json`, `Accept: application/json` | `[147,148]` | требует локальный предварительный выбор услуги |
+| `TICKET_NUMBER_PLAIN_TEXT` | `Content-Type: text/plain`, `Accept: application/json` | `Щ028` | вызывает med-robot по номеру талона даже без локального совпадения |
+
+### `error-handling-mode`
+
+| Значение | Поведение |
+|---|---|
+| `FALLBACK_TO_LOCAL` | при ошибке med-robot использовать локальный выбор, если он есть |
+| `SKIP_VISIT` | при ошибке med-robot пропустить текущий визит в этом цикле |
+
+## `application.websocket`
+
+| Параметр | Тип | Пример | Назначение |
+|---|---|---|---|
+| `enabled` | boolean | `false` | включает event-driven режим через SockJS/STOMP |
+| `topic` | string | `/topic/event` | базовый STOMP topic |
+| `subscribed-events` | list | `USER_SERVICE_POINT_SESSION_START`, `SET_WORK_PROFILE` | события, на которые подписывается служба |
+| `delay-before-reconnect-in-milliseconds` | number | `10000` | задержка переподключения |
+| `send-cookies-in-handshake` | boolean | `false` | передавать ли REST-cookie в websocket/SockJS handshake |
+
+### Рекомендации
+
+- Для стабильной production-схемы можно оставить `websocket.enabled=false` и использовать polling.
+- Если включаете websocket, оставляйте `SERVICE_POINT_OPEN` как диагностический сигнал, а не как основной trigger.
+- `send-cookies-in-handshake=false` безопаснее: websocket авторизуется Basic Auth, а REST-cookie не смешиваются с SockJS transport.
+
+## `application.assignment` - общие параметры
+
+| Параметр | Тип | Пример | Назначение |
+|---|---|---|---|
+| `enabled` | boolean | `true` | глобально включает алгоритм назначения |
+| `unknown-doctor-queue-id` | number | `312` | queue id очереди «врач не назначен» |
+| `max-visits-per-cycle` | number | `50` | максимум визитов за один цикл |
+| `polling-enabled` | boolean | `true` | включает scheduled reconciliation |
+| `polling-cron` | cron | `0 */1 * * * ?` | расписание polling |
+| `branch-lock-timeout-ms` | number | `5000` | ожидание lock на branch |
+| `dry-run` | boolean | `false` | режим без реальных мутаций в Orchestra |
+| `allowed-branches` | list | `[1]` | белый список branch id; пустой список означает все |
+| `stale-cache-duration-seconds` | number | `300` | TTL branch cache |
+| `event-deduplication-ttl-seconds` | number | `120` | TTL дедупликации событий |
+| `processed-visit-ttl-seconds` | number | `900` | TTL защиты от повторной обработки визита |
+| `service-priority-by-key` | map | `{ "4": 10 }` | приоритеты услуг при локальном выборе |
+
+## Trigger flags
+
+| Параметр | Рекомендуемое значение | Назначение |
+|---|---:|---|
+| `service-point-open-trigger-enabled` | `false` | не запускать мутации по преждевременному `SERVICE_POINT_OPEN` |
+| `set-work-profile-trigger-enabled` | `false` | не запускать мутации по сырому `SET_WORK_PROFILE` |
+| `work-profile-expanded-trigger-enabled` | `true` | повторно запускать цикл, если новый профиль расширил услуги врача |
+| `user-service-point-session-start-trigger-enabled` | `true` | основной event trigger через корреляцию `USER_SERVICE_POINT_SESSION_START -> SET_WORK_PROFILE` |
+| `user-session-settle-window-ms` | `2000` | окно ожидания стабилизации профиля |
+
+## Проверки и предохранители workflow
+
+| Параметр | Тип | Рекомендуемое значение | Назначение |
+|---|---|---:|---|
+| `recheck-visit-before-transfer` | boolean | `true` | перед transfer перечитать визит и проверить, что он еще в unknown queue |
+| `abort-cycle-on-forbidden-mutation` | boolean | `true` | остановить цикл после первого 403/контекстной ошибки mutation |
+| `treat-inactive-user-state-as-failure` | boolean | `true` | считать `userState=INACTIVE` контекстной ошибкой assign |
+| `treat-no-started-service-point-session-as-failure` | boolean | `true` | считать `NO_STARTED_SERVICE_POINT_SESSION` контекстной ошибкой assign |
+
+## Добавление отсутствующей услуги med-robot
+
+| Параметр | Тип | Значения | Назначение |
+|---|---|---|---|
+| `add-missing-robot-service-to-visit` | boolean | `true` / `false` | добавлять услугу в маршрут, если med-robot вернул serviceId вне `unservedVisitServices` и не равный текущей услуге |
+| `add-missing-robot-service-failure-mode` | enum | `CONTINUE_WITH_ASSIGN`, `SKIP_VISIT`, `PROPAGATE_ERROR` | что делать при ошибке REST-точки Orchestra `POST add-service` |
+
+### `add-missing-robot-service-failure-mode`
+
+| Значение | Поведение | Когда выбирать |
+|---|---|---|
+| `CONTINUE_WITH_ASSIGN` | логировать ошибку add-service и продолжать assign/transfer | рекомендуемый режим для нестабильной или непроверенной REST-точки add-service |
+| `SKIP_VISIT` | пропустить текущий визит | если нельзя безопасно назначать услугу без явного добавления в маршрут |
+| `PROPAGATE_ERROR` | пробросить ошибку наверх | для отладки и жесткого тестирования контракта |
+
+## Activation step
+
+```yaml
+application:
+  assignment:
+    activation:
+      enabled: false
+      fail-cycle-on-error: true
+      method: POST
+      path: ""
+      payload-template: ""
+```
+
+| Параметр | Тип | Назначение |
+|---|---|---|
+| `activation.enabled` | boolean | включает отдельный REST-вызов перед assign/transfer |
+| `activation.fail-cycle-on-error` | boolean | прерывать цикл при ошибке activation |
+| `activation.method` | string | HTTP-метод: `GET`, `POST`, `PUT`, `PATCH`, `DELETE` |
+| `activation.path` | path template | endpoint activation |
+| `activation.payload-template` | string | body template activation-запроса |
+
+Доступные placeholders:
+
+```text
+{branchId}, {servicePointId}, {staffId}, {workProfileId}, {servicePointName}, {workProfileName}, {userName}
+```
+
+Activation step нужен только для инсталляций Orchestra, где перед mutating REST нужно явно активировать server-side operator/service point context. По умолчанию выключен, потому что универсальный endpoint не подтвержден.
+
+## Source entry point id для transfer
+
+```yaml
+application:
+  assignment:
+    default-source-entry-point-id: 1
+    source-entry-point-id-by-branch:
+      "1": 1
+```
+
+| Параметр | Тип | Назначение |
+|---|---|---|
+| `default-source-entry-point-id` | number | fallback `fromId` для transfer, если branch-specific значение не задано |
+| `source-entry-point-id-by-branch` | map string -> number | `fromId` для каждого branch |
+
+Ключи карты рекомендуется писать строками:
+
+```yaml
+source-entry-point-id-by-branch:
+  "1": 1
+```
+
+Это исключает неоднозначность YAML binding numeric map keys. В runtime-аудите проверяйте поле:
+
+```text
+resolvedSourceEntryPointIds=1->1
+```
+
+## `application.assignment.experimental-endpoints`
+
+| Параметр | Метод | Путь по умолчанию | Назначение |
+|---|---:|---|---|
+| `enabled` | - | `true` | включает конфигурируемый visit workflow adapter |
+| `queue-visits-path` | GET | `/rest/entrypoint/branches/{branchId}/queues/{queueId}/visits/full/` | получить визиты очереди |
+| `visit-details-path` | GET | `/rest/entrypoint/branches/{branchId}/visits/{visitId}/` | получить детали визита |
+| `visit-by-id-path` | GET | `/rest/entrypoint/branches/{branchId}/visits/{visitId}/` | перечитать визит по id |
+| `assign-service-path` | PUT | `/rest/entrypoint/branches/{branchId}/visits/{visitId}/services/{serviceId}/` | назначить услугу визиту |
+| `add-service-path` | POST | `/rest/entrypoint/branches/{branchId}/visits/{visitId}/services/{serviceOrigId}/` | добавить услугу в маршрут визита |
+| `transfer-visit-path` | PUT | `/rest/entrypoint/branches/{branchId}/queues/{queueId}/visits/` | перевести визит в очередь |
+
+Поддерживаемые placeholders:
+
+```text
+{branchId}, {queueId}, {targetQueueId}, {visitId}, {serviceId}, {serviceOrigId}
+```
+
+## Проверочный production-профиль
+
+```yaml
+micronaut:
+  server:
+    port: 8085
+  http:
+    client:
+      read-timeout: 60000ms
+
+application:
+  orchestra:
+    url: http://orchestra-host:8080
+    username: ${ORCHESTRA_USER}
+    password: ${ORCHESTRA_PASSWORD}
+    branches-for-cache: "1"
+    replay-mutation-cookies: false
+
+  med-robot:
+    enabled: true
+    url: http://med-robot-host:8082
+    request-body-mode: TICKET_NUMBER_PLAIN_TEXT
+    plain-text-policy: default
+    error-handling-mode: FALLBACK_TO_LOCAL
+    require-known-queue: true
+
+  websocket:
+    enabled: false
+
+  assignment:
+    enabled: true
+    dry-run: false
+    unknown-doctor-queue-id: 312
+    allowed-branches: [ 1 ]
+    polling-enabled: true
+    polling-cron: "0 */1 * * * ?"
+    source-entry-point-id-by-branch:
+      "1": 1
+    add-missing-robot-service-to-visit: true
+    add-missing-robot-service-failure-mode: CONTINUE_WITH_ASSIGN
+    experimental-endpoints:
+      enabled: true
+      queue-visits-path: "/rest/entrypoint/branches/{branchId}/queues/{queueId}/visits/full/"
+      visit-details-path: "/rest/entrypoint/branches/{branchId}/visits/{visitId}/"
+      visit-by-id-path: "/rest/entrypoint/branches/{branchId}/visits/{visitId}/"
+      assign-service-path: "/rest/entrypoint/branches/{branchId}/visits/{visitId}/services/{serviceId}/"
+      add-service-path: "/rest/entrypoint/branches/{branchId}/visits/{visitId}/services/{serviceOrigId}/"
+      transfer-visit-path: "/rest/entrypoint/branches/{branchId}/queues/{queueId}/visits/"
+```

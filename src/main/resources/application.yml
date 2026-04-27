@@ -13,12 +13,12 @@ application:
   orchestra:
     # Базовый URL Orchestra без завершающего слэша.
     # Используется и для REST, и для SockJS/STOMP-подключения к /qpevents/events.
-    url: http://192.168.0.77:8080
+    url: http://192.168.0.131:8080
 
     # Сервисная учетная запись Orchestra.
     # Для production рекомендуется вынести в переменные окружения / секреты.
     username: superadmin
-    password: ulan
+    password: December2022!
 
     # Общий REST base path Orchestra.
     # По умолчанию для подтвержденных endpoint-ов используется /rest.
@@ -32,7 +32,7 @@ application:
     #   "*"   -> все доступные отделения
     #   "6"   -> одно отделение
     #   "6,7" -> несколько отделений через запятую
-    branches-for-cache: "6"
+    branches-for-cache: "1"
 
     # Повторно отправлять ли cookie, полученные на mutating REST-операциях.
     # По свежим логам Orchestra первый PUT без cookie проходит, а последующие PUT с mutation-cookie
@@ -42,7 +42,7 @@ application:
   med-robot:
     # Включает обращение к med-robot для выбора оптимальной услуги и очереди.
     # false — полностью старая локальная схема Doctor Assistant.
-    enabled: false
+    enabled: true
 
     # Базовый URL REST API med-robot.
     url: http://localhost:8082
@@ -98,7 +98,7 @@ application:
 
     # Идентификатор очереди "врач не назначен".
     # Это queue id Orchestra, из которой сервис берет визиты для перераспределения.
-    unknown-doctor-queue-id: 98
+    unknown-doctor-queue-id: 92
 
     # Максимальное количество визитов, обрабатываемых за один цикл.
     # Нужен как предохранитель от слишком длинной обработки одного события.
@@ -182,7 +182,7 @@ application:
 
     # Белый список branch id, на которых разрешено реальное выполнение алгоритма.
     # Пустой список означает "разрешены все".
-    allowed-branches: [ 6 ]
+    allowed-branches: [ 1 ]
 
     # TTL branch cache в секундах.
     # Если кэш старше этого значения, перед обработкой события он будет перестроен.
@@ -215,7 +215,7 @@ application:
     #   6: 1
     #   7: 3
     source-entry-point-id-by-branch:
-      6: 1
+      1: 130
 
     experimental-endpoints:
       # Флаг включения visit workflow adapter-а.

@@ -1,27 +1,6 @@
 @startuml
+!include common-style.puml
 left to right direction
-skinparam backgroundColor #F8FAFC
-skinparam defaultFontName Segoe UI
-skinparam defaultFontSize 15
-skinparam shadowing false
-skinparam ArrowColor #334155
-skinparam ArrowThickness 1.4
-skinparam classAttributeIconSize 0
-skinparam linetype ortho
-skinparam wrapWidth 220
-skinparam nodesep 50
-skinparam ranksep 55
-skinparam packageStyle rectangle
-skinparam rectangleRoundCorner 12
-skinparam class {
-  BackgroundColor #FFFFFF
-  BorderColor #64748B
-}
-skinparam interface {
-  BackgroundColor #FFFFFF
-  BorderColor #64748B
-}
-
 title Диаграмма классов доменного контура назначения
 
 package "Оркестратор" {
@@ -30,7 +9,6 @@ package "Оркестратор" {
     + processDoctor()
   }
 }
-
 package "Порты домена" {
   interface DoctorContextResolver {
     + resolve(event)
@@ -51,7 +29,6 @@ package "Порты домена" {
     + assignAndTransfer(...)
   }
 }
-
 package "Реализации" {
   class DefaultMatcher #E0F2FE {
     + match(...)
@@ -66,13 +43,11 @@ package "Реализации" {
     + transferVisit()
   }
 }
-
 package "Интеграция" {
   interface MedRobotGateway {
     + selectOptimal()
   }
 }
-
 package "Модели и кэш" {
   class BranchCache #DCFCE7 {
     + serviceById
@@ -88,27 +63,25 @@ package "Модели и кэш" {
   }
 }
 
-AssignmentService ..> DoctorContextResolver : использует
-AssignmentService ..> AvailableServicesResolver : использует
-AssignmentService ..> QueueVisitProvider : использует
-AssignmentService ..> VisitRouteAnalyzer : использует
-AssignmentService ..> SelectionService : использует
-AssignmentService ..> AssignmentExecutor : использует
-
+AssignmentService ..> DoctorContextResolver
+AssignmentService ..> AvailableServicesResolver
+AssignmentService ..> QueueVisitProvider
+AssignmentService ..> VisitRouteAnalyzer
+AssignmentService ..> SelectionService
+AssignmentService ..> AssignmentExecutor
 SelectionService <|.. MedRobotAwareSelection
 VisitRouteAnalyzer <|.. DefaultMatcher
 AssignmentExecutor <|.. DefaultExecutor
-
-MedRobotAwareSelection ..> MedRobotGateway : вызывает
-MedRobotAwareSelection --> SelectedService : возвращает
-DefaultExecutor --> VisitDetails : использует
-AvailableServicesResolver ..> BranchCache : читает
-QueueVisitProvider ..> BranchCache : читает
-VisitRouteAnalyzer ..> VisitDetails : анализирует
+MedRobotAwareSelection ..> MedRobotGateway
+MedRobotAwareSelection --> SelectedService
+DefaultExecutor --> VisitDetails
+AvailableServicesResolver ..> BranchCache
+QueueVisitProvider ..> BranchCache
+VisitRouteAnalyzer ..> VisitDetails
 
 note bottom
-Домен связан с REST только через порты и gateway-интерфейсы.
-Входной моделью алгоритма служит локальный кэш отделения,
-а выбор через med-robot остается опциональным расширением.
+Домен связан с REST только через порты и gateway-интерфейсы. Входной
+моделью алгоритма служит локальный кэш отделения; med-robot остается
+опциональным расширением выбора.
 end note
 @enduml

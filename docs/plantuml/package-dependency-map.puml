@@ -1,73 +1,68 @@
 @startuml
+!include common-style.puml
 left to right direction
-skinparam backgroundColor #F8FAFC
-skinparam defaultFontName Segoe UI
-skinparam defaultFontSize 15
-skinparam shadowing false
-skinparam ArrowColor #334155
-skinparam ArrowThickness 1.4
-skinparam packageStyle rectangle
-skinparam componentStyle rectangle
-skinparam rectangleRoundCorner 12
-skinparam linetype ortho
-skinparam wrapWidth 220
-skinparam nodesep 50
-skinparam ranksep 50
-skinparam package {
-  BackgroundColor #FCFCFF
-  BorderColor #7C3AED
-}
-skinparam rectangle {
-  BackgroundColor #FBF7FF
-  BorderColor #7C3AED
-}
-
 title Диаграмма пакетов и направлений зависимостей
 
 package "com.qsystems.meddoctorassignment\nкорневой пакет приложения" {
   package "Точка входа" {
-    rectangle "websocket\nSockJS / STOMP" as websocket
-    rectangle "event\nкорреляция" as event
-    rectangle "schedule\ncron-сверка" as schedule
+    component "websocket\nSockJS / STOMP" as websocket
+    component "event\nкорреляция" as event
+    component "schedule\ncron-сверка" as schedule
+
+    websocket -[hidden]down-> event
+    event -[hidden]down-> schedule
   }
 
   package "Домен" {
-    rectangle "domain.service\nконтракты" as service
-    rectangle "domain.impl\nалгоритмы" as impl
-    rectangle "domain.model\nмодели" as model
-    rectangle "cache\nлокальный срез" as cache
-    rectangle "util\nlock / TTL" as util
+    interface "domain.service" as service
+    component "domain.impl\nалгоритмы" as impl
+    class "domain.model\nмодели" as model
+    database "cache\nлокальный срез" as cache
+    class "util\nlock / TTL" as util
+
+    service -[hidden]down-> impl
+    impl -[hidden]right-> model
+    impl -[hidden]down-> cache
+    model -[hidden]down-> util
   }
 
   package "Адаптеры" {
-    rectangle "gateway\nпорты" as gateway
-    rectangle "gateway.impl\nреализации" as gatewayImpl
-    rectangle "orchestra\nREST" as orchestra
-    rectangle "medrobot\nREST" as medrobot
+    interface "gateway" as gateway
+    component "gateway.impl\nреализация" as gatewayImpl
+    component "orchestra\nREST" as orchestra
+    component "medrobot\nREST" as medrobot
+
+    gateway -[hidden]down-> gatewayImpl
+    gatewayImpl -[hidden]down-> orchestra
+    orchestra -[hidden]down-> medrobot
   }
 
   package "Платформа" {
-    rectangle "config\nyml / flags" as config
-    rectangle "diagnostics\nchecks" as diagnostics
+    artifact "config\nyml / flags" as config
+    component "diagnostics\nchecks" as diagnostics
+
+    config -[hidden]down-> diagnostics
   }
 }
 
-websocket --> event : события
-schedule -[dashed]-> service : страхующая сверка
-event --> service : запуск
-service --> impl : impl
-impl --> cache : кэш / модели
-impl -[dashed]-> gateway : порты
+websocket --> service : события
+event --> service : запуск\nцикла
+schedule ..> service : плановая\nсверка
+
+service --> impl : контракты
+impl --> model : модели
+impl --> cache : локальный\nкэш
+impl ..> gateway : порты
+
 gateway --> gatewayImpl : реализация
-gatewayImpl --> orchestra : REST
-gatewayImpl --> medrobot : REST
-config -[dashed]-> websocket : config
-config -[dashed]-> schedule : config
-config --> diagnostics : flags
+gatewayImpl --> orchestra : Orchestra\nREST
+gatewayImpl --> medrobot : med-robot\nREST
+
+config ..> service : flags
+config --> diagnostics : checks
 
 note bottom
-Стрелки показывают допустимое направление зависимостей:
-доменный слой зависит только от контрактов и портов,
-а не от конкретных REST-клиентов и платформенных реализаций.
+Стрелки показывают допустимое направление зависимостей: доменный слой
+зависит от контрактов и портов, но не от конкретных REST-клиентов.
 end note
 @enduml

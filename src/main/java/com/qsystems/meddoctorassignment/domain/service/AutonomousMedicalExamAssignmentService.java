@@ -179,7 +179,6 @@ public class AutonomousMedicalExamAssignmentService {
 
                 try {
                     VisitDetails visitDetails = visitRouteAnalyzer.analyze(doctorContext.getBranchId(), visit.getId());
-                    copyTicketNumberIfMissing(visit, visitDetails);
                     Optional<SelectedDoctorService> selected = doctorServiceSelectionService.select(visitDetails, doctorAvailableServices, branchCache);
 
                     if (!selected.isPresent()) {
@@ -231,18 +230,6 @@ public class AutonomousMedicalExamAssignmentService {
             if (lockAcquired) {
                 branchLockManager.unlock(doctorContext.getBranchId());
             }
-        }
-    }
-
-    private void copyTicketNumberIfMissing(VisitSummary visit, VisitDetails visitDetails) {
-        if (visit == null || visitDetails == null) {
-            return;
-        }
-        if (visitDetails.getTicketNumber() != null && !visitDetails.getTicketNumber().trim().isEmpty()) {
-            return;
-        }
-        if (visit.getTicketNumber() != null && !visit.getTicketNumber().trim().isEmpty()) {
-            visitDetails.setTicketNumber(visit.getTicketNumber().trim());
         }
     }
 

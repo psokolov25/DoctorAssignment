@@ -47,30 +47,16 @@ application:
     # Базовый URL REST API med-robot.
     url: http://192.168.7.135:8082
 
-    # Контракт из med-robot: POST /prorobot/optimalqueue/{branchId}/service/{serviceId}.
-    # Оба режима используют один и тот же path; REST-точка med-robot выбирается по Content-Type.
+    # Контракт из med-robot: POST /prorobot/optimalqueue/{branchId}/service/{serviceId}
+    # Тело запроса — JSON-массив id непройденных услуг визита.
     optimal-service-path: /prorobot/optimalqueue/{branchId}/service/{serviceId}
-
-    # Формат тела запроса к med-robot:
-    #   UNSERVED_SERVICE_IDS_JSON_ARRAY — старый режим, Content-Type: application/json, body: [301,302].
-    #   TICKET_NUMBER_PLAIN_TEXT       — новый режим, Content-Type: text/plain, body: строка номера талона.
-    request-body-mode: TICKET_NUMBER_PLAIN_TEXT
-
-    # Query-параметр policy для text/plain REST-точки med-robot.
-    # В med-robot поддержаны default / exclude / priority; для номера талона обычно достаточно default.
-    plain-text-policy: default
 
     # Опциональная Basic Auth для закрытого REST API med-robot.
     # username: robot
     # password: secret
 
-    # Действие при HTTP/сетевой/контрактной ошибке med-robot:
-    #   FALLBACK_TO_LOCAL — продолжить текущий визит по локальной схеме без робота;
-    #   SKIP_VISIT       — пропустить текущий визит в этом цикле и перейти к следующему.
-    error-handling-mode: FALLBACK_TO_LOCAL
-
-    # Deprecated-алиас старого boolean-свойства. Для новых конфигураций используйте error-handling-mode.
-    # fallback-to-local-on-error: true
+    # При ошибке med-robot не останавливать цикл, а использовать локальный алгоритм.
+    fallback-to-local-on-error: true
 
     # Если med-robot вернул null/null или 0/0, использовать локальный алгоритм.
     fallback-to-local-on-empty-response: true
@@ -159,17 +145,6 @@ application:
     # Перед переводом визита перечитать его и убедиться, что он все еще находится в очереди "врач не назначен".
     recheck-visit-before-transfer: true
 
-    # Если med-robot вернул услугу, которой нет в unservedVisitServices визита,
-    # сначала добавить эту услугу в маршрут визита через POST /visits/{visitId}/services/{serviceId}/,
-    # а затем продолжить обычный assign/transfer workflow.
-    add-missing-robot-service-to-visit: true
-
-    # Что делать, если Orchestra вернула ошибку на POST добавления отсутствующей услуги med-robot:
-    #   CONTINUE_WITH_ASSIGN — не останавливать визит, а продолжить assign/transfer;
-    #   SKIP_VISIT           — пропустить текущий визит в этом цикле;
-    #   PROPAGATE_ERROR      — пробросить ошибку наверх.
-    add-missing-robot-service-failure-mode: CONTINUE_WITH_ASSIGN
-
     # После первого 403/контекстного отказа на mutating REST не продолжать цикл по оставшимся визитам.
     # Это уменьшает шум в логах и не долбит Orchestra повторными заведомо неверными PUT.
     abort-cycle-on-forbidden-mutation: true
@@ -237,10 +212,10 @@ application:
     # Ключ — branch id, значение — соответствующий entry point id в конкретном отделении.
     # Пример:
     # source-entry-point-id-by-branch:
-    #   "6": 1
-    #   "7": 3
+    #   6: 1
+    #   7: 3
     source-entry-point-id-by-branch:
-      "1": 1
+      1: 1
 
     experimental-endpoints:
       # Флаг включения visit workflow adapter-а.
@@ -263,11 +238,6 @@ application:
       # На текущей проверенной интеграции вызывается как PUT по URL ресурса,
       # без обязательного payload в теле запроса.
       assign-service-path: "/rest/entrypoint/branches/{branchId}/visits/{visitId}/services/{serviceId}/"
-
-      # Endpoint добавления услуги в маршрут визита.
-      # Используется, когда med-robot выбрал услугу, которой еще нет в unservedVisitServices.
-      # По документации Orchestra это POST на тот же ресурс услуги визита.
-      add-service-path: "/rest/entrypoint/branches/{branchId}/visits/{visitId}/services/{serviceOrigId}/"
 
       # Endpoint перевода визита в очередь.
       # Важно: тело запроса содержит fromBranchId, fromId и visitId.

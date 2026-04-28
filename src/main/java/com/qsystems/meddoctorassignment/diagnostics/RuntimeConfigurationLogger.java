@@ -27,7 +27,7 @@ import org.slf4j.LoggerFactory;
 public class RuntimeConfigurationLogger implements ApplicationEventListener<StartupEvent> {
 
   private static final Logger log = LoggerFactory.getLogger(RuntimeConfigurationLogger.class);
-  private static final String BUILD_MARKER = "2026-04-27-entrypoint-source-id-diagnostics";
+  private static final String BUILD_MARKER = "2026-04-24-med-robot-selection-polling-toggle";
 
   private final AssignmentProperties assignmentProperties;
   private final MedRobotProperties medRobotProperties;
@@ -54,7 +54,7 @@ public class RuntimeConfigurationLogger implements ApplicationEventListener<Star
   @Override
   public void onApplicationEvent(StartupEvent event) {
     log.info(
-        "Runtime configuration marker={} gatewayClass={} gatewayCodeSource={} activationGatewayClass={} activationGatewayCodeSource={} activationEnabled={} activationMethod={} activationPath={} activationFailCycleOnError={} userServicePointSessionStartTriggerEnabled={} workProfileExpandedTriggerEnabled={} setWorkProfileTriggerEnabled={} servicePointOpenTriggerEnabled={} userSessionSettleWindowMs={} abortCycleOnForbiddenMutation={} treatInactiveUserStateAsFailure={} treatNoStartedServicePointSessionAsFailure={} addMissingRobotServiceToVisit={} addMissingRobotServiceFailureMode={} defaultSourceEntryPointId={} sourceEntryPointIdByBranch={} resolvedSourceEntryPointIds={} replayMutationCookiesForPut={} replayReadCookiesForGet={} websocketSendCookiesInHandshake={} pollingEnabled={} pollingCron={} medRobotEnabled={} medRobotUrl={} medRobotOptimalServicePath={} medRobotRequestBodyMode={} medRobotPlainTextPolicy={} medRobotErrorHandlingMode={} medRobotFallbackOnError={} medRobotFallbackOnEmpty={} medRobotRequireDoctorAvailableService={} medRobotRequireKnownQueue={}",
+        "Runtime configuration marker={} gatewayClass={} gatewayCodeSource={} activationGatewayClass={} activationGatewayCodeSource={} activationEnabled={} activationMethod={} activationPath={} activationFailCycleOnError={} userServicePointSessionStartTriggerEnabled={} workProfileExpandedTriggerEnabled={} setWorkProfileTriggerEnabled={} servicePointOpenTriggerEnabled={} userSessionSettleWindowMs={} abortCycleOnForbiddenMutation={} treatInactiveUserStateAsFailure={} treatNoStartedServicePointSessionAsFailure={} replayMutationCookiesForPut={} replayReadCookiesForGet={} websocketSendCookiesInHandshake={} pollingEnabled={} pollingCron={} medRobotEnabled={} medRobotUrl={} medRobotOptimalServicePath={} medRobotFallbackOnError={} medRobotFallbackOnEmpty={} medRobotRequireDoctorAvailableService={} medRobotRequireKnownQueue={}",
         BUILD_MARKER,
         visitWorkflowGateway.getClass().getName(),
         resolveCodeSource(visitWorkflowGateway.getClass()),
@@ -78,11 +78,6 @@ public class RuntimeConfigurationLogger implements ApplicationEventListener<Star
         assignmentProperties.isAbortCycleOnForbiddenMutation(),
         assignmentProperties.isTreatInactiveUserStateAsFailure(),
         assignmentProperties.isTreatNoStartedServicePointSessionAsFailure(),
-        assignmentProperties.isAddMissingRobotServiceToVisit(),
-        assignmentProperties.getAddMissingRobotServiceFailureMode(),
-        assignmentProperties.getDefaultSourceEntryPointId(),
-        assignmentProperties.getSourceEntryPointIdByBranch(),
-        resolveSourceEntryPointIds(),
         orchestraSessionCookieStore.isCookieReplayEnabledForMethod("PUT"),
         orchestraSessionCookieStore.isCookieReplayEnabledForMethod("GET"),
         websocketProperties.isSendCookiesInHandshake(),
@@ -91,31 +86,10 @@ public class RuntimeConfigurationLogger implements ApplicationEventListener<Star
         medRobotProperties.isEnabled(),
         medRobotProperties.getUrl(),
         medRobotProperties.getOptimalServicePath(),
-        medRobotProperties.getRequestBodyMode(),
-        medRobotProperties.getPlainTextPolicy(),
-        medRobotProperties.getErrorHandlingMode(),
         medRobotProperties.isFallbackToLocalOnError(),
         medRobotProperties.isFallbackToLocalOnEmptyResponse(),
         medRobotProperties.isRequireDoctorAvailableService(),
         medRobotProperties.isRequireKnownQueue());
-  }
-
-  private String resolveSourceEntryPointIds() {
-    if (assignmentProperties.getAllowedBranches() == null
-        || assignmentProperties.getAllowedBranches().isEmpty()) {
-      return "<allowedBranches-empty>";
-    }
-    StringBuilder builder = new StringBuilder();
-    for (Integer branchId : assignmentProperties.getAllowedBranches()) {
-      if (branchId == null) {
-        continue;
-      }
-      if (builder.length() > 0) {
-        builder.append(',');
-      }
-      builder.append(branchId).append("->").append(assignmentProperties.resolveSourceEntryPointId(branchId));
-    }
-    return builder.toString();
   }
 
   private String resolveCodeSource(Class<?> type) {

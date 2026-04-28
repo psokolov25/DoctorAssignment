@@ -163,61 +163,6 @@ public class ConfigurableVisitWorkflowGateway implements VisitWorkflowGateway {
     }
 
     /**
-     * Добавляет услугу в маршрут визита через подтвержденный REST endpoint Orchestra.
-     *
-     * <p>Этот шаг нужен для режима med-robot text/plain: робот выбирает услугу по номеру
-     * талона и может вернуть serviceId, которого не было в локально прочитанном
-     * {@code unservedVisitServices}. В этом случае сначала расширяем маршрут визита,
-     * а уже затем выполняем штатный assign/transfer workflow.</p>
-     */
-    @Override
-    public void addServiceToVisit(int branchId, long visitId, int serviceId) {
-        String path = assignmentProperties.getExperimentalEndpoints().getAddServicePath();
-        if (path == null || path.trim().isEmpty()) {
-            path = assignmentProperties.getExperimentalEndpoints().getAssignServicePath();
-        }
-        ensureConfigured(path, "add-service-path");
-
-        Map<String, Object> variables = new HashMap<String, Object>();
-        variables.put("branchId", branchId);
-        variables.put("visitId", visitId);
-        variables.put("serviceId", serviceId);
-        variables.put("serviceOrigId", serviceId);
-
-        String expandedPath = expand(path, variables);
-        log.info("Add service to visit request branchId={} visitId={} serviceId={} path={} payload=<empty>",
-                branchId,
-                visitId,
-                serviceId,
-                expandedPath);
-
-        MutableHttpRequest<String> request = applyAuth(HttpRequest.POST(expandedPath, ""))
-                .contentType(MediaType.APPLICATION_JSON_TYPE)
-                .accept(MediaType.APPLICATION_JSON_TYPE);
-
-        try {
-            HttpResponse<byte[]> response = httpClient.toBlocking().exchange(request, byte[].class);
-            String responseBody = toLoggableBody(response.getBody(byte[].class).orElse(null));
-            log.info("Add service to visit response branchId={} visitId={} serviceId={} status={} responseBody={}",
-                    branchId,
-                    visitId,
-                    serviceId,
-                    response.getStatus().getCode(),
-                    responseBody);
-        } catch (HttpClientResponseException exception) {
-            String responseBody = exception.getResponse().getBody(String.class).orElse("<empty>");
-            log.error("Failed to add service {} to visit {} in branch {}: status={} responseBody={}",
-                    serviceId,
-                    visitId,
-                    branchId,
-                    exception.getStatus(),
-                    responseBody,
-                    exception);
-            throw exception;
-        }
-    }
-
-    /**
      * Выполняет assign-service через конфигурируемый endpoint и интерпретирует ответ Orchestra
      * в терминах доменного workflow, а не только HTTP-статуса.
      *
@@ -234,7 +179,6 @@ public class ConfigurableVisitWorkflowGateway implements VisitWorkflowGateway {
         variables.put("branchId", branchId);
         variables.put("visitId", visitId);
         variables.put("serviceId", serviceId);
-        variables.put("serviceOrigId", serviceId);
 
         String expandedPath = expand(path, variables);
         log.info("Assign service request branchId={} visitId={} serviceId={} staffId={} servicePointId={} path={} payload=<empty>",

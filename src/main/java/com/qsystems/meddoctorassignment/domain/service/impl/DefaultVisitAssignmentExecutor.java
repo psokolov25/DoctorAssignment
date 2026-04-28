@@ -2,16 +2,12 @@ package com.qsystems.meddoctorassignment.domain.service.impl;
 
 import com.qsystems.meddoctorassignment.adapter.gateway.VisitWorkflowGateway;
 import com.qsystems.meddoctorassignment.config.AssignmentProperties;
-import com.qsystems.meddoctorassignment.config.MissingRobotServiceAddFailureMode;
 import com.qsystems.meddoctorassignment.domain.model.SelectedDoctorService;
 import com.qsystems.meddoctorassignment.domain.model.VisitDetails;
 import com.qsystems.meddoctorassignment.domain.model.VisitSummary;
-import com.qsystems.meddoctorassignment.domain.model.VisitUnservedService;
 import com.qsystems.meddoctorassignment.domain.service.VisitAssignmentExecutor;
 import com.qsystems.meddoctorassignment.model.event.DoctorContext;
 import jakarta.inject.Singleton;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -82,35 +78,6 @@ public class DefaultVisitAssignmentExecutor implements VisitAssignmentExecutor {
                 doctorContext.getWorkProfileId(),
                 doctorContext.getTriggerSource());
 
-        if (shouldAddMissingRobotServiceToVisit(visitDetails, selectedDoctorService)) {
-            log.info("Selected med-robot service {} is absent in visit {} unserved route and is not current service. Add service to visit before assign/transfer.",
-                    selectedDoctorService.getServiceId(),
-                    visitSummary.getId());
-            try {
-                visitWorkflowGateway.addServiceToVisit(
-                        doctorContext.getBranchId(),
-                        visitSummary.getId(),
-                        selectedDoctorService.getServiceId());
-                rememberAddedService(visitDetails, selectedDoctorService.getServiceId());
-            } catch (RuntimeException exception) {
-                MissingRobotServiceAddFailureMode failureMode = assignmentProperties.getAddMissingRobotServiceFailureMode();
-                if (failureMode == MissingRobotServiceAddFailureMode.SKIP_VISIT) {
-                    log.warn("Skip visit {} because adding med-robot selected service {} failed and addMissingRobotServiceFailureMode=SKIP_VISIT: {}",
-                            visitSummary.getId(),
-                            selectedDoctorService.getServiceId(),
-                            exception.getMessage());
-                    return false;
-                }
-                if (failureMode == MissingRobotServiceAddFailureMode.PROPAGATE_ERROR) {
-                    throw exception;
-                }
-                log.warn("Continue visit {} with assign/transfer after failed add-service for med-robot selected service {} because addMissingRobotServiceFailureMode=CONTINUE_WITH_ASSIGN: {}",
-                        visitSummary.getId(),
-                        selectedDoctorService.getServiceId(),
-                        exception.getMessage());
-            }
-        }
-
         boolean assignRequired = visitDetails == null
                 || visitDetails.getCurrentServiceId() == null
                 || visitDetails.getCurrentServiceId().intValue() != selectedDoctorService.getServiceId();
@@ -158,54 +125,5 @@ public class DefaultVisitAssignmentExecutor implements VisitAssignmentExecutor {
         }
 
         return true;
-    }
-
-    private boolean shouldAddMissingRobotServiceToVisit(VisitDetails visitDetails,
-                                                        SelectedDoctorService selectedDoctorService) {
-        if (!assignmentProperties.isAddMissingRobotServiceToVisit()) {
-            return false;
-        }
-        if (visitDetails == null || selectedDoctorService == null || !isMedRobotSelection(selectedDoctorService)) {
-            return false;
-        }
-        if (visitDetails.getCurrentServiceId() != null
-                && visitDetails.getCurrentServiceId().intValue() == selectedDoctorService.getServiceId()) {
-            return false;
-        }
-        if (selectedDoctorService.getRouteOrder() != null) {
-            return false;
-        }
-        return !containsUnservedService(visitDetails, selectedDoctorService.getServiceId());
-    }
-
-    private boolean isMedRobotSelection(SelectedDoctorService selectedDoctorService) {
-        String reason = selectedDoctorService.getSelectionReason();
-        return reason != null && reason.startsWith("med-robot-");
-    }
-
-    private boolean containsUnservedService(VisitDetails visitDetails, int serviceId) {
-        if (visitDetails == null || visitDetails.getUnservedServices() == null) {
-            return false;
-        }
-        for (VisitUnservedService unservedService : visitDetails.getUnservedServices()) {
-            if (unservedService != null
-                    && unservedService.getServiceId() != null
-                    && unservedService.getServiceId().intValue() == serviceId) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private void rememberAddedService(VisitDetails visitDetails, int serviceId) {
-        if (visitDetails == null || containsUnservedService(visitDetails, serviceId)) {
-            return;
-        }
-        List<VisitUnservedService> existing = visitDetails.getUnservedServices();
-        List<VisitUnservedService> updated = existing != null
-                ? new ArrayList<VisitUnservedService>(existing)
-                : new ArrayList<VisitUnservedService>();
-        updated.add(new VisitUnservedService(Integer.valueOf(serviceId), null, null));
-        visitDetails.setUnservedServices(updated);
     }
 }

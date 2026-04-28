@@ -5,7 +5,6 @@ import com.qsystems.meddoctorassignment.cache.OrchestraDataCacheContainer;
 import com.qsystems.meddoctorassignment.cache.service.OrchestraDataCacheUpdateService;
 import com.qsystems.meddoctorassignment.config.AssignmentProperties;
 import com.qsystems.meddoctorassignment.config.MedRobotProperties;
-import com.qsystems.meddoctorassignment.config.MedRobotRequestBodyMode;
 import com.qsystems.meddoctorassignment.adapter.medrobot.dto.MedRobotOptimalServiceResponse;
 import com.qsystems.meddoctorassignment.config.OrchestraProperties;
 import com.qsystems.meddoctorassignment.domain.model.VisitDetails;
@@ -192,118 +191,6 @@ public class AutonomousMedicalExamAssignmentServiceTest {
         Assertions.assertEquals(1, fixture.gateways.medRobotRequests.size());
         Assertions.assertEquals(1, fixture.gateways.assignedOperations.size());
         Assertions.assertTrue(fixture.gateways.assignedOperations.get(0).contains("|302|45|41220000000007"));
-        Assertions.assertEquals(1, fixture.gateways.transferredOperations.size());
-        Assertions.assertTrue(fixture.gateways.transferredOperations.get(0).endsWith("|902"));
-    }
-
-    @Test
-    void passesTicketNumberFromWaitingVisitToMedRobotPlainTextEndpoint() {
-        Fixture fixture = new Fixture();
-        fixture.prepareBranchTopology();
-        fixture.assignmentProperties.setDryRun(false);
-        fixture.medRobotProperties.setEnabled(true);
-        fixture.medRobotProperties.setRequestBodyMode(MedRobotRequestBodyMode.TICKET_NUMBER_PLAIN_TEXT);
-        fixture.medRobotProperties.setPlainTextPolicy("default");
-
-        com.qsystems.meddoctorassignment.adapter.orchestra.dto.TinyQueue robotQueue = new com.qsystems.meddoctorassignment.adapter.orchestra.dto.TinyQueue();
-        robotQueue.setId(902);
-        robotQueue.setName("оптимальная очередь робота");
-        fixture.cacheContainer.getOrCreateBranchCache(7).getQueueMap().put(902, robotQueue);
-
-        MedRobotOptimalServiceResponse response = new MedRobotOptimalServiceResponse();
-        response.setServiceId(302);
-        response.setQueueId(902);
-        fixture.gateways.medRobotResponses.put("7|301", response);
-
-        fixture.gateways.waitingVisitsByQueue.put("7|900", Collections.singletonList(new VisitSummary(5010L, 900, "WAITING", "TICKET-5010")));
-        fixture.gateways.visitDetailsById.put(5010L, new VisitDetails(5010L, 900, Arrays.asList(
-                new VisitUnservedService(301, null, 1),
-                new VisitUnservedService(302, null, 2)
-        )));
-        fixture.gateways.visitById.put(5010L, new VisitSummary(5010L, 900, "WAITING", "TICKET-5010"));
-
-        DoctorContext context = fixture.openDoctor(7, 41220000000007L, 45, 15);
-        fixture.service.process(context);
-
-        Assertions.assertTrue(fixture.gateways.medRobotRequests.isEmpty());
-        Assertions.assertEquals(1, fixture.gateways.medRobotPlainTextRequests.size());
-        Assertions.assertEquals("7|301|TICKET-5010|default", fixture.gateways.medRobotPlainTextRequests.get(0));
-        Assertions.assertEquals(1, fixture.gateways.assignedOperations.size());
-        Assertions.assertTrue(fixture.gateways.assignedOperations.get(0).contains("|302|45|41220000000007"));
-        Assertions.assertEquals(1, fixture.gateways.transferredOperations.size());
-        Assertions.assertTrue(fixture.gateways.transferredOperations.get(0).endsWith("|902"));
-    }
-
-    @Test
-    void addsRobotSelectedServiceToVisitWhenItIsAbsentFromUnservedRoute() {
-        Fixture fixture = new Fixture();
-        fixture.prepareBranchTopology();
-        fixture.assignmentProperties.setDryRun(false);
-        fixture.assignmentProperties.setAddMissingRobotServiceToVisit(true);
-        fixture.medRobotProperties.setEnabled(true);
-        fixture.medRobotProperties.setRequestBodyMode(MedRobotRequestBodyMode.TICKET_NUMBER_PLAIN_TEXT);
-
-        com.qsystems.meddoctorassignment.adapter.orchestra.dto.TinyQueue robotQueue = new com.qsystems.meddoctorassignment.adapter.orchestra.dto.TinyQueue();
-        robotQueue.setId(902);
-        robotQueue.setName("очередь услуги, выбранной роботом");
-        fixture.cacheContainer.getOrCreateBranchCache(7).getQueueMap().put(902, robotQueue);
-
-        MedRobotOptimalServiceResponse response = new MedRobotOptimalServiceResponse();
-        response.setServiceId(302);
-        response.setQueueId(902);
-        fixture.gateways.medRobotResponses.put("7|301", response);
-
-        fixture.gateways.waitingVisitsByQueue.put("7|900", Collections.singletonList(new VisitSummary(5020L, 900, "WAITING", "TICKET-5020")));
-        fixture.gateways.visitDetailsById.put(5020L, new VisitDetails(5020L, 900, Arrays.asList(
-                new VisitUnservedService(301, null, 1)
-        )));
-        fixture.gateways.visitById.put(5020L, new VisitSummary(5020L, 900, "WAITING", "TICKET-5020"));
-
-        DoctorContext context = fixture.openDoctor(7, 41220000000007L, 45, 15);
-        fixture.service.process(context);
-
-        Assertions.assertEquals(1, fixture.gateways.medRobotPlainTextRequests.size());
-        Assertions.assertEquals(1, fixture.gateways.addedServiceOperations.size());
-        Assertions.assertEquals("7|5020|302", fixture.gateways.addedServiceOperations.get(0));
-        Assertions.assertEquals(1, fixture.gateways.assignedOperations.size());
-        Assertions.assertTrue(fixture.gateways.assignedOperations.get(0).contains("|302|45|41220000000007"));
-        Assertions.assertEquals(1, fixture.gateways.transferredOperations.size());
-        Assertions.assertTrue(fixture.gateways.transferredOperations.get(0).endsWith("|902"));
-    }
-
-    @Test
-    void doesNotAddRobotSelectedServiceToVisitWhenItIsAlreadyCurrentService() {
-        Fixture fixture = new Fixture();
-        fixture.prepareBranchTopology();
-        fixture.assignmentProperties.setDryRun(false);
-        fixture.assignmentProperties.setAddMissingRobotServiceToVisit(true);
-        fixture.medRobotProperties.setEnabled(true);
-        fixture.medRobotProperties.setRequestBodyMode(MedRobotRequestBodyMode.TICKET_NUMBER_PLAIN_TEXT);
-
-        com.qsystems.meddoctorassignment.adapter.orchestra.dto.TinyQueue robotQueue = new com.qsystems.meddoctorassignment.adapter.orchestra.dto.TinyQueue();
-        robotQueue.setId(902);
-        robotQueue.setName("очередь текущей услуги, выбранной роботом");
-        fixture.cacheContainer.getOrCreateBranchCache(7).getQueueMap().put(902, robotQueue);
-
-        MedRobotOptimalServiceResponse response = new MedRobotOptimalServiceResponse();
-        response.setServiceId(302);
-        response.setQueueId(902);
-        fixture.gateways.medRobotResponses.put("7|301", response);
-
-        fixture.gateways.waitingVisitsByQueue.put("7|900", Collections.singletonList(new VisitSummary(5021L, 900, "WAITING", "TICKET-5021")));
-        VisitDetails visitDetails = new VisitDetails(5021L, 900, Arrays.asList(
-                new VisitUnservedService(301, null, 1)
-        ));
-        visitDetails.setCurrentServiceId(Integer.valueOf(302));
-        fixture.gateways.visitDetailsById.put(5021L, visitDetails);
-        fixture.gateways.visitById.put(5021L, new VisitSummary(5021L, 900, "WAITING", "TICKET-5021"));
-
-        DoctorContext context = fixture.openDoctor(7, 41220000000007L, 45, 15);
-        fixture.service.process(context);
-
-        Assertions.assertEquals(1, fixture.gateways.medRobotPlainTextRequests.size());
-        Assertions.assertTrue(fixture.gateways.addedServiceOperations.isEmpty());
-        Assertions.assertTrue(fixture.gateways.assignedOperations.isEmpty());
         Assertions.assertEquals(1, fixture.gateways.transferredOperations.size());
         Assertions.assertTrue(fixture.gateways.transferredOperations.get(0).endsWith("|902"));
     }

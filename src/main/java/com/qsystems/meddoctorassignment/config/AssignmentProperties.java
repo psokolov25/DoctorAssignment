@@ -100,18 +100,6 @@ public class AssignmentProperties {
     private boolean recheckVisitBeforeTransfer = true;
 
     /**
-     * Добавлять ли в маршрут визита услугу, которую вернул med-robot, если такой услуги
-     * нет среди локально прочитанных непройденных услуг визита и эта услуга не является
-     * текущей currentVisitService.
-     */
-    private boolean addMissingRobotServiceToVisit = true;
-
-    /**
-     * Что делать, если Orchestra вернула ошибку на POST добавления отсутствующей услуги med-robot.
-     */
-    private MissingRobotServiceAddFailureMode addMissingRobotServiceFailureMode = MissingRobotServiceAddFailureMode.CONTINUE_WITH_ASSIGN;
-
-    /**
      * Прерывать ли текущий цикл после первого 403/контекстного отказа mutation-запроса.
      *
      * <p>По логам Orchestra повторные PUT в том же невалидном контексте почти всегда
@@ -181,7 +169,7 @@ public class AssignmentProperties {
      *
      * <p>Позволяет задавать собственный entry point для каждого отделения.</p>
      */
-    private Map<String, Integer> sourceEntryPointIdByBranch = new HashMap<String, Integer>();
+    private Map<Integer, Integer> sourceEntryPointIdByBranch = new HashMap<Integer, Integer>();
 
     /**
      * Конфигурируемые пути для visit workflow endpoint-ов.
@@ -292,24 +280,6 @@ public class AssignmentProperties {
         this.recheckVisitBeforeTransfer = recheckVisitBeforeTransfer;
     }
 
-    public boolean isAddMissingRobotServiceToVisit() {
-        return addMissingRobotServiceToVisit;
-    }
-
-    public void setAddMissingRobotServiceToVisit(boolean addMissingRobotServiceToVisit) {
-        this.addMissingRobotServiceToVisit = addMissingRobotServiceToVisit;
-    }
-
-    public MissingRobotServiceAddFailureMode getAddMissingRobotServiceFailureMode() {
-        return addMissingRobotServiceFailureMode;
-    }
-
-    public void setAddMissingRobotServiceFailureMode(MissingRobotServiceAddFailureMode addMissingRobotServiceFailureMode) {
-        this.addMissingRobotServiceFailureMode = addMissingRobotServiceFailureMode != null
-                ? addMissingRobotServiceFailureMode
-                : MissingRobotServiceAddFailureMode.CONTINUE_WITH_ASSIGN;
-    }
-
     public boolean isAbortCycleOnForbiddenMutation() {
         return abortCycleOnForbiddenMutation;
     }
@@ -390,11 +360,11 @@ public class AssignmentProperties {
         this.defaultSourceEntryPointId = defaultSourceEntryPointId;
     }
 
-    public Map<String, Integer> getSourceEntryPointIdByBranch() {
+    public Map<Integer, Integer> getSourceEntryPointIdByBranch() {
         return sourceEntryPointIdByBranch;
     }
 
-    public void setSourceEntryPointIdByBranch(Map<String, Integer> sourceEntryPointIdByBranch) {
+    public void setSourceEntryPointIdByBranch(Map<Integer, Integer> sourceEntryPointIdByBranch) {
         this.sourceEntryPointIdByBranch = sourceEntryPointIdByBranch;
     }
 
@@ -465,17 +435,9 @@ public class AssignmentProperties {
      */
     public Integer resolveSourceEntryPointId(int branchId) {
         if (sourceEntryPointIdByBranch != null) {
-            Integer branchSpecific = sourceEntryPointIdByBranch.get(String.valueOf(branchId));
+            Integer branchSpecific = sourceEntryPointIdByBranch.get(Integer.valueOf(branchId));
             if (branchSpecific != null) {
                 return branchSpecific;
-            }
-            // Defensive fallback for externally supplied maps where keys may contain spaces.
-            for (Map.Entry<String, Integer> entry : sourceEntryPointIdByBranch.entrySet()) {
-                if (entry != null
-                        && entry.getKey() != null
-                        && String.valueOf(branchId).equals(entry.getKey().trim())) {
-                    return entry.getValue();
-                }
             }
         }
         return defaultSourceEntryPointId;
@@ -572,7 +534,6 @@ public class AssignmentProperties {
         private String visitDetailsPath;
         private String visitByIdPath;
         private String assignServicePath;
-        private String addServicePath;
         private String transferVisitPath;
 
         public boolean isEnabled() {
@@ -613,14 +574,6 @@ public class AssignmentProperties {
 
         public void setAssignServicePath(String assignServicePath) {
             this.assignServicePath = assignServicePath;
-        }
-
-        public String getAddServicePath() {
-            return addServicePath;
-        }
-
-        public void setAddServicePath(String addServicePath) {
-            this.addServicePath = addServicePath;
         }
 
         public String getTransferVisitPath() {

@@ -24,15 +24,6 @@ public class MedRobotOptimalServiceGatewayImpl implements MedRobotOptimalService
   public MedRobotOptimalServiceResponse selectOptimalService(
       int branchId, int currentServiceId, Set<Integer> unservedServiceIds) {
     return restUtils.handleReactiveResponseWithBlock(
-        medRobotRestClient.selectOptimalServiceByUnservedServices(
-            branchId, currentServiceId, unservedServiceIds));
-  }
-
-  @Override
-  public MedRobotOptimalServiceResponse selectOptimalServicePlainText(
-      int branchId, int currentServiceId, String plainTextBody, String policy) {
-    return restUtils.handleReactiveResponseWithBlock(
-        medRobotRestClient.selectOptimalServiceByPlainText(
-            branchId, currentServiceId, plainTextBody, policy));
+        medRobotRestClient.selectOptimalService(branchId, currentServiceId, unservedServiceIds));
   }
 }

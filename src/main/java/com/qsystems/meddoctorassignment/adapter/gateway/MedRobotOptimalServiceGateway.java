@@ -7,7 +7,7 @@ import java.util.Set;
 public interface MedRobotOptimalServiceGateway {
 
   /**
-   * Запрашивает у med-robot оптимальную пару serviceId/queueId через JSON-массив услуг.
+   * Запрашивает у med-robot оптимальную пару serviceId/queueId.
    *
    * @param branchId идентификатор отделения
    * @param currentServiceId текущая или предварительно выбранная услуга, передаваемая в path
@@ -16,17 +16,4 @@ public interface MedRobotOptimalServiceGateway {
    */
   MedRobotOptimalServiceResponse selectOptimalService(
       int branchId, int currentServiceId, Set<Integer> unservedServiceIds);
-
-  /**
-   * Запрашивает у med-robot оптимальную пару serviceId/queueId через text/plain body.
-   *
-   * @param branchId идентификатор отделения
-   * @param currentServiceId текущая или предварительно выбранная услуга, передаваемая в path
-   * @param plainTextBody строковый идентификатор для второй REST-точки med-robot; в этой службе
-   *     используется номер талона
-   * @param policy query-параметр policy второй REST-точки med-robot
-   * @return ответ med-robot
-   */
-  MedRobotOptimalServiceResponse selectOptimalServicePlainText(
-      int branchId, int currentServiceId, String plainTextBody, String policy);
 }

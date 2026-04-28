@@ -60,6 +60,51 @@ public class AutonomousMedicalExamAssignmentServiceTest {
         Assertions.assertTrue(fixture.gateways.transferredOperations.get(0).endsWith("|901"));
     }
 
+
+    @Test
+    void processesSameVisitAgainWhenCurrentVisitServiceRecordChanges() {
+        Fixture fixture = new Fixture();
+        fixture.prepareBranchTopology();
+        fixture.assignmentProperties.setDryRun(false);
+        fixture.gateways.waitingVisitsByQueue.put("7|900", Collections.singletonList(new VisitSummary(1003L, 900, "WAITING", "A-003")));
+        fixture.gateways.visitById.put(1003L, new VisitSummary(1003L, 900, "WAITING", "A-003"));
+
+        VisitDetails firstStep = new VisitDetails(1003L, 900, Arrays.asList(new VisitUnservedService(301, null, 1)));
+        firstStep.setCurrentVisitServiceRecordId(Long.valueOf(7001L));
+        fixture.gateways.visitDetailsById.put(1003L, firstStep);
+
+        DoctorContext context = fixture.openDoctor(7, 41220000000007L, 45, 15);
+        fixture.service.process(context);
+
+        VisitDetails secondStep = new VisitDetails(1003L, 900, Arrays.asList(new VisitUnservedService(301, null, 1)));
+        secondStep.setCurrentVisitServiceRecordId(Long.valueOf(7002L));
+        fixture.gateways.visitDetailsById.put(1003L, secondStep);
+        fixture.service.process(context);
+
+        Assertions.assertEquals(2, fixture.gateways.assignedOperations.size());
+        Assertions.assertEquals(2, fixture.gateways.transferredOperations.size());
+    }
+
+    @Test
+    void skipsSameVisitWhenCurrentVisitServiceRecordIsUnchangedInsideTtl() {
+        Fixture fixture = new Fixture();
+        fixture.prepareBranchTopology();
+        fixture.assignmentProperties.setDryRun(false);
+        fixture.gateways.waitingVisitsByQueue.put("7|900", Collections.singletonList(new VisitSummary(1004L, 900, "WAITING", "A-004")));
+        fixture.gateways.visitById.put(1004L, new VisitSummary(1004L, 900, "WAITING", "A-004"));
+
+        VisitDetails step = new VisitDetails(1004L, 900, Arrays.asList(new VisitUnservedService(301, null, 1)));
+        step.setCurrentVisitServiceRecordId(Long.valueOf(7003L));
+        fixture.gateways.visitDetailsById.put(1004L, step);
+
+        DoctorContext context = fixture.openDoctor(7, 41220000000007L, 45, 15);
+        fixture.service.process(context);
+        fixture.service.process(context);
+
+        Assertions.assertEquals(1, fixture.gateways.assignedOperations.size());
+        Assertions.assertEquals(1, fixture.gateways.transferredOperations.size());
+    }
+
     @Test
     void skipsVisitWithoutMatchingService() {
         Fixture fixture = new Fixture();

@@ -170,15 +170,27 @@ public class AutonomousMedicalExamAssignmentService {
             for (int i = 0; i < limit; i++) {
                 VisitSummary visit = visits.get(i);
 
-                // Повторная обработка одного визита тем же врачом в коротком окне времени обычно означает
-                // дубль события или повторный запуск fallback-задачи. Пропускаем такой визит без ошибки.
-                if (processedVisitRegistry.alreadyProcessed(doctorContext.getBranchId(), visit.getId(), doctorContext.getStaffId(), processedTtl)) {
-                    log.info("Visit {} already processed recently for doctor {}", visit.getId(), doctorContext.getStaffId());
-                    continue;
-                }
-
                 try {
                     VisitDetails visitDetails = visitRouteAnalyzer.analyze(doctorContext.getBranchId(), visit.getId());
+                    String processingFingerprint = buildProcessingFingerprint(visitDetails);
+
+                    // Повторная обработка одного и того же маршрутного шага тем же врачом в коротком
+                    // окне времени обычно означает дубль события или повторный запуск fallback-задачи.
+                    // Но один и тот же visitId может несколько раз возвращаться в «Врач не в системе»:
+                    // тогда currentVisitService.id меняется, и визит должен снова обратиться к med-robot.
+                    if (processedVisitRegistry.alreadyProcessed(
+                            doctorContext.getBranchId(),
+                            visit.getId(),
+                            doctorContext.getStaffId(),
+                            processingFingerprint,
+                            processedTtl)) {
+                        log.info("Visit {} already processed recently for doctor {} processingFingerprint={}",
+                                visit.getId(),
+                                doctorContext.getStaffId(),
+                                processingFingerprint);
+                        continue;
+                    }
+
                     Optional<SelectedDoctorService> selected = doctorServiceSelectionService.select(visitDetails, doctorAvailableServices, branchCache);
 
                     if (!selected.isPresent()) {
@@ -202,7 +214,11 @@ public class AutonomousMedicalExamAssignmentService {
 
                     if (success) {
                         if (!assignmentProperties.isDryRun()) {
-                            processedVisitRegistry.markProcessed(doctorContext.getBranchId(), visit.getId(), doctorContext.getStaffId());
+                            processedVisitRegistry.markProcessed(
+                                    doctorContext.getBranchId(),
+                                    visit.getId(),
+                                    doctorContext.getStaffId(),
+                                    processingFingerprint);
                         }
                         processed++;
                     }
@@ -231,6 +247,39 @@ public class AutonomousMedicalExamAssignmentService {
                 branchLockManager.unlock(doctorContext.getBranchId());
             }
         }
+    }
+
+
+    private String buildProcessingFingerprint(VisitDetails visitDetails) {
+        if (visitDetails == null) {
+            return "details-absent";
+        }
+        if (visitDetails.getCurrentVisitServiceRecordId() != null) {
+            return "currentVisitServiceRecordId=" + visitDetails.getCurrentVisitServiceRecordId();
+        }
+        StringBuilder builder = new StringBuilder();
+        builder.append("currentServiceId=").append(visitDetails.getCurrentServiceId());
+        builder.append("|queueId=").append(visitDetails.getQueueId());
+        builder.append("|unserved=");
+        if (visitDetails.getUnservedServices() == null || visitDetails.getUnservedServices().isEmpty()) {
+            builder.append("empty");
+            return builder.toString();
+        }
+        for (int i = 0; i < visitDetails.getUnservedServices().size(); i++) {
+            if (i > 0) {
+                builder.append(',');
+            }
+            if (visitDetails.getUnservedServices().get(i) == null) {
+                builder.append("null");
+            } else {
+                builder.append(visitDetails.getUnservedServices().get(i).getServiceId())
+                        .append(':')
+                        .append(visitDetails.getUnservedServices().get(i).getExternalKey())
+                        .append(':')
+                        .append(visitDetails.getUnservedServices().get(i).getRouteOrder());
+            }
+        }
+        return builder.toString();
     }
 
     private boolean shouldAbortCycle(Exception exception) {

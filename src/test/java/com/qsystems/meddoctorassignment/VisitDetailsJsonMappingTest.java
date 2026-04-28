@@ -25,12 +25,13 @@ public class VisitDetailsJsonMappingTest {
   @Test
   void mapsCurrentVisitServiceIdFromNestedCurrentVisitServiceObject() throws Exception {
     String json =
-        "{\"id\":172161,\"currentVisitService\":{\"serviceId\":4},\"parameterMap\":{\"currentQueueOrigId\":98}}";
+        "{\"id\":172161,\"currentVisitService\":{\"id\":226626,\"serviceId\":4},\"parameterMap\":{\"currentQueueOrigId\":98}}";
 
     VisitDetails visitDetails = new ObjectMapper().readValue(json, VisitDetails.class);
 
     Assertions.assertEquals(172161L, visitDetails.getId());
     Assertions.assertEquals(Integer.valueOf(98), visitDetails.getQueueId());
     Assertions.assertEquals(Integer.valueOf(4), visitDetails.getCurrentServiceId());
+    Assertions.assertEquals(Long.valueOf(226626L), visitDetails.getCurrentVisitServiceRecordId());
   }
 }

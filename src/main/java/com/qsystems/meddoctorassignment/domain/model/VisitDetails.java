@@ -15,6 +15,7 @@ public class VisitDetails {
   private long id;
   private Integer queueId;
   private Integer currentServiceId;
+  private Long currentVisitServiceRecordId;
 
   @JsonAlias({"ticketNumber", "ticketId"})
   private String ticketNumber;
@@ -52,6 +53,14 @@ public class VisitDetails {
 
   public void setCurrentServiceId(Integer currentServiceId) {
     this.currentServiceId = currentServiceId;
+  }
+
+  public Long getCurrentVisitServiceRecordId() {
+    return currentVisitServiceRecordId;
+  }
+
+  public void setCurrentVisitServiceRecordId(Long currentVisitServiceRecordId) {
+    this.currentVisitServiceRecordId = currentVisitServiceRecordId;
   }
 
   public String getTicketNumber() {
@@ -96,6 +105,10 @@ public class VisitDetails {
     if (currentVisitService == null) {
       return;
     }
+    Long resolvedRecordId = readLong(currentVisitService.get("id"));
+    if (resolvedRecordId != null) {
+      this.currentVisitServiceRecordId = resolvedRecordId;
+    }
     Integer resolvedServiceId = readInteger(currentVisitService.get("serviceId"));
     if (resolvedServiceId == null) {
       resolvedServiceId = readInteger(currentVisitService.get("id"));
@@ -103,6 +116,20 @@ public class VisitDetails {
     if (resolvedServiceId != null) {
       this.currentServiceId = resolvedServiceId;
     }
+  }
+
+  private Long readLong(Object value) {
+    if (value instanceof Number) {
+      return Long.valueOf(((Number) value).longValue());
+    }
+    if (value instanceof String) {
+      try {
+        return Long.valueOf((String) value);
+      } catch (NumberFormatException ignored) {
+        return null;
+      }
+    }
+    return null;
   }
 
   private Integer readInteger(Object value) {

@@ -28,7 +28,7 @@ import org.slf4j.LoggerFactory;
 public class RuntimeConfigurationLogger implements ApplicationEventListener<StartupEvent> {
 
   private static final Logger log = LoggerFactory.getLogger(RuntimeConfigurationLogger.class);
-  private static final String BUILD_MARKER = "2026-04-28-med-robot-plain-text-content-type-fix";
+  private static final String BUILD_MARKER = "2026-04-28-route-step-dedup-fix";
 
   private final AssignmentProperties assignmentProperties;
   private final MedRobotProperties medRobotProperties;

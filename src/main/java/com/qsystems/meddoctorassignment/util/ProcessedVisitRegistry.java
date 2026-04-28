@@ -18,8 +18,16 @@ public class ProcessedVisitRegistry {
      * Возвращает {@code true}, если этот же врач уже обрабатывал этот же визит внутри заданного TTL.
      */
     public boolean alreadyProcessed(int branchId, long visitId, int staffId, Duration ttl) {
+        return alreadyProcessed(branchId, visitId, staffId, null, ttl);
+    }
+
+    /**
+     * Возвращает {@code true}, если этот же врач уже обрабатывал этот же маршрутный шаг визита
+     * внутри заданного TTL.
+     */
+    public boolean alreadyProcessed(int branchId, long visitId, int staffId, String routeFingerprint, Duration ttl) {
         cleanup(ttl);
-        String key = key(branchId, visitId, staffId);
+        String key = key(branchId, visitId, staffId, routeFingerprint);
         Instant instant = processed.get(key);
         return instant != null && instant.plus(ttl).isAfter(Instant.now());
     }
@@ -28,11 +36,21 @@ public class ProcessedVisitRegistry {
      * Помечает визит как успешно обработанный конкретным врачом.
      */
     public void markProcessed(int branchId, long visitId, int staffId) {
-        processed.put(key(branchId, visitId, staffId), Instant.now());
+        markProcessed(branchId, visitId, staffId, null);
     }
 
-    private String key(int branchId, long visitId, int staffId) {
-        return branchId + "|" + visitId + "|" + staffId;
+    /**
+     * Помечает успешно обработанным конкретный маршрутный шаг визита.
+     */
+    public void markProcessed(int branchId, long visitId, int staffId, String routeFingerprint) {
+        processed.put(key(branchId, visitId, staffId, routeFingerprint), Instant.now());
+    }
+
+    private String key(int branchId, long visitId, int staffId, String routeFingerprint) {
+        String fingerprint = routeFingerprint == null || routeFingerprint.trim().isEmpty()
+                ? "default"
+                : routeFingerprint;
+        return branchId + "|" + visitId + "|" + staffId + "|" + fingerprint;
     }
 
     private void cleanup(Duration ttl) {

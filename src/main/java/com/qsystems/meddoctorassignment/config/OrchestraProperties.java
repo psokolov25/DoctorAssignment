@@ -13,6 +13,11 @@ public class OrchestraProperties {
   private String configurationRestPath = "/qsystem/rest/config";
   private String branchesForCache = "*";
   private boolean replayMutationCookies = false;
+  /**
+   * Задержка перед повторной попыткой чтения Orchestra REST, если на старте или при refresh кэша
+   * связь отсутствует.
+   */
+  private long reconnectDelayMs = 30000L;
 
   public String getUrl() {
     return url;
@@ -68,5 +73,13 @@ public class OrchestraProperties {
 
   public void setReplayMutationCookies(boolean replayMutationCookies) {
     this.replayMutationCookies = replayMutationCookies;
+  }
+
+  public long getReconnectDelayMs() {
+    return reconnectDelayMs;
+  }
+
+  public void setReconnectDelayMs(long reconnectDelayMs) {
+    this.reconnectDelayMs = reconnectDelayMs;
   }
 }

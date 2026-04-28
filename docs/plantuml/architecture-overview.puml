@@ -1,109 +1,73 @@
 @startuml
-title Общая архитектура Doctor Assistant и med-robot
-
-' Единый профиль диаграмм документации Doctor Assistant.
-' Акцент: аккуратная business/UML-нотация, прозрачные подписи стрелок,
-' ровная сетка, короткие технические подписи и читаемый шрифт без засечек.
+' Улучшенный вариант с акцентом на отказоустойчивость при потере связи с Orchestra.
+left to right direction
 skinparam backgroundColor #F8FAFC
+skinparam defaultFontName Segoe UI
+skinparam defaultFontSize 15
 skinparam shadowing false
-skinparam defaultFontName "Segoe UI"
-skinparam defaultFontSize 13
-skinparam defaultTextAlignment center
-skinparam wrapWidth 170
-skinparam maxMessageSize 120
-skinparam linetype ortho
 skinparam ArrowColor #334155
-skinparam ArrowThickness 1.2
+skinparam ArrowThickness 1.5
 skinparam packageStyle rectangle
-skinparam componentStyle uml2
-skinparam classAttributeIconSize 0
-skinparam handwritten false
-skinparam RoundCorner 6
-skinparam nodesep 38
-skinparam ranksep 46
-skinparam package {
-  BackgroundColor #FFFFFF
-  BorderColor #7C3AED
-  FontColor #111827
-}
+skinparam componentStyle rectangle
+skinparam rectangleRoundCorner 12
+skinparam linetype ortho
+skinparam wrapWidth 220
+skinparam maxMessageSize 120
+skinparam nodesep 55
+skinparam ranksep 55
 skinparam component {
   BackgroundColor #E0F2FE
   BorderColor #0369A1
-  FontColor #111827
+  FontColor #0F172A
 }
-skinparam interface {
-  BackgroundColor #F8FAFC
-  BorderColor #64748B
+skinparam package {
+  BackgroundColor #FCFCFF
+  BorderColor #7C3AED
   FontColor #111827
 }
 skinparam database {
   BackgroundColor #DCFCE7
   BorderColor #15803D
-  FontColor #111827
 }
 skinparam artifact {
-  BackgroundColor #FEF3C7
-  BorderColor #B45309
-  FontColor #111827
+  BackgroundColor #FFF7ED
+  BorderColor #C2410C
 }
-skinparam node {
-  BackgroundColor #FFFFFF
-  BorderColor #64748B
-  FontColor #111827
-}
-skinparam note {
-  BackgroundColor #FEF3C7
-  BorderColor #B45309
-  FontColor #111827
-}
-skinparam actor {
-  BorderColor #475569
-  FontColor #111827
-}
-skinparam sequence {
-  ArrowColor #334155
-  ArrowThickness 1.2
-  LifeLineBorderColor #CBD5E1
-  LifeLineBackgroundColor transparent
-  ParticipantBackgroundColor #E0F2FE
-  ParticipantBorderColor #0369A1
-  ParticipantFontColor #111827
-  GroupBorderColor #94A3B8
-  GroupBackgroundColor transparent
-  GroupFontColor #334155
-  BoxBackgroundColor transparent
-  BoxBorderColor #CBD5E1
-}
-skinparam responseMessageBelowArrow true
 
-left to right direction
+title Общая архитектура Doctor Assistant и med-robot
 
-node "QMatic Orchestra 6\nREST API справочников\nSockJS/STOMP события" <<external system>> as orchestra
-node "med-robot\nREST API выбора услуги и очереди" <<external service>> as robot
-artifact "Файловые журналы\nmed-robot.log\nhttp.log" as logs
-package "Doctor Assistant / service\nmed-doctor-assignment-service" as svc {
-  component "WebSocketService\nприем событий" as ws
-  component "EventHandler\nкорреляция сессии" as ev
-  component "PollingJob\nстрахующая сверка" as poll
-  component "AssignmentService\nдоменный цикл" as assign
-  database "BranchCache\nлокальный срез" as cache
-  component "SelectionService\nвыбор услуги" as sel
-  component "VisitWorkflowGateway\nassign / transfer" as flow
+rectangle "<<external system>>\nQMatic Orchestra 6\n--\nREST API справочников\nREST API рабочих действий\nSockJS / STOMP события" as orchestra #F3F4F6
+rectangle "<<external service>>\nmed-robot\n--\nREST API выбора услуги\nи очереди" as medrobot #F3F4F6
+artifact "Файловые журналы\n--\nmed-robot.log\nhttp.log" as logs
+
+package "Doctor Assistant / service\nmed-doctor-assignment-service" {
+  component "WebSocketService\n--\nприем событий" as websocket
+  component "EventHandler\n--\nкорреляция сессии" as handler
+  component "PollingJob\n--\nстрахующая сверка" as polling
+  component "AssignmentService\n--\nдоменный цикл" as assignment
+  component "SelectionService\n--\nвыбор услуги" as selection
+  component "VisitWorkflowGateway\n--\nassign / transfer" as workflow
+  component "OrchestraReconnectPolicy\n--\nне роняет процесс\nпланирует retry\ncache bootstrap / refresh" as retry #EEF2FF
+  database "BranchCache\n--\nлокальный снимок\nсправочников" as cache
 }
-orchestra ..> ws : события
-ws ..> ev : event
-ev ..> assign : USER_SESSION_READY
-poll ..> assign : POLLING
-assign ..> cache : читает
-assign ..> sel : выбор
-sel ..> robot : POST /optimalqueue
-sel ..> assign : решение
-assign ..> flow : мутации
-flow ..> orchestra : REST Orchestra
-flow ..> logs : диагностика
 
-note bottom of svc
-  События и расписание запускают один доменный цикл;
-  решение принимается по локальному кэшу.
+orchestra -[dashed]-> websocket : события
+websocket --> handler : event
+handler --> assignment : USER_SESSION_READY
+polling --> assignment : POLLING
+assignment --> cache : читает
+assignment --> selection : выбор
+selection -[dashed]-> medrobot : POST /optimalqueue
+medrobot -[dashed]-> selection : решение
+assignment --> workflow : мутации
+workflow --> orchestra : REST Orchestra
+workflow --> logs : диагностика
+retry -[dashed]-> assignment : retry bootstrap / refresh
+assignment --> retry : ошибки связи с Orchestra
+
+note bottom of assignment
+События и расписание запускают один доменный цикл.
+При отсутствии или потере связи с Orchestra сервис не падает,
+а остается запущенным и периодически повторяет попытку подключения.
 end note
 @enduml

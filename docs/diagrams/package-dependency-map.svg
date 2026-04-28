@@ -1,121 +1,129 @@
-<?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="1180" height="600" viewBox="0 0 1180 600">
-  <defs>
-    <marker id="arrow" markerWidth="12" markerHeight="10" refX="10" refY="5" orient="auto" markerUnits="strokeWidth">
-      <path d="M 1 1 L 10 5 L 1 9" fill="none" stroke="#334155" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
-    </marker>
-    <marker id="triangle" markerWidth="14" markerHeight="12" refX="12" refY="6" orient="auto" markerUnits="strokeWidth">
-      <path d="M 1 6 L 12 1 L 12 11 Z" fill="#F8FAFC" stroke="#334155" stroke-width="1.5"/>
-    </marker>
-    <marker id="green-dot" markerWidth="10" markerHeight="10" refX="5" refY="5" orient="auto">
-      <circle cx="5" cy="5" r="4" fill="#16A34A"/>
-    </marker>
-    <filter id="card-shadow" x="-15%" y="-15%" width="130%" height="130%">
-      <feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="#94A3B8" flood-opacity="0.16"/>
-    </filter>
-  </defs>
-  <rect x="0" y="0" width="1180" height="600" fill="#F8FAFC"/>
-  <text x="590.0" y="34" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="21" font-weight="700" fill="#111827">Диаграмма пакетов и направлений зависимостей</text>
-<path d="M 48 94 L 48 77 Q 48 70 55 70 L 298 70 L 316 94 Z" fill="#EDE9FE" stroke="#7C3AED" stroke-width="1.4"/>
-<rect x="40" y="94" width="1100" height="456" rx="8" ry="8" fill="#FFFFFF" stroke="#7C3AED" stroke-width="1.4" filter="url(#card-shadow)"/>
-<text x="60" y="87" text-anchor="start" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="700" fill="#111827" style=""><tspan x="60" dy="0">com.qsystems.meddoctorassignment</tspan></text>
-<text x="590.0" y="116" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" font-weight="400" fill="#6B7280" style=""><tspan x="590.0" dy="0">корневой пакет приложения</tspan></text>
-<path d="M 93 154 L 93 137 Q 93 130 100 130 L 196 130 L 214 154 Z" fill="#EDE9FE" stroke="#7C3AED" stroke-width="1.4"/>
-<rect x="85" y="154" width="270" height="236" rx="8" ry="8" fill="#FFFFFF" stroke="#7C3AED" stroke-width="1.4" filter="url(#card-shadow)"/>
-<text x="105" y="147" text-anchor="start" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="700" fill="#111827" style=""><tspan x="105" dy="0">Точка входа</tspan></text>
-<path d="M 393 154 L 393 137 Q 393 130 400 130 L 471 130 L 489 154 Z" fill="#EDE9FE" stroke="#7C3AED" stroke-width="1.4"/>
-<rect x="385" y="154" width="340" height="236" rx="8" ry="8" fill="#FFFFFF" stroke="#7C3AED" stroke-width="1.4" filter="url(#card-shadow)"/>
-<text x="405" y="147" text-anchor="start" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="700" fill="#111827" style=""><tspan x="405" dy="0">Домен</tspan></text>
-<path d="M 763 154 L 763 137 Q 763 130 770 130 L 845 130 L 863 154 Z" fill="#EDE9FE" stroke="#7C3AED" stroke-width="1.4"/>
-<rect x="755" y="154" width="300" height="236" rx="8" ry="8" fill="#FFFFFF" stroke="#7C3AED" stroke-width="1.4" filter="url(#card-shadow)"/>
-<text x="775" y="147" text-anchor="start" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="700" fill="#111827" style=""><tspan x="775" dy="0">Адаптеры</tspan></text>
-<path d="M 728 449 L 728 432 Q 728 425 735 425 L 817 425 L 835 449 Z" fill="#EDE9FE" stroke="#7C3AED" stroke-width="1.4"/>
-<rect x="720" y="449" width="320" height="71" rx="8" ry="8" fill="#FFFFFF" stroke="#7C3AED" stroke-width="1.4" filter="url(#card-shadow)"/>
-<text x="740" y="442" text-anchor="start" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="700" fill="#111827" style=""><tspan x="740" dy="0">Платформа</tspan></text>
-<path d="M 123 214 L 123 197 Q 123 190 130 190 L 182 190 L 200 214 Z" fill="#EDE9FE" stroke="#7C3AED" stroke-width="1.4"/>
-<rect x="115" y="214" width="85" height="58" rx="8" ry="8" fill="#FFFFFF" stroke="#7C3AED" stroke-width="1.4" filter="url(#card-shadow)"/>
-<text x="135" y="207" text-anchor="start" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="700" fill="#111827" style=""><tspan x="135" dy="0">websocket</tspan></text>
-<text x="157.5" y="236" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" font-weight="400" fill="#6B7280" style=""><tspan x="157.5" dy="0">SockJS/STOMP</tspan></text>
-<path d="M 233 214 L 233 197 Q 233 190 240 190 L 285 190 L 303 214 Z" fill="#EDE9FE" stroke="#7C3AED" stroke-width="1.4"/>
-<rect x="225" y="214" width="78" height="58" rx="8" ry="8" fill="#FFFFFF" stroke="#7C3AED" stroke-width="1.4" filter="url(#card-shadow)"/>
-<text x="245" y="207" text-anchor="start" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="700" fill="#111827" style=""><tspan x="245" dy="0">event</tspan></text>
-<text x="264.0" y="236" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" font-weight="400" fill="#6B7280" style=""><tspan x="264.0" dy="0">корреляция</tspan></text>
-<path d="M 123 319 L 123 302 Q 123 295 130 295 L 189 295 L 207 319 Z" fill="#EDE9FE" stroke="#7C3AED" stroke-width="1.4"/>
-<rect x="115" y="319" width="92" height="54" rx="8" ry="8" fill="#FFFFFF" stroke="#7C3AED" stroke-width="1.4" filter="url(#card-shadow)"/>
-<text x="135" y="312" text-anchor="start" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="700" fill="#111827" style=""><tspan x="135" dy="0">schedule</tspan></text>
-<text x="161.0" y="341" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" font-weight="400" fill="#6B7280" style=""><tspan x="161.0" dy="0">cron-сверка</tspan></text>
-<path d="M 423 214 L 423 197 Q 423 190 430 190 L 513 190 L 531 214 Z" fill="#EDE9FE" stroke="#7C3AED" stroke-width="1.4"/>
-<rect x="415" y="214" width="116" height="58" rx="8" ry="8" fill="#FFFFFF" stroke="#7C3AED" stroke-width="1.4" filter="url(#card-shadow)"/>
-<text x="435" y="207" text-anchor="start" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="700" fill="#111827" style=""><tspan x="435" dy="0">domain.service</tspan></text>
-<text x="473.0" y="236" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" font-weight="400" fill="#6B7280" style=""><tspan x="473.0" dy="0">контракты</tspan></text>
-<path d="M 563 214 L 563 197 Q 563 190 570 190 L 649 190 L 667 214 Z" fill="#EDE9FE" stroke="#7C3AED" stroke-width="1.4"/>
-<rect x="555" y="214" width="112" height="58" rx="8" ry="8" fill="#FFFFFF" stroke="#7C3AED" stroke-width="1.4" filter="url(#card-shadow)"/>
-<text x="575" y="207" text-anchor="start" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="700" fill="#111827" style=""><tspan x="575" dy="0">domain.impl</tspan></text>
-<text x="611.0" y="236" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" font-weight="400" fill="#6B7280" style=""><tspan x="611.0" dy="0">алгоритмы</tspan></text>
-<path d="M 423 324 L 423 307 Q 423 300 430 300 L 507 300 L 525 324 Z" fill="#EDE9FE" stroke="#7C3AED" stroke-width="1.4"/>
-<rect x="415" y="324" width="110" height="52" rx="8" ry="8" fill="#FFFFFF" stroke="#7C3AED" stroke-width="1.4" filter="url(#card-shadow)"/>
-<text x="435" y="317" text-anchor="start" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="700" fill="#111827" style=""><tspan x="435" dy="0">domain.model</tspan></text>
-<text x="470.0" y="346" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" font-weight="400" fill="#6B7280" style=""><tspan x="470.0" dy="0">модели</tspan></text>
-<path d="M 563 324 L 563 307 Q 563 300 570 300 L 637 300 L 655 324 Z" fill="#EDE9FE" stroke="#7C3AED" stroke-width="1.4"/>
-<rect x="555" y="324" width="100" height="52" rx="8" ry="8" fill="#FFFFFF" stroke="#7C3AED" stroke-width="1.4" filter="url(#card-shadow)"/>
-<text x="575" y="317" text-anchor="start" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="700" fill="#111827" style=""><tspan x="575" dy="0">cache</tspan></text>
-<text x="605.0" y="346" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" font-weight="400" fill="#6B7280" style=""><tspan x="605.0" dy="0">справочники</tspan></text>
-<path d="M 663 324 L 663 307 Q 663 300 670 300 L 689 300 L 707 324 Z" fill="#EDE9FE" stroke="#7C3AED" stroke-width="1.4"/>
-<rect x="655" y="324" width="52" height="52" rx="8" ry="8" fill="#FFFFFF" stroke="#7C3AED" stroke-width="1.4" filter="url(#card-shadow)"/>
-<text x="675" y="317" text-anchor="start" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="700" fill="#111827" style=""><tspan x="675" dy="0">util</tspan></text>
-<text x="681.0" y="346" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" font-weight="400" fill="#6B7280" style=""><tspan x="681.0" dy="0">lock</tspan></text>
-<path d="M 793 214 L 793 197 Q 793 190 800 190 L 853 190 L 871 214 Z" fill="#EDE9FE" stroke="#7C3AED" stroke-width="1.4"/>
-<rect x="785" y="214" width="86" height="58" rx="8" ry="8" fill="#FFFFFF" stroke="#7C3AED" stroke-width="1.4" filter="url(#card-shadow)"/>
-<text x="805" y="207" text-anchor="start" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="700" fill="#111827" style=""><tspan x="805" dy="0">gateway</tspan></text>
-<text x="828.0" y="236" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" font-weight="400" fill="#6B7280" style=""><tspan x="828.0" dy="0">порты</tspan></text>
-<path d="M 903 214 L 903 197 Q 903 190 910 190 L 977 190 L 995 214 Z" fill="#EDE9FE" stroke="#7C3AED" stroke-width="1.4"/>
-<rect x="895" y="214" width="100" height="58" rx="8" ry="8" fill="#FFFFFF" stroke="#7C3AED" stroke-width="1.4" filter="url(#card-shadow)"/>
-<text x="915" y="207" text-anchor="start" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="700" fill="#111827" style=""><tspan x="915" dy="0">gateway.impl</tspan></text>
-<text x="945.0" y="236" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" font-weight="400" fill="#6B7280" style=""><tspan x="945.0" dy="0">реализации</tspan></text>
-<path d="M 793 324 L 793 307 Q 793 300 800 300 L 865 300 L 883 324 Z" fill="#EDE9FE" stroke="#7C3AED" stroke-width="1.4"/>
-<rect x="785" y="324" width="98" height="52" rx="8" ry="8" fill="#FFFFFF" stroke="#7C3AED" stroke-width="1.4" filter="url(#card-shadow)"/>
-<text x="805" y="317" text-anchor="start" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="700" fill="#111827" style=""><tspan x="805" dy="0">orchestra</tspan></text>
-<text x="834.0" y="346" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" font-weight="400" fill="#6B7280" style=""><tspan x="834.0" dy="0">REST</tspan></text>
-<path d="M 933 324 L 933 307 Q 933 300 940 300 L 1005 300 L 1023 324 Z" fill="#EDE9FE" stroke="#7C3AED" stroke-width="1.4"/>
-<rect x="925" y="324" width="98" height="52" rx="8" ry="8" fill="#FFFFFF" stroke="#7C3AED" stroke-width="1.4" filter="url(#card-shadow)"/>
-<text x="945" y="317" text-anchor="start" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="700" fill="#111827" style=""><tspan x="945" dy="0">medrobot</tspan></text>
-<text x="974.0" y="346" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" font-weight="400" fill="#6B7280" style=""><tspan x="974.0" dy="0">REST</tspan></text>
-<path d="M 763 489 L 763 472 Q 763 465 770 465 L 837 465 L 855 489 Z" fill="#EDE9FE" stroke="#7C3AED" stroke-width="1.4"/>
-<rect x="755" y="489" width="100" height="26" rx="8" ry="8" fill="#FFFFFF" stroke="#7C3AED" stroke-width="1.4" filter="url(#card-shadow)"/>
-<text x="775" y="482" text-anchor="start" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="700" fill="#111827" style=""><tspan x="775" dy="0">config</tspan></text>
-<text x="805.0" y="511" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" font-weight="400" fill="#6B7280" style=""><tspan x="805.0" dy="0">yml</tspan></text>
-<path d="M 908 489 L 908 472 Q 908 465 915 465 L 992 465 L 1010 489 Z" fill="#EDE9FE" stroke="#7C3AED" stroke-width="1.4"/>
-<rect x="900" y="489" width="110" height="26" rx="8" ry="8" fill="#FFFFFF" stroke="#7C3AED" stroke-width="1.4" filter="url(#card-shadow)"/>
-<text x="920" y="482" text-anchor="start" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="700" fill="#111827" style=""><tspan x="920" dy="0">diagnostics</tspan></text>
-<text x="955.0" y="511" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" font-weight="400" fill="#6B7280" style=""><tspan x="955.0" dy="0">checks</tspan></text>
-<line x1="200" y1="233" x2="225" y2="233" stroke="#334155" stroke-width="1.35" stroke-linecap="round" stroke-dasharray="6 5" marker-end="url(#arrow)"/>
-<text x="212" y="224" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#4B5563" style=""><tspan x="212" dy="0">события</tspan></text>
-<line x1="303" y1="233" x2="415" y2="233" stroke="#334155" stroke-width="1.35" stroke-linecap="round" stroke-dasharray="6 5" marker-end="url(#arrow)"/>
-<text x="360" y="224" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#4B5563" style=""><tspan x="360" dy="0">запуск</tspan></text>
-<path d="M 207 334 L 315 334 L 315 267 L 415 267" fill="none" stroke="#334155" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="6 5" marker-end="url(#arrow)"/>
-<text x="330" y="326" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#4B5563" style=""><tspan x="330" dy="0">сверка</tspan></text>
-<line x1="531" y1="233" x2="555" y2="233" stroke="#334155" stroke-width="1.35" stroke-linecap="round" stroke-dasharray="6 5" marker-end="url(#arrow)"/>
-<text x="543" y="224" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#4B5563" style=""><tspan x="543" dy="0">impl</tspan></text>
-<path d="M 611 272 L 611 300" fill="none" stroke="#334155" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="6 5" marker-end="url(#arrow)"/>
-<text x="635" y="291" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#4B5563" style=""><tspan x="635" dy="0">кэш</tspan></text>
-<line x1="667" y1="233" x2="785" y2="233" stroke="#334155" stroke-width="1.35" stroke-linecap="round" stroke-dasharray="6 5" marker-end="url(#arrow)"/>
-<text x="730" y="224" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#4B5563" style=""><tspan x="730" dy="0">порты</tspan></text>
-<line x1="895" y1="233" x2="871" y2="233" stroke="#334155" stroke-width="1.35" stroke-linecap="round" stroke-dasharray="6 5" marker-end="url(#triangle)"/>
-<text x="883" y="224" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#4B5563" style=""><tspan x="883" dy="0">реал.</tspan></text>
-<path d="M 945 272 L 945 300 L 834 300" fill="none" stroke="#334155" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="6 5" marker-end="url(#arrow)"/>
-<text x="900" y="292" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#4B5563" style=""><tspan x="900" dy="0">REST</tspan></text>
-<line x1="945" y1="272" x2="974" y2="300" stroke="#334155" stroke-width="1.35" stroke-linecap="round" stroke-dasharray="6 5" marker-end="url(#arrow)"/>
-<text x="970" y="288" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#4B5563" style=""><tspan x="970" dy="0">REST</tspan></text>
-<path d="M 605 338 L 732 338 L 732 250 L 785 250" fill="none" stroke="#334155" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="6 5" marker-end="url(#arrow)"/>
-<text x="715" y="332" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#4B5563" style=""><tspan x="715" dy="0">читает</tspan></text>
-<path d="M 805 465 L 805 430 L 158 430 L 158 373" fill="none" stroke="#334155" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="6 5" marker-end="url(#arrow)"/>
-<text x="480" y="420" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#4B5563" style=""><tspan x="480" dy="0">config</tspan></text>
-<path d="M 805 465 L 805 415 L 161 415 L 161 334" fill="none" stroke="#334155" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="6 5" marker-end="url(#arrow)"/>
-<text x="490" y="408" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#4B5563" style=""><tspan x="490" dy="0">config</tspan></text>
-<path d="M 805 465 L 1070 465 L 1070 338 L 1023 338" fill="none" stroke="#334155" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="6 5" marker-end="url(#arrow)"/>
-<text x="1032" y="428" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#4B5563" style=""><tspan x="1032" dy="0">config</tspan></text>
-<line x1="900" y1="490" x2="855" y2="490" stroke="#334155" stroke-width="1.35" stroke-linecap="round" stroke-dasharray="6 5" marker-end="url(#arrow)"/>
-<text x="878" y="480" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#4B5563" style=""><tspan x="878" dy="0">flags</tspan></text>
-<rect x="655" y="545" width="460" height="38" rx="7" ry="7" fill="#FEF3C7" stroke="#B45309" stroke-width="1.2" filter="url(#card-shadow)"/>
-<text x="669" y="569" text-anchor="start" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="400" fill="#111827" style=""><tspan x="669" dy="0">Стрелки показывают допустимое направление зависимостей: доменный слой не зависит от REST-клиентов.</tspan></text>
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="760" viewBox="0 0 1280 760" role="img" aria-labelledby="title desc">
+<title>Диаграмма пакетов и направлений зависимостей</title>
+<desc>Диаграмма пакетов и направлений зависимостей</desc>
+<defs>
+  <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+    <path d="M 0 0 L 10 5 L 0 10 z" fill="#334155"/>
+  </marker>
+  <marker id="arrowDashed" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+    <path d="M 0 0 L 10 5 L 0 10 z" fill="#64748b"/>
+  </marker>
+</defs>
+<rect width="100%" height="100%" fill="#f8fafc"/>
+<text x="640" y="42" font-family="Segoe UI, Arial, sans-serif" font-size="28" font-weight="700" fill="#111827" text-anchor="middle">Диаграмма пакетов и направлений зависимостей</text>
+<rect x="42" y="108" width="1188" height="580" rx="16" fill="#fcfcff" stroke="#7c3aed" stroke-width="1.8"/>
+<path d="M 60,108 h 150 l 18,-18 h -150 a 8 8 0 0 0 -8 8 z" fill="#f5f3ff" stroke="#7c3aed" stroke-width="1.8"/>
+<text x="135" y="102" font-family="Segoe UI, Arial, sans-serif" font-size="17" font-weight="600" fill="#1f2937" text-anchor="middle">com.qsystems.meddoctorassignment</text>
+<text x="640" y="140" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="400" fill="#64748b" text-anchor="middle">корневой пакет приложения</text>
+<rect x="88" y="170" width="282" height="264" rx="16" fill="#fcfcff" stroke="#7c3aed" stroke-width="1.8"/>
+<path d="M 106,170 h 150 l 18,-18 h -150 a 8 8 0 0 0 -8 8 z" fill="#f5f3ff" stroke="#7c3aed" stroke-width="1.8"/>
+<text x="181" y="164" font-family="Segoe UI, Arial, sans-serif" font-size="17" font-weight="600" fill="#1f2937" text-anchor="middle">Точка входа</text>
+<rect x="410" y="170" width="344" height="264" rx="16" fill="#fcfcff" stroke="#7c3aed" stroke-width="1.8"/>
+<path d="M 428,170 h 150 l 18,-18 h -150 a 8 8 0 0 0 -8 8 z" fill="#f5f3ff" stroke="#7c3aed" stroke-width="1.8"/>
+<text x="503" y="164" font-family="Segoe UI, Arial, sans-serif" font-size="17" font-weight="600" fill="#1f2937" text-anchor="middle">Домен</text>
+<rect x="786" y="170" width="320" height="264" rx="16" fill="#fcfcff" stroke="#7c3aed" stroke-width="1.8"/>
+<path d="M 804,170 h 150 l 18,-18 h -150 a 8 8 0 0 0 -8 8 z" fill="#f5f3ff" stroke="#7c3aed" stroke-width="1.8"/>
+<text x="879" y="164" font-family="Segoe UI, Arial, sans-serif" font-size="17" font-weight="600" fill="#1f2937" text-anchor="middle">Адаптеры</text>
+<rect x="846" y="486" width="254" height="126" rx="16" fill="#fcfcff" stroke="#7c3aed" stroke-width="1.8"/>
+<path d="M 864,486 h 150 l 18,-18 h -150 a 8 8 0 0 0 -8 8 z" fill="#f5f3ff" stroke="#7c3aed" stroke-width="1.8"/>
+<text x="939" y="480" font-family="Segoe UI, Arial, sans-serif" font-size="17" font-weight="600" fill="#1f2937" text-anchor="middle">Платформа</text>
+<rect x="120" y="228" width="82" height="82" rx="10" fill="#fbf7ff" stroke="#7c3aed" stroke-width="1.6"/>
+<text x="161.0" y="254" font-family="Segoe UI, Arial, sans-serif" font-size="18" font-weight="700" fill="#111827" text-anchor="middle">websocket</text>
+<text x="161.0" y="280" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="400" fill="#6b7280" text-anchor="middle">
+<tspan x="161.0" dy="0">SockJS / STOMP</tspan>
+</text>
+<rect x="228" y="228" width="82" height="82" rx="10" fill="#fbf7ff" stroke="#7c3aed" stroke-width="1.6"/>
+<text x="269.0" y="254" font-family="Segoe UI, Arial, sans-serif" font-size="18" font-weight="700" fill="#111827" text-anchor="middle">event</text>
+<text x="269.0" y="280" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="400" fill="#6b7280" text-anchor="middle">
+<tspan x="269.0" dy="0">корреляция</tspan>
+</text>
+<rect x="146" y="352" width="98" height="68" rx="10" fill="#fbf7ff" stroke="#7c3aed" stroke-width="1.6"/>
+<text x="195.0" y="378" font-family="Segoe UI, Arial, sans-serif" font-size="18" font-weight="700" fill="#111827" text-anchor="middle">schedule</text>
+<text x="195.0" y="404" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="400" fill="#6b7280" text-anchor="middle">
+<tspan x="195.0" dy="0">cron-сверка</tspan>
+</text>
+<rect x="442" y="222" width="134" height="78" rx="10" fill="#fbf7ff" stroke="#7c3aed" stroke-width="1.6"/>
+<text x="509.0" y="248" font-family="Segoe UI, Arial, sans-serif" font-size="18" font-weight="700" fill="#111827" text-anchor="middle">domain.service</text>
+<text x="509.0" y="274" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="400" fill="#6b7280" text-anchor="middle">
+<tspan x="509.0" dy="0">контракты</tspan>
+</text>
+<rect x="594" y="222" width="120" height="78" rx="10" fill="#fbf7ff" stroke="#7c3aed" stroke-width="1.6"/>
+<text x="654.0" y="248" font-family="Segoe UI, Arial, sans-serif" font-size="18" font-weight="700" fill="#111827" text-anchor="middle">domain.impl</text>
+<text x="654.0" y="274" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="400" fill="#6b7280" text-anchor="middle">
+<tspan x="654.0" dy="0">алгоритмы</tspan>
+</text>
+<rect x="456" y="350" width="118" height="70" rx="10" fill="#fbf7ff" stroke="#7c3aed" stroke-width="1.6"/>
+<text x="515.0" y="376" font-family="Segoe UI, Arial, sans-serif" font-size="18" font-weight="700" fill="#111827" text-anchor="middle">domain.model</text>
+<text x="515.0" y="402" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="400" fill="#6b7280" text-anchor="middle">
+<tspan x="515.0" dy="0">модели</tspan>
+</text>
+<rect x="590" y="350" width="90" height="70" rx="10" fill="#fbf7ff" stroke="#7c3aed" stroke-width="1.6"/>
+<text x="635.0" y="376" font-family="Segoe UI, Arial, sans-serif" font-size="18" font-weight="700" fill="#111827" text-anchor="middle">cache</text>
+<text x="635.0" y="402" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="400" fill="#6b7280" text-anchor="middle">
+<tspan x="635.0" dy="0">срез</tspan>
+</text>
+<rect x="690" y="350" width="50" height="70" rx="10" fill="#fbf7ff" stroke="#7c3aed" stroke-width="1.6"/>
+<text x="715.0" y="376" font-family="Segoe UI, Arial, sans-serif" font-size="18" font-weight="700" fill="#111827" text-anchor="middle">util</text>
+<text x="715.0" y="402" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="400" fill="#6b7280" text-anchor="middle">
+<tspan x="715.0" dy="0">lock</tspan>
+<tspan x="715.0" dy="18">TTL</tspan>
+</text>
+<rect x="814" y="222" width="100" height="78" rx="10" fill="#fbf7ff" stroke="#7c3aed" stroke-width="1.6"/>
+<text x="864.0" y="248" font-family="Segoe UI, Arial, sans-serif" font-size="18" font-weight="700" fill="#111827" text-anchor="middle">gateway</text>
+<text x="864.0" y="274" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="400" fill="#6b7280" text-anchor="middle">
+<tspan x="864.0" dy="0">порты</tspan>
+</text>
+<rect x="938" y="222" width="136" height="78" rx="10" fill="#fbf7ff" stroke="#7c3aed" stroke-width="1.6"/>
+<text x="1006.0" y="248" font-family="Segoe UI, Arial, sans-serif" font-size="18" font-weight="700" fill="#111827" text-anchor="middle">gateway.impl</text>
+<text x="1006.0" y="274" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="400" fill="#6b7280" text-anchor="middle">
+<tspan x="1006.0" dy="0">реализации</tspan>
+</text>
+<rect x="820" y="350" width="96" height="70" rx="10" fill="#fbf7ff" stroke="#7c3aed" stroke-width="1.6"/>
+<text x="868.0" y="376" font-family="Segoe UI, Arial, sans-serif" font-size="18" font-weight="700" fill="#111827" text-anchor="middle">orchestra</text>
+<text x="868.0" y="402" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="400" fill="#6b7280" text-anchor="middle">
+<tspan x="868.0" dy="0">REST</tspan>
+</text>
+<rect x="942" y="350" width="98" height="70" rx="10" fill="#fbf7ff" stroke="#7c3aed" stroke-width="1.6"/>
+<text x="991.0" y="376" font-family="Segoe UI, Arial, sans-serif" font-size="18" font-weight="700" fill="#111827" text-anchor="middle">medrobot</text>
+<text x="991.0" y="402" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="400" fill="#6b7280" text-anchor="middle">
+<tspan x="991.0" dy="0">REST</tspan>
+</text>
+<rect x="876" y="530" width="96" height="58" rx="10" fill="#fbf7ff" stroke="#7c3aed" stroke-width="1.6"/>
+<text x="924.0" y="556" font-family="Segoe UI, Arial, sans-serif" font-size="18" font-weight="700" fill="#111827" text-anchor="middle">config</text>
+<text x="924.0" y="582" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="400" fill="#6b7280" text-anchor="middle">
+<tspan x="924.0" dy="0">yml / flags</tspan>
+</text>
+<rect x="986" y="530" width="92" height="58" rx="10" fill="#fbf7ff" stroke="#7c3aed" stroke-width="1.6"/>
+<text x="1032.0" y="556" font-family="Segoe UI, Arial, sans-serif" font-size="18" font-weight="700" fill="#111827" text-anchor="middle">diagnostics</text>
+<text x="1032.0" y="582" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="400" fill="#6b7280" text-anchor="middle">
+<tspan x="1032.0" dy="0">checks</tspan>
+</text>
+<line x1="202" y1="269" x2="228" y2="269" stroke="#334155" stroke-width="1.8" fill="none" marker-end="url(#arrow)"/>
+<text x="216" y="258" font-family="Segoe UI, Arial, sans-serif" font-size="13" font-weight="400" fill="#64748b" text-anchor="middle">события</text>
+<line x1="310" y1="269" x2="442" y2="261" stroke="#334155" stroke-width="1.8" fill="none" marker-end="url(#arrow)"/>
+<text x="376" y="257" font-family="Segoe UI, Arial, sans-serif" font-size="13" font-weight="400" fill="#64748b" text-anchor="middle">запуск</text>
+<polyline points="194,386 194,334 442,334 442,334" stroke="#64748b" stroke-width="1.8" fill="none" stroke-dasharray="6 5" marker-end="url(#arrowDashed)"/>
+<text x="328" y="324" font-family="Segoe UI, Arial, sans-serif" font-size="13" font-weight="400" fill="#64748b" text-anchor="middle">страхующая сверка</text>
+<line x1="576" y1="261" x2="594" y2="261" stroke="#334155" stroke-width="1.8" fill="none" marker-end="url(#arrow)"/>
+<text x="585" y="249" font-family="Segoe UI, Arial, sans-serif" font-size="13" font-weight="400" fill="#64748b" text-anchor="middle">impl</text>
+<polyline points="654,300 654,334 635,334 635,350" stroke="#334155" stroke-width="1.8" fill="none" marker-end="url(#arrow)"/>
+<text x="680" y="332" font-family="Segoe UI, Arial, sans-serif" font-size="13" font-weight="400" fill="#64748b" text-anchor="start">кэш / модели</text>
+<polyline points="714,261 814,261" stroke="#64748b" stroke-width="1.8" fill="none" stroke-dasharray="6 5" marker-end="url(#arrowDashed)"/>
+<text x="764" y="249" font-family="Segoe UI, Arial, sans-serif" font-size="13" font-weight="400" fill="#64748b" text-anchor="middle">порты</text>
+<line x1="914" y1="261" x2="938" y2="261" stroke="#334155" stroke-width="1.8" fill="none" marker-end="url(#arrow)"/>
+<text x="926" y="249" font-family="Segoe UI, Arial, sans-serif" font-size="13" font-weight="400" fill="#64748b" text-anchor="middle">реал.</text>
+<polyline points="1006,300 1006,335 1040,335 1040,350" stroke="#334155" stroke-width="1.8" fill="none" marker-end="url(#arrow)"/>
+<text x="1034" y="322" font-family="Segoe UI, Arial, sans-serif" font-size="13" font-weight="400" fill="#64748b" text-anchor="middle">REST</text>
+<polyline points="984,300 984,335 868,335 868,350" stroke="#334155" stroke-width="1.8" fill="none" marker-end="url(#arrow)"/>
+<text x="926" y="322" font-family="Segoe UI, Arial, sans-serif" font-size="13" font-weight="400" fill="#64748b" text-anchor="middle">REST</text>
+<polyline points="972,558 972,470 196,470 196,420" stroke="#64748b" stroke-width="1.8" fill="none" stroke-dasharray="7 6" marker-end="url(#arrowDashed)"/>
+<text x="570" y="458" font-family="Segoe UI, Arial, sans-serif" font-size="13" font-weight="400" fill="#64748b" text-anchor="middle">config</text>
+<polyline points="972,558 972,468 996,468 996,530" stroke="#334155" stroke-width="1.8" fill="none" marker-end="url(#arrow)"/>
+<text x="1008" y="456" font-family="Segoe UI, Arial, sans-serif" font-size="13" font-weight="400" fill="#64748b" text-anchor="start">flags</text>
+<polyline points="868,386 760,386 760,386 740,386" stroke="#64748b" stroke-width="1.8" fill="none" stroke-dasharray="6 5" marker-end="url(#arrowDashed)"/>
+<text x="804" y="374" font-family="Segoe UI, Arial, sans-serif" font-size="13" font-weight="400" fill="#64748b" text-anchor="middle">чтение / адаптеры</text>
+<rect x="635" y="646" width="530" height="40" rx="10" fill="#fff7ed" stroke="#c2410c" stroke-width="1.6"/>
+<text x="900.0" y="672" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="400" fill="#7c2d12" text-anchor="middle">
+<tspan x="900.0" dy="0">Стрелки показывают допустимое направление зависимостей: доменный слой зависит только от контрактов и портов, а не от конкретных REST-клиентов и платформенных реализаций.</tspan>
+</text>
 </svg>

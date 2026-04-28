@@ -22,4 +22,12 @@ public class RuntimeConfigurationLoggerTest {
     Assertions.assertFalse(properties.getActivation().isEnabled());
     Assertions.assertTrue(properties.getActivation().isFailCycleOnError());
   }
+
+  @Test
+  void orchestraPropertiesDefaultsIncludeReconnectDelay() {
+    com.qsystems.meddoctorassignment.config.OrchestraProperties properties =
+        new com.qsystems.meddoctorassignment.config.OrchestraProperties();
+
+    Assertions.assertEquals(30000L, properties.getReconnectDelayMs());
+  }
 }

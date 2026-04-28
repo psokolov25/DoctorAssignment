@@ -39,6 +39,10 @@ application:
     # массово получают 403, поэтому по умолчанию replay выключен.
     replay-mutation-cookies: false
 
+    # Если Orchestra недоступна на старте или во время refresh branch cache,
+    # сервис не завершается аварийно, а планирует повторную попытку bootstrap/refresh.
+    reconnect-delay-ms: 30000
+
   med-robot:
     # Включает обращение к med-robot для выбора оптимальной услуги и очереди.
     # false — полностью старая локальная схема Doctor Assistant.

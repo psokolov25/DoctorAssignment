@@ -1,123 +1,73 @@
 @startuml
+left to right direction
+skinparam backgroundColor #F8FAFC
+skinparam defaultFontName Segoe UI
+skinparam defaultFontSize 15
+skinparam shadowing false
+skinparam ArrowColor #334155
+skinparam ArrowThickness 1.4
+skinparam packageStyle rectangle
+skinparam componentStyle rectangle
+skinparam rectangleRoundCorner 12
+skinparam linetype ortho
+skinparam wrapWidth 220
+skinparam nodesep 50
+skinparam ranksep 50
+skinparam package {
+  BackgroundColor #FCFCFF
+  BorderColor #7C3AED
+}
+skinparam rectangle {
+  BackgroundColor #FBF7FF
+  BorderColor #7C3AED
+}
+
 title Диаграмма пакетов и направлений зависимостей
 
-' Единый профиль диаграмм документации Doctor Assistant.
-' Акцент: аккуратная business/UML-нотация, прозрачные подписи стрелок,
-' ровная сетка, короткие технические подписи и читаемый шрифт без засечек.
-skinparam backgroundColor #F8FAFC
-skinparam shadowing false
-skinparam defaultFontName "Segoe UI"
-skinparam defaultFontSize 13
-skinparam defaultTextAlignment center
-skinparam wrapWidth 170
-skinparam maxMessageSize 120
-skinparam linetype ortho
-skinparam ArrowColor #334155
-skinparam ArrowThickness 1.2
-skinparam packageStyle rectangle
-skinparam componentStyle uml2
-skinparam classAttributeIconSize 0
-skinparam handwritten false
-skinparam RoundCorner 6
-skinparam nodesep 38
-skinparam ranksep 46
-skinparam package {
-  BackgroundColor #FFFFFF
-  BorderColor #7C3AED
-  FontColor #111827
-}
-skinparam component {
-  BackgroundColor #E0F2FE
-  BorderColor #0369A1
-  FontColor #111827
-}
-skinparam interface {
-  BackgroundColor #F8FAFC
-  BorderColor #64748B
-  FontColor #111827
-}
-skinparam database {
-  BackgroundColor #DCFCE7
-  BorderColor #15803D
-  FontColor #111827
-}
-skinparam artifact {
-  BackgroundColor #FEF3C7
-  BorderColor #B45309
-  FontColor #111827
-}
-skinparam node {
-  BackgroundColor #FFFFFF
-  BorderColor #64748B
-  FontColor #111827
-}
-skinparam note {
-  BackgroundColor #FEF3C7
-  BorderColor #B45309
-  FontColor #111827
-}
-skinparam actor {
-  BorderColor #475569
-  FontColor #111827
-}
-skinparam sequence {
-  ArrowColor #334155
-  ArrowThickness 1.2
-  LifeLineBorderColor #CBD5E1
-  LifeLineBackgroundColor transparent
-  ParticipantBackgroundColor #E0F2FE
-  ParticipantBorderColor #0369A1
-  ParticipantFontColor #111827
-  GroupBorderColor #94A3B8
-  GroupBackgroundColor transparent
-  GroupFontColor #334155
-  BoxBackgroundColor transparent
-  BoxBorderColor #CBD5E1
-}
-skinparam responseMessageBelowArrow true
-
-left to right direction
-package "com.qsystems.meddoctorassignment" {
+package "com.qsystems.meddoctorassignment\nкорневой пакет приложения" {
   package "Точка входа" {
-    package "websocket\nSockJS/STOMP" as websocket
-    package "event\nкорреляция" as event
-    package "schedule\ncron-сверка" as schedule
+    rectangle "websocket\nSockJS / STOMP" as websocket
+    rectangle "event\nкорреляция" as event
+    rectangle "schedule\ncron-сверка" as schedule
   }
+
   package "Домен" {
-    package "domain.service\nконтракты" as domainService
-    package "domain.impl\nалгоритмы" as domainImpl
-    package "domain.model\nмодели" as domainModel
-    package "cache\nсправочники" as cache
-    package "util\nlock/dedup" as util
+    rectangle "domain.service\nконтракты" as service
+    rectangle "domain.impl\nалгоритмы" as impl
+    rectangle "domain.model\nмодели" as model
+    rectangle "cache\nлокальный срез" as cache
+    rectangle "util\nlock / TTL" as util
   }
+
   package "Адаптеры" {
-    package "gateway\nпорты" as gateway
-    package "gateway.impl\nреализации" as gatewayImpl
-    package "orchestra\nREST Orchestra" as orchestra
-    package "medrobot\nREST med-robot" as medrobot
+    rectangle "gateway\nпорты" as gateway
+    rectangle "gateway.impl\nреализации" as gatewayImpl
+    rectangle "orchestra\nREST" as orchestra
+    rectangle "medrobot\nREST" as medrobot
   }
+
   package "Платформа" {
-    package "config\napplication.yml" as config
-    package "diagnostics\nstartup checks" as diagnostics
+    rectangle "config\nyml / flags" as config
+    rectangle "diagnostics\nchecks" as diagnostics
   }
 }
-websocket ..> event : события
-event ..> domainService : запуск
-schedule ..> domainService : сверка
-domainService ..> domainImpl : impl
-domainImpl ..> domainModel : модели
-domainImpl ..> cache : кэш
-domainImpl ..> gateway : порты
-gatewayImpl ..|> gateway : реал.
-gatewayImpl ..> orchestra : REST
-gatewayImpl ..> medrobot : REST
-cache ..> gateway : читает
-config ..> websocket : config
-config ..> schedule : config
-config ..> medrobot : config
-diagnostics ..> config : flags
+
+websocket --> event : события
+schedule -[dashed]-> service : страхующая сверка
+event --> service : запуск
+service --> impl : impl
+impl --> cache : кэш / модели
+impl -[dashed]-> gateway : порты
+gateway --> gatewayImpl : реализация
+gatewayImpl --> orchestra : REST
+gatewayImpl --> medrobot : REST
+config -[dashed]-> websocket : config
+config -[dashed]-> schedule : config
+config --> diagnostics : flags
+
 note bottom
-  Стрелки показывают допустимое направление зависимостей:
-  доменный слой не зависит от конкретных REST-клиентов.
+Стрелки показывают допустимое направление зависимостей:
+доменный слой зависит только от контрактов и портов,
+а не от конкретных REST-клиентов и платформенных реализаций.
 end note
 @enduml

@@ -256,7 +256,8 @@ state machine вокруг посадки врача:
 - `BranchLockManager` — не допускает конкурентную обработку одного branch несколькими потоками;
 - `EventDeduplicator` — подавляет повторы событий Orchestra;
 - `ProcessedVisitRegistry` — предотвращает повторную обработку одного визита в коротком окне времени;
-- `PollingReconciliationJob` — периодический страхующий запуск, если событие было потеряно или пришло в неудачный момент.
+- `PollingReconciliationJob` — периодический страхующий запуск, если событие было потеряно или пришло в неудачный момент;
+- `OrchestraDataCacheUpdateService` — отказоустойчивый bootstrap и refresh branch cache: при недоступности Orchestra не роняет процесс, а сохраняет сервис в рабочем состоянии и планирует повторную попытку подключения/прогрева кэша.
 
 ## 4. Алгоритм назначения
 
@@ -329,75 +330,9 @@ state machine вокруг посадки врача:
 если HTTP-статус равен `200`, а в response body уже видно, что `currentVisitService.serviceId` совпал с запрошенной
 услугой. В этом случае сервис не abort-ит цикл и сразу продолжает `transfer`.
 
-## 5. Режимы работы службы
+## 5. Подтвержденные и неподтвержденные API
 
-Подробное описание режимов вынесено в отдельный документ `OPERATION_MODES.md`. В `README.md` приведена краткая эксплуатационная карта, чтобы по конфигурации быстро понять, как именно работает служба.
-
-### 5.1. Режимы запуска
-
-| Режим | Ключевые настройки | Когда использовать |
-|---|---|---|
-| Событийный запуск | `application.websocket.enabled=true`, `user-service-point-session-start-trigger-enabled=true` | Основной быстрый путь: врач сел на рабочее место, профиль стабилизировался, служба сразу запускает цикл назначения. |
-| Только по расписанию | `application.websocket.enabled=false`, `application.assignment.polling-enabled=true` | Начальное внедрение, стенды без стабильного SockJS/STOMP, регулярная сверка состояния без зависимости от событий. |
-| События + расписание | `websocket.enabled=true`, `polling-enabled=true` | Рекомендуемый production-режим: события дают скорость, polling страхует потерянные события и рестарты. |
-| Расширение профиля | `work-profile-expanded-trigger-enabled=true` | Повторный цикл при изменении рабочего профиля врача, если новый профиль расширил доступный набор услуг. |
-| Диагностические raw-trigger | `service-point-open-trigger-enabled`, `set-work-profile-trigger-enabled` | Только для анализа конкретной инсталляции Orchestra; в production обычно выключены. |
-
-### 5.2. Режимы выбора услуги
-
-| Режим | Ключевая настройка | Поведение |
-|---|---|---|
-| Локальный режим | `application.med-robot.enabled=false` | Услуга выбирается по `unservedVisitServices`, доступным врачу услугам, очередям и локальным приоритетам. |
-| Med-robot JSON | `request-body-mode=UNSERVED_SERVICE_IDS_JSON_ARRAY` | В med-robot отправляется JSON-массив локально найденных непройденных услуг. Локальная pre-selection обязательна. |
-| Med-robot plain text | `request-body-mode=TICKET_NUMBER_PLAIN_TEXT` | В med-robot отправляется строка номера талона с `Content-Type: text/plain`. Локальная pre-selection не блокирует вызов робота. |
-
-### 5.3. Обход очереди «Врач не назначен» и неполного маршрута
-
-В новых сценариях под обходом очереди «Врач не назначен» понимается обход старого ограничения, при котором целевая услуга обязательно должна была присутствовать в локальном списке `unservedVisitServices`.
-
-Типовой проблемный случай:
-
-```text
-ticketId = Р004
-currentVisitService = "Врач не назначен" / "Врач не в системе"
-unservedVisitServices = []
-```
-
-В старой локальной схеме такой визит пропускался. В режиме `TICKET_NUMBER_PLAIN_TEXT` служба передаёт номер талона в med-robot, получает фактическую целевую услугу и продолжает workflow.
-
-Если med-robot вернул услугу, которой нет в `unservedVisitServices`, применяется правило:
-
-| Состояние выбранной услуги | Действие |
-|---|---|
-| Услуги нет в `unservedVisitServices` и она не является текущей | Сначала добавить услугу в визит через `POST add-service`, затем выполнить обычный workflow. |
-| Услуги нет в `unservedVisitServices`, но она уже является `currentVisitService` | Не добавлять повторно, сразу перейти к `transfer-only`. |
-| Услуга уже есть в `unservedVisitServices` | Выполнить обычную ветку `assign-service -> transfer-visit`. |
-
-Важно: текущий provider по-прежнему берёт визиты из `unknown-doctor-queue-id`. Если требуется читать несколько исходных очередей вместо одной очереди «Врач не назначен», это отдельная доработка provider-слоя и правил дедупликации.
-
-### 5.4. Режимы исполнения решения
-
-| Режим | Когда применяется | REST-цепочка |
-|---|---|---|
-| `assign + transfer` | Целевая услуга отличается от текущей | `assign-service`, затем `transfer-visit`. |
-| `transfer-only` | Целевая услуга уже является текущей | Только `transfer-visit`, без повторного assign. |
-| `add-service + assign + transfer` | Med-robot вернул услугу, которой нет в маршруте визита | `add-service`, затем `assign-service`, затем `transfer-visit`. |
-| `dry-run` | Проверка без изменения Orchestra | Мутации не выполняются, решение только логируется. |
-
-### 5.5. Режимы отказоустойчивости
-
-| Ситуация | Настройка | Поведение |
-|---|---|---|
-| Ошибка med-robot | `error-handling-mode=FALLBACK_TO_LOCAL` | Продолжить текущий визит по локальной схеме без робота. |
-| Ошибка med-robot | `error-handling-mode=SKIP_VISIT` | Пропустить текущий визит в этом цикле. |
-| Пустой ответ med-robot | `fallback-to-local-on-empty-response=true` | Вернуться к локальному алгоритму, если локальный кандидат есть. |
-| Визит уже ушёл из исходной очереди | `recheck-visit-before-transfer=true` | Не выполнять mutation-цепочку для этого визита. |
-| Ошибка серверного контекста Orchestra | `abort-cycle-on-forbidden-mutation=true` | Завершить текущий цикл раньше и дождаться следующего события или polling. |
-
-
-## 6. Подтвержденные и неподтвержденные API
-
-### 6.1. Подтвержденные REST-точки
+### 5.1. Подтвержденные REST-точки
 
 В проекте как подтвержденные используются:
 
@@ -409,7 +344,7 @@ unservedVisitServices = []
 - `/rest/servicepoint/branches/{branchId}/workProfiles/{workProfileId}/queues`
 - `/rest/servicepoint/branches/{branchId}/queues/`
 
-### 6.2. Конфигурируемые REST-точки рабочего процесса визита
+### 5.2. Конфигурируемые REST-точки рабочего процесса визита
 
 Кроме REST-точек assign/transfer проект теперь поддерживает и **отдельный шаг активации (`activation-step`)**.
 Он задается через `application.assignment.activation.*` и по умолчанию выключен, потому что
@@ -442,20 +377,25 @@ unservedVisitServices = []
 
 Это сделано намеренно: код не должен «угадывать» приватные REST-точки Orchestra.
 
-## 7. Конфигурация
+## 6. Конфигурация
 
 Главный файл конфигурации — `src/main/resources/application.yml`.
 
-### 7.1. Блок `application.orchestra`
+### 6.1. Блок `application.orchestra`
 
 Используется для:
 
 - базового URL Orchestra;
 - логина и пароля;
 - base-path для REST;
-- выбора отделений, для которых нужно строить кэш.
+- выбора отделений, для которых нужно строить кэш;
+- политики повторного подключения к Orchestra REST, если на старте или во время работы связь отсутствует.
 
-### 7.2. Блок `application.websocket`
+Практически важный параметр:
+
+- `reconnect-delay-ms` — задержка перед повторной попыткой bootstrap/refresh branch cache. Если Orchestra временно недоступна, сервис **не завершается аварийно**, а пишет проблему в лог и через этот интервал пытается подключиться снова.
+
+### 6.2. Блок `application.websocket`
 
 Управляет event-driven интеграцией:
 
@@ -464,7 +404,7 @@ unservedVisitServices = []
 - список событий;
 - задержка переподключения.
 
-### 7.3. Блок `application.assignment`
+### 6.3. Блок `application.assignment`
 
 Управляет самим алгоритмом:
 
@@ -492,17 +432,13 @@ unservedVisitServices = []
 - `treat-inactive-user-state-as-failure` / `treat-no-started-service-point-session-as-failure` — как интерпретировать
   server-side user state в ответах `assign-service`.
 
-### 7.4. Блок `application.med-robot`
+### 6.4. Блок `application.med-robot`
 
 Управляет опциональной интеграцией с внешним сервисом `med-robot`:
 
 - `enabled=false` — полностью старая схема выбора услуги без обращения к роботу;
-- `enabled=true` — Doctor Assistant вызывает `POST /prorobot/optimalqueue/{branchId}/service/{serviceId}` после локального предварительного выбора; в режиме `TICKET_NUMBER_PLAIN_TEXT` вызов med-robot допускается и без локального совпадения услуги, если можно определить `serviceId` для path;
-- `request-body-mode=UNSERVED_SERVICE_IDS_JSON_ARRAY` — старый режим: `Content-Type: application/json`, тело запроса —
-  JSON-массив id непройденных услуг визита;
-- `request-body-mode=TICKET_NUMBER_PLAIN_TEXT` — новый режим: `Content-Type: text/plain`, тело запроса — строка номера
-  талона визита; этот режим использует номер талона как источник списка непройденных услуг на стороне med-robot и не блокируется отсутствием локального пересечения с маршрутом визита;
-- `plain-text-policy=default` — значение query-параметра `policy` для text/plain REST-точки med-robot;
+- `enabled=true` — локальный алгоритм выбирает предварительную текущую услугу, затем Doctor Assistant вызывает
+  `POST /prorobot/optimalqueue/{branchId}/service/{serviceId}` и передает JSON-массив id непройденных услуг визита;
 - `fallback-to-local-on-error=true` — при сетевой/HTTP-ошибке med-robot цикл не останавливается, а продолжает работу
   старым локальным алгоритмом;
 - `fallback-to-local-on-empty-response=true` — ответ `null/null`, `0/0` или невалидная пара service/queue не блокирует
@@ -519,8 +455,6 @@ application:
     enabled: true
     url: http://med-robot:8082
     optimal-service-path: /prorobot/optimalqueue/{branchId}/service/{serviceId}
-    request-body-mode: TICKET_NUMBER_PLAIN_TEXT
-    plain-text-policy: default
     fallback-to-local-on-error: true
     fallback-to-local-on-empty-response: true
     require-known-queue: true
@@ -534,9 +468,10 @@ application:
 Подробный контракт, матрица возврата к локальному алгоритму и эксплуатационные режимы описаны в `MED_ROBOT_INTEGRATION.md`.
 
 
-## 8. Руководство для разработчиков
 
-### 8.1. Сценарий локального запуска
+## 7. Руководство для разработчиков
+
+### 7.1. Сценарий локального запуска
 
 ```bash
 mvn clean test
@@ -550,7 +485,7 @@ mvn clean package
 java -jar target/med-doctor-assignment-service-*.jar
 ```
 
-### 8.2. Текущие интеграционные инварианты
+### 7.2. Текущие интеграционные инварианты
 
 Ниже перечислены правила, которые уже подтверждены живыми прогонами и заложены в код:
 
@@ -576,7 +511,7 @@ java -jar target/med-doctor-assignment-service-*.jar
    Если Orchestra уже сменила `currentVisitService` на нужную услугу, сервис продолжает `transfer`, даже если
    `userState` выглядит как неидеальный серверный контекст.
 
-### 8.3. Наблюдаемый выигрыш по скорости
+### 7.3. Наблюдаемый выигрыш по скорости
 
 По реальным логам проекта зафиксирован заметный выигрыш после введения составной триггер, `transfer-only` и корректной
 трактовки эффективного `assign`:
@@ -587,7 +522,7 @@ java -jar target/med-doctor-assignment-service-*.jar
 
 Практический выигрыш — порядка **43x** для кейса «назначить услугу и сразу перевести визит».
 
-### 8.4. Что важно понимать при доработке
+### 7.4. Что важно понимать при доработке
 
 1. **Не смешивать доменную логику и транспорт.**
    Все нюансы websocket и REST должны оставаться в `websocket.*` и `adapter.*`.
@@ -604,7 +539,7 @@ java -jar target/med-doctor-assignment-service-*.jar
 5. **Не встраивать жестко зашивать приватные REST-точки Orchestra в доменный код.**
    Все пути для визитов должны оставаться конфигурируемыми.
 
-### 8.5. Главные точки расширения
+### 7.5. Главные точки расширения
 
 - новая логика сопоставления услуг — `DoctorServiceMatcher`
 - новый способ вычисления доступных врачу услуг — `DoctorAvailableServicesResolver`
@@ -612,7 +547,7 @@ java -jar target/med-doctor-assignment-service-*.jar
 - дополнительные триггеры — `DoctorAssignmentEventHandler`
 - особая логика резервного поиска — `LoggedDoctorContextResolver`
 
-### 8.6. Что смотреть при ошибке `500` на assign-service
+### 7.6. Что смотреть при ошибке `500` на assign-service
 
 Если в логах виден `500` на `POST /rest/entrypoint/.../visits/{visitId}/services/{serviceId}/`, нужно проверить:
 
@@ -624,15 +559,18 @@ java -jar target/med-doctor-assignment-service-*.jar
 - не конфликтует ли смена услуги с текущей очередью визита;
 - не было ли race condition, из-за которого визит уже ушел из очереди «врач не назначен».
 
-## 9. Руководство для технической поддержки
+## 8. Руководство для технической поддержки
 
-### 9.1. На что смотреть в логах
+### 8.1. На что смотреть в логах
 
 Основные контрольные сообщения:
 
 - `Refresh caches for configured branches ...`
 - `Start cache refresh for branch ...`
 - `Finish cache refresh for branch ...`
+- `Cannot resolve configured branches from Orchestra. Service will stay alive and retry later ...`
+- `Branch cache refresh failed for branch ... Service will continue and retry later ...`
+- `Schedule Orchestra REST reconnect/cache bootstrap retry in ... ms ...`
 - `Connecting to Orchestra websocket ...`
 - `Subscribed to ...`
 - `Start assignment cycle ...`
@@ -641,10 +579,10 @@ java -jar target/med-doctor-assignment-service-*.jar
 - `Visit ... matchFound=true ... success=...`
 - `Finish assignment cycle ... processed=...`
 
-### 9.2. Типовые симптомы и интерпретация
+### 8.2. Типовые симптомы и интерпретация
 
 **Симптом:** кэш не прогревается.  
-Проверить доступность REST-точек справочников и корректность `branches-for-cache`.
+Проверить доступность REST-точек справочников и корректность `branches-for-cache`. Начиная с текущей версии сервис при такой ошибке не завершает процесс, а периодически повторяет bootstrap. В логах нужно искать сообщения вида `Schedule Orchestra REST reconnect/cache bootstrap retry ...`.
 
 **Симптом:** websocket не подключается.  
 Проверить `/qpevents/events/info`, логин/пароль, сетевую доступность, reverse proxy и heartbeat.
@@ -672,7 +610,7 @@ java -jar target/med-doctor-assignment-service-*.jar
 - не попал ли визит в ветку `transfer-only`;
 - не сработал ли `abort-cycle-on-forbidden-mutation` на действительно неподтвержденном assign.
 
-### 9.3. Минимальный набор данных для разбора инцидента
+### 8.3. Минимальный набор данных для разбора инцидента
 
 При эскалации разработчику нужно приложить:
 
@@ -686,7 +624,7 @@ java -jar target/med-doctor-assignment-service-*.jar
 - тело ответа Orchestra;
 - фрагмент лога от `Start assignment cycle` до ошибки.
 
-## 10. Руководство по внедрению
+## 9. Руководство по внедрению
 
 Перед вводом в эксплуатацию нужно подтвердить:
 
@@ -702,7 +640,7 @@ java -jar target/med-doctor-assignment-service-*.jar
     - перевода визита;
 6. возможность авторизации под сервисной учетной записью.
 
-### 10.1. Рекомендуемый порядок внедрения
+### 9.1. Рекомендуемый порядок внедрения
 
 1. Запустить сервис с `dry-run=true`.
 2. Проверить кэш и websocket.
@@ -712,9 +650,9 @@ java -jar target/med-doctor-assignment-service-*.jar
 6. Включить `dry-run=false` сначала на тестовом отделении.
 7. После подтверждения корректности постепенно расширять список `allowed-branches`.
 
-## 11. Руководство для DevOps
+## 10. Руководство для DevOps
 
-### 11.1. Сетевые зависимости
+### 10.1. Сетевые зависимости
 
 Сервису нужен исходящий доступ:
 
@@ -723,7 +661,7 @@ java -jar target/med-doctor-assignment-service-*.jar
 - к `/qpevents/events/info`;
 - к XHR streaming / XHR send REST-точкам SockJS.
 
-### 11.2. Runtime REST-точки самого сервиса
+### 10.2. Runtime REST-точки самого сервиса
 
 Micronaut поднимает сервер на `micronaut.server.port`, по умолчанию в проекте — `8085`.
 
@@ -736,15 +674,15 @@ Micronaut поднимает сервер на `micronaut.server.port`, по у�
 - `/threaddump`
 - `/refresh`
 
-### 11.3. Что важно для эксплуатации
+### 10.3. Что важно для эксплуатации
 
 - сервис не хранит состояние в БД;
 - кэш полностью в памяти процесса;
 - при рестарте кэш будет перестроен заново;
 - при недоступности websocket сервис продолжит работу через страхующего опроса по расписанию;
-- при недоступности REST Orchestra сервис не сможет прогревать кэш и выполнять назначение.
+- при недоступности REST Orchestra сервис не сможет прогревать кэш и выполнять назначение, **но процесс не завершается аварийно**: он сохраняет уже имеющийся кэш, пишет проблему в журнал и периодически пытается восстановить подключение и refresh branch cache.
 
-### 11.4. Логирование
+### 10.4. Логирование
 
 Для production желательно явно задать уровни логирования:
 
@@ -755,7 +693,7 @@ Micronaut поднимает сервер на `micronaut.server.port`, по у�
     - `io.micronaut.http.client`
     - `org.springframework.web.socket`
 
-### 11.5. Рекомендации по конфигурированию
+### 10.5. Рекомендации по конфигурированию
 
 - учетные данные Orchestra лучше подавать через переменные окружения или секреты, а не хранить в git;
 - список `allowed-branches` использовать как предохранитель при поэтапном rollout;
@@ -763,7 +701,7 @@ Micronaut поднимает сервер на `micronaut.server.port`, по у�
 - `stale-cache-duration-seconds` не делать слишком маленьким, иначе возрастет нагрузка на Orchestra;
 - `event-deduplication-ttl-seconds` и `processed-visit-ttl-seconds` подбирать под реальную частоту событий.
 
-## 12. Тесты
+## 11. Тесты
 
 В проекте есть модульные и интеграционные тесты для ключевых частей алгоритма:
 
@@ -785,7 +723,7 @@ Micronaut поднимает сервер на `micronaut.server.port`, по у�
 
 Тесты используют in-memory/fake gateway-реализации и подтверждают доменную логику независимо от реальной Orchestra.
 
-## 13. Краткий чек-лист перед production
+## 12. Краткий чек-лист перед production
 
 - [ ] Подтверждены branch id для rollout
 - [ ] Подтвержден `unknown-doctor-queue-id`
@@ -798,7 +736,7 @@ Micronaut поднимает сервер на `micronaut.server.port`, по у�
 - [ ] Настроены уровни логирования и сбор логов
 - [ ] Учетные данные Orchestra вынесены в безопасное хранилище
 
-## Актуальные защитные режимы по результатам анализа логов 2026-04-16
+## Актуальные защитные режимы по результатам анализа логов и текущей доработки
 
 - `application.orchestra.replay-mutation-cookies=false` — mutating cookie сохраняются только для диагностики и не
   переиспользуются автоматически.
@@ -808,7 +746,7 @@ Micronaut поднимает сервер на `micronaut.server.port`, по у�
   контекстной ошибкой и блокирует последующий transfer в том же цикле.
 - `application.assignment.treat-no-started-service-point-session-as-failure=true` — ответ assign с
   `userState=NO_STARTED_SERVICE_POINT_SESSION` обрабатывается как такой же контекстный отказ и завершает цикл раньше.
-- На старте сервис пишет строку `Runtime configuration marker=2026-04-16-run953-r3-activation ...`, чтобы по логу сразу
+- На старте сервис пишет строку `Runtime configuration marker=2026-04-28-orchestra-reconnect-docs-refresh ...`, чтобы по логу сразу
   проверить, какой именно артефакт запущен и какие effective-флаги реально подхватились.
 - `transfer-visit` читает ответ через `exchange(..., byte[].class)` и трактует `204 No Content` как штатный ответ без
   попытки десериализовать пустое тело.

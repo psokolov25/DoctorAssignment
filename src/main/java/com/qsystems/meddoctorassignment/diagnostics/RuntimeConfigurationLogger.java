@@ -5,6 +5,7 @@ import com.qsystems.meddoctorassignment.adapter.gateway.VisitWorkflowGateway;
 import com.qsystems.meddoctorassignment.adapter.orchestra.OrchestraSessionCookieStore;
 import com.qsystems.meddoctorassignment.config.AssignmentProperties;
 import com.qsystems.meddoctorassignment.config.MedRobotProperties;
+import com.qsystems.meddoctorassignment.config.OrchestraProperties;
 import com.qsystems.meddoctorassignment.config.WebsocketProperties;
 import io.micronaut.context.event.ApplicationEventListener;
 import io.micronaut.context.event.StartupEvent;
@@ -20,14 +21,14 @@ import org.slf4j.LoggerFactory;
  * проверить: подхватились ли нужные настройки и тот ли артефакт реально запущен.
  *
  * <p>В лог сознательно выводятся именно "операционные" признаки: какие trigger-ы активны, как
- * интерпретируется server-side user state, включен ли replay cookie для GET/PUT и какие
- * gateway-реализации реально были подняты в текущем процессе.
+ * интерпретируется server-side user state, включен ли replay cookie для GET/PUT, как настроены
+ * websocket/polling fallback и какая задержка используется для повторного подключения к Orchestra.
  */
 @Singleton
 public class RuntimeConfigurationLogger implements ApplicationEventListener<StartupEvent> {
 
   private static final Logger log = LoggerFactory.getLogger(RuntimeConfigurationLogger.class);
-  private static final String BUILD_MARKER = "2026-04-24-med-robot-selection-polling-toggle";
+  private static final String BUILD_MARKER = "2026-04-28-orchestra-reconnect-docs-refresh";
 
   private final AssignmentProperties assignmentProperties;
   private final MedRobotProperties medRobotProperties;
@@ -35,6 +36,7 @@ public class RuntimeConfigurationLogger implements ApplicationEventListener<Star
   private final VisitWorkflowGateway visitWorkflowGateway;
   private final OperatorContextActivationGateway operatorContextActivationGateway;
   private final WebsocketProperties websocketProperties;
+  private final OrchestraProperties orchestraProperties;
 
   public RuntimeConfigurationLogger(
       AssignmentProperties assignmentProperties,
@@ -42,19 +44,21 @@ public class RuntimeConfigurationLogger implements ApplicationEventListener<Star
       OrchestraSessionCookieStore orchestraSessionCookieStore,
       VisitWorkflowGateway visitWorkflowGateway,
       OperatorContextActivationGateway operatorContextActivationGateway,
-      WebsocketProperties websocketProperties) {
+      WebsocketProperties websocketProperties,
+      OrchestraProperties orchestraProperties) {
     this.assignmentProperties = assignmentProperties;
     this.medRobotProperties = medRobotProperties;
     this.orchestraSessionCookieStore = orchestraSessionCookieStore;
     this.visitWorkflowGateway = visitWorkflowGateway;
     this.operatorContextActivationGateway = operatorContextActivationGateway;
     this.websocketProperties = websocketProperties;
+    this.orchestraProperties = orchestraProperties;
   }
 
   @Override
   public void onApplicationEvent(StartupEvent event) {
     log.info(
-        "Runtime configuration marker={} gatewayClass={} gatewayCodeSource={} activationGatewayClass={} activationGatewayCodeSource={} activationEnabled={} activationMethod={} activationPath={} activationFailCycleOnError={} userServicePointSessionStartTriggerEnabled={} workProfileExpandedTriggerEnabled={} setWorkProfileTriggerEnabled={} servicePointOpenTriggerEnabled={} userSessionSettleWindowMs={} abortCycleOnForbiddenMutation={} treatInactiveUserStateAsFailure={} treatNoStartedServicePointSessionAsFailure={} replayMutationCookiesForPut={} replayReadCookiesForGet={} websocketSendCookiesInHandshake={} pollingEnabled={} pollingCron={} medRobotEnabled={} medRobotUrl={} medRobotOptimalServicePath={} medRobotFallbackOnError={} medRobotFallbackOnEmpty={} medRobotRequireDoctorAvailableService={} medRobotRequireKnownQueue={}",
+        "Runtime configuration marker={} gatewayClass={} gatewayCodeSource={} activationGatewayClass={} activationGatewayCodeSource={} activationEnabled={} activationMethod={} activationPath={} activationFailCycleOnError={} userServicePointSessionStartTriggerEnabled={} workProfileExpandedTriggerEnabled={} setWorkProfileTriggerEnabled={} servicePointOpenTriggerEnabled={} userSessionSettleWindowMs={} abortCycleOnForbiddenMutation={} treatInactiveUserStateAsFailure={} treatNoStartedServicePointSessionAsFailure={} replayMutationCookiesForPut={} replayReadCookiesForGet={} orchestraUrl={} orchestraBranchesForCache={} orchestraReconnectDelayMs={} websocketEnabled={} websocketReconnectDelayMs={} websocketSendCookiesInHandshake={} pollingEnabled={} pollingCron={} medRobotEnabled={} medRobotUrl={} medRobotOptimalServicePath={} medRobotFallbackOnError={} medRobotFallbackOnEmpty={} medRobotRequireDoctorAvailableService={} medRobotRequireKnownQueue={}",
         BUILD_MARKER,
         visitWorkflowGateway.getClass().getName(),
         resolveCodeSource(visitWorkflowGateway.getClass()),
@@ -80,6 +84,11 @@ public class RuntimeConfigurationLogger implements ApplicationEventListener<Star
         assignmentProperties.isTreatNoStartedServicePointSessionAsFailure(),
         orchestraSessionCookieStore.isCookieReplayEnabledForMethod("PUT"),
         orchestraSessionCookieStore.isCookieReplayEnabledForMethod("GET"),
+        orchestraProperties.getUrl(),
+        orchestraProperties.getBranchesForCache(),
+        Long.valueOf(orchestraProperties.getReconnectDelayMs()),
+        websocketProperties.isEnabled(),
+        Long.valueOf(websocketProperties.getDelayBeforeReconnectInMilliseconds()),
         websocketProperties.isSendCookiesInHandshake(),
         assignmentProperties.isPollingEnabled(),
         assignmentProperties.getPollingCron(),

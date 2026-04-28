@@ -1,81 +1,7 @@
 @startuml
+!include common-style.puml
+!pragma teoz true
 title REST-мутации Orchestra при назначении визита
-
-' Единый профиль диаграмм документации Doctor Assistant.
-' Акцент: аккуратная business/UML-нотация, прозрачные подписи стрелок,
-' ровная сетка, короткие технические подписи и читаемый шрифт без засечек.
-skinparam backgroundColor #F8FAFC
-skinparam shadowing false
-skinparam defaultFontName "Segoe UI"
-skinparam defaultFontSize 13
-skinparam defaultTextAlignment center
-skinparam wrapWidth 170
-skinparam maxMessageSize 120
-skinparam linetype ortho
-skinparam ArrowColor #334155
-skinparam ArrowThickness 1.2
-skinparam packageStyle rectangle
-skinparam componentStyle uml2
-skinparam classAttributeIconSize 0
-skinparam handwritten false
-skinparam RoundCorner 6
-skinparam nodesep 38
-skinparam ranksep 46
-skinparam package {
-  BackgroundColor #FFFFFF
-  BorderColor #7C3AED
-  FontColor #111827
-}
-skinparam component {
-  BackgroundColor #E0F2FE
-  BorderColor #0369A1
-  FontColor #111827
-}
-skinparam interface {
-  BackgroundColor #F8FAFC
-  BorderColor #64748B
-  FontColor #111827
-}
-skinparam database {
-  BackgroundColor #DCFCE7
-  BorderColor #15803D
-  FontColor #111827
-}
-skinparam artifact {
-  BackgroundColor #FEF3C7
-  BorderColor #B45309
-  FontColor #111827
-}
-skinparam node {
-  BackgroundColor #FFFFFF
-  BorderColor #64748B
-  FontColor #111827
-}
-skinparam note {
-  BackgroundColor #FEF3C7
-  BorderColor #B45309
-  FontColor #111827
-}
-skinparam actor {
-  BorderColor #475569
-  FontColor #111827
-}
-skinparam sequence {
-  ArrowColor #334155
-  ArrowThickness 1.2
-  LifeLineBorderColor #CBD5E1
-  LifeLineBackgroundColor transparent
-  ParticipantBackgroundColor #E0F2FE
-  ParticipantBorderColor #0369A1
-  ParticipantFontColor #111827
-  GroupBorderColor #94A3B8
-  GroupBackgroundColor transparent
-  GroupFontColor #334155
-  BoxBackgroundColor transparent
-  BoxBorderColor #CBD5E1
-}
-skinparam responseMessageBelowArrow true
-
 hide footbox
 
 actor "Врач" as D
@@ -83,19 +9,23 @@ participant "Doctor\nAssistant" as A
 participant "Activation\ngateway" as G
 participant "Orchestra\nREST" as R
 participant "Очередь\nуслуги" as Q
+
 D -> A : готовность врача
 A -> G : активировать контекст
-если включено
-G -> R : activation REST
+opt activation включена
+  G -> R : activation REST
+end
 A -> R : детали визита
-alt услуга уже назначена / не назначена
+alt услуга уже назначена
+  A -> R : transfer-visit
+else услугу нужно назначить
   A -> R : assign-service
   A -> R : transfer-visit
 end
 R -> Q : визит в целевой очереди
 Q --> D : доступен для вызова
 note over A,R
-  Transfer-only: если текущая услуга уже совпадает с выбранной,
-  assign-service пропускается.
+Transfer-only: если текущая услуга уже совпадает с выбранной,
+assign-service пропускается.
 end note
 @enduml

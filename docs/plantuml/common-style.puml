@@ -1,0 +1,136 @@
+' -----------------------------------------------------------------------------
+' Doctor Assistant documentation visual profile
+' -----------------------------------------------------------------------------
+' Principles:
+' - closer to strict UML visual language;
+' - predictable spacing to avoid text overlap;
+' - short multiline labels on arrows;
+' - sharper sequence lifelines and cleaner orthogonal connectors;
+' - SVG-first output for documentation and PDF/HTML publishing.
+
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam handwritten false
+skinparam defaultFontName "Segoe UI"
+skinparam defaultFontSize 13
+skinparam defaultTextAlignment center
+skinparam classAttributeIconSize 0
+skinparam wrapWidth 160
+skinparam maxMessageSize 90
+skinparam ArrowColor #334155
+skinparam ArrowThickness 1.35
+skinparam LineColor #475569
+skinparam linetype ortho
+skinparam nodesep 62
+skinparam ranksep 68
+skinparam packageStyle rectangle
+skinparam componentStyle uml2
+skinparam RoundCorner 10
+skinparam dpi 150
+
+skinparam title {
+  FontName "Segoe UI"
+  FontStyle bold
+  FontSize 22
+  FontColor #0F172A
+}
+
+skinparam package {
+  BackgroundColor #F8FAFC
+  BorderColor #7C3AED
+  FontColor #111827
+  FontStyle bold
+}
+
+skinparam component {
+  BackgroundColor #E0F2FE
+  BorderColor #0369A1
+  FontColor #111827
+}
+
+skinparam interface {
+  BackgroundColor #F8FAFC
+  BorderColor #64748B
+  FontColor #111827
+}
+
+skinparam class {
+  BackgroundColor #FFFFFF
+  BorderColor #64748B
+  FontColor #111827
+}
+
+skinparam node {
+  BackgroundColor #FFFFFF
+  BorderColor #64748B
+  FontColor #111827
+}
+
+skinparam artifact {
+  BackgroundColor #FFF7ED
+  BorderColor #C2410C
+  FontColor #111827
+}
+
+skinparam database {
+  BackgroundColor #DCFCE7
+  BorderColor #15803D
+  FontColor #111827
+}
+
+skinparam state {
+  BackgroundColor #E0F2FE
+  BorderColor #0369A1
+  FontColor #111827
+  StartColor #334155
+  EndColor #334155
+}
+
+skinparam activity {
+  BackgroundColor #E0F2FE
+  BorderColor #0369A1
+  FontColor #111827
+  DiamondBackgroundColor #FFF7ED
+  DiamondBorderColor #C2410C
+  StartColor #334155
+  EndColor #334155
+}
+
+skinparam partition {
+  BackgroundColor #F8FAFC
+  BorderColor #CBD5E1
+  FontColor #334155
+}
+
+skinparam note {
+  BackgroundColor #FFF7ED
+  BorderColor #C2410C
+  FontColor #111827
+}
+
+skinparam actor {
+  BackgroundColor #FFFFFF
+  BorderColor #475569
+  FontColor #111827
+}
+
+skinparam sequence {
+  ArrowColor #334155
+  ArrowThickness 1.35
+  LifeLineBorderColor #94A3B8
+  LifeLineBackgroundColor transparent
+  ParticipantBackgroundColor #E0F2FE
+  ParticipantBorderColor #0369A1
+  ParticipantFontColor #111827
+  ActorBorderColor #475569
+  ActorFontColor #111827
+  GroupBorderColor #94A3B8
+  GroupBackgroundColor transparent
+  GroupFontColor #334155
+  BoxBackgroundColor transparent
+  BoxBorderColor #CBD5E1
+  BoxPadding 14
+  ParticipantPadding 28
+  MessageAlign center
+}
+skinparam responseMessageBelowArrow true

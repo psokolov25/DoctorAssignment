@@ -1,55 +1,63 @@
-<?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="1180" height="610" viewBox="0 0 1180 610">
-  <defs>
-    <marker id="arrow" markerWidth="12" markerHeight="10" refX="10" refY="5" orient="auto" markerUnits="strokeWidth">
-      <path d="M 1 1 L 10 5 L 1 9" fill="none" stroke="#334155" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
-    </marker>
-    <marker id="triangle" markerWidth="14" markerHeight="12" refX="12" refY="6" orient="auto" markerUnits="strokeWidth">
-      <path d="M 1 6 L 12 1 L 12 11 Z" fill="#F8FAFC" stroke="#334155" stroke-width="1.5"/>
-    </marker>
-    <marker id="green-dot" markerWidth="10" markerHeight="10" refX="5" refY="5" orient="auto">
-      <circle cx="5" cy="5" r="4" fill="#16A34A"/>
-    </marker>
-    <filter id="card-shadow" x="-15%" y="-15%" width="130%" height="130%">
-      <feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="#94A3B8" flood-opacity="0.16"/>
-    </filter>
-  </defs>
-  <rect x="0" y="0" width="1180" height="610" fill="#F8FAFC"/>
-  <text x="590.0" y="34" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="21" font-weight="700" fill="#111827">Дерево решений при ответе med-robot</text>
-<rect x="70" y="250" width="155" height="60" rx="10" ry="10" fill="#DCFCE7" stroke="#15803D" stroke-width="1.5" filter="url(#card-shadow)"/>
-<text x="147.5" y="274" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="700" fill="#111827" style=""><tspan x="147.5" dy="0">Локальный выбор</tspan></text>
-<text x="147.5" y="294" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#4B5563" style=""><tspan x="147.5" dy="0">получен</tspan></text>
-<path d="M 315 242.0 L 377.5 280 L 315 318.0 L 252.5 280 Z" fill="#F0F9FF" stroke="#0369A1" stroke-width="1.5" filter="url(#card-shadow)"/>
-<text x="315" y="276" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="700" fill="#111827" style=""><tspan x="315" dy="0">med-robot</tspan><tspan x="315" dy="14">включен?</tspan></text>
-<path d="M 485 142.0 L 547.5 180 L 485 218.0 L 422.5 180 Z" fill="#F0F9FF" stroke="#0369A1" stroke-width="1.5" filter="url(#card-shadow)"/>
-<text x="485" y="176" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="700" fill="#111827" style=""><tspan x="485" dy="0">Запрос</tspan><tspan x="485" dy="14">успешен?</tspan></text>
-<path d="M 660 142.0 L 722.5 180 L 660 218.0 L 597.5 180 Z" fill="#F0F9FF" stroke="#0369A1" stroke-width="1.5" filter="url(#card-shadow)"/>
-<text x="660" y="176" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="700" fill="#111827" style=""><tspan x="660" dy="0">serviceId</tspan><tspan x="660" dy="14">в маршруте?</tspan></text>
-<path d="M 835 142.0 L 897.5 180 L 835 218.0 L 772.5 180 Z" fill="#F0F9FF" stroke="#0369A1" stroke-width="1.5" filter="url(#card-shadow)"/>
-<text x="835" y="176" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="700" fill="#111827" style=""><tspan x="835" dy="0">queueId</tspan><tspan x="835" dy="14">известен?</tspan></text>
-<rect x="980" y="250" width="145" height="60" rx="10" ry="10" fill="#DCFCE7" stroke="#15803D" stroke-width="1.5" filter="url(#card-shadow)"/>
-<text x="1052.5" y="274" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="700" fill="#111827" style=""><tspan x="1052.5" dy="0">Принять результат</tspan></text>
-<text x="1052.5" y="294" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#4B5563" style=""><tspan x="1052.5" dy="0">serviceId + queueId</tspan></text>
-<rect x="520" y="410" width="160" height="62" rx="10" ry="10" fill="#FEF3C7" stroke="#B45309" stroke-width="1.5" filter="url(#card-shadow)"/>
-<text x="600.0" y="434" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="700" fill="#111827" style=""><tspan x="600.0" dy="0">Fallback</tspan></text>
-<text x="600.0" y="454" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#4B5563" style=""><tspan x="600.0" dy="0">локальный алгоритм</tspan></text>
-<line x1="225" y1="280" x2="252" y2="280" stroke="#334155" stroke-width="1.35" stroke-linecap="round" marker-end="url(#arrow)"/>
-<line x1="378" y1="250" x2="440" y2="180" stroke="#334155" stroke-width="1.35" stroke-linecap="round" marker-end="url(#arrow)"/>
-<text x="402" y="205" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#4B5563" style=""><tspan x="402" dy="0">да</tspan></text>
-<line x1="548" y1="180" x2="598" y2="180" stroke="#334155" stroke-width="1.35" stroke-linecap="round" marker-end="url(#arrow)"/>
-<text x="573" y="170" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#4B5563" style=""><tspan x="573" dy="0">да</tspan></text>
-<line x1="723" y1="180" x2="773" y2="180" stroke="#334155" stroke-width="1.35" stroke-linecap="round" marker-end="url(#arrow)"/>
-<text x="748" y="170" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#4B5563" style=""><tspan x="748" dy="0">да</tspan></text>
-<line x1="898" y1="180" x2="980" y2="275" stroke="#334155" stroke-width="1.35" stroke-linecap="round" marker-end="url(#arrow)"/>
-<text x="935" y="210" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#4B5563" style=""><tspan x="935" dy="0">да</tspan></text>
-<path d="M 315 318 L 315 441 L 520 441" fill="none" stroke="#334155" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow)"/>
-<text x="384" y="434" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#4B5563" style=""><tspan x="384" dy="0">нет</tspan></text>
-<path d="M 485 218 L 485 441 L 520 441" fill="none" stroke="#334155" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow)"/>
-<text x="502" y="328" text-anchor="start" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#4B5563" style=""><tspan x="502" dy="0">нет</tspan></text>
-<path d="M 660 218 L 660 410" fill="none" stroke="#334155" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow)"/>
-<text x="675" y="322" text-anchor="start" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#4B5563" style=""><tspan x="675" dy="0">нет</tspan></text>
-<path d="M 835 218 L 835 441 L 680 441" fill="none" stroke="#334155" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow)"/>
-<text x="852" y="325" text-anchor="start" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#4B5563" style=""><tspan x="852" dy="0">нет</tspan></text>
-<rect x="90" y="520" width="520" height="38" rx="7" ry="7" fill="#FEF3C7" stroke="#B45309" stroke-width="1.2" filter="url(#card-shadow)"/>
-<text x="104" y="544" text-anchor="start" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="400" fill="#111827" style=""><tspan x="104" dy="0">При строгом режиме дополнительно проверяется, доступна ли услуга текущему врачу.</tspan></text>
+<svg xmlns="http://www.w3.org/2000/svg" width="940" height="1000" viewBox="0 0 940 1000" role="img" aria-label="Дерево решений при ответе med-robot">
+<defs>
+  <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#334155"/></marker>
+  <marker id="arrow-dashed" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#64748B"/></marker>
+</defs>
+<rect x="0.0" y="0.0" width="940.0" height="1000.0" rx="0.0" fill="#FFFFFF" stroke="none" stroke-width="1"/>
+<rect x="24.0" y="24.0" width="892.0" height="952.0" rx="18.0" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="1"/>
+<text x="470.0" y="60.0" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="25" font-weight="700" fill="#0F172A" >Дерево решений при ответе med-robot</text>
+<circle cx="470" cy="120" r="12" fill="#334155"/>
+<rect x="335.0" y="160.0" width="270.0" height="62.0" rx="18.0" fill="#E0F2FE" stroke="#0369A1" stroke-width="1.6"/>
+<text x="470.0" y="186.0" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="600" fill="#0F172A">
+<tspan x="470.0" dy="0">Локальный выбор</tspan>
+<tspan x="470.0" dy="18">получен</tspan>
+</text>
+<path d="M 470.0 250.0 L 585.0 300.0 L 470.0 350.0 L 355.0 300.0 Z" fill="#FEF3C7" stroke="#B45309" stroke-width="1.6"/>
+<text x="470.0" y="304.0" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" font-weight="600" fill="#0F172A">
+<tspan x="470.0" dy="0">med-robot включен?</tspan>
+</text>
+<path d="M 470.0 390.0 L 580.0 440.0 L 470.0 490.0 L 360.0 440.0 Z" fill="#FEF3C7" stroke="#B45309" stroke-width="1.6"/>
+<text x="470.0" y="444.0" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" font-weight="600" fill="#0F172A">
+<tspan x="470.0" dy="0">Запрос успешен?</tspan>
+</text>
+<path d="M 470.0 530.0 L 585.0 580.0 L 470.0 630.0 L 355.0 580.0 Z" fill="#FEF3C7" stroke="#B45309" stroke-width="1.6"/>
+<text x="470.0" y="575.5" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" font-weight="600" fill="#0F172A">
+<tspan x="470.0" dy="0">serviceId в</tspan>
+<tspan x="470.0" dy="17">маршруте?</tspan>
+</text>
+<path d="M 470.0 672.0 L 575.0 720.0 L 470.0 768.0 L 365.0 720.0 Z" fill="#FEF3C7" stroke="#B45309" stroke-width="1.6"/>
+<text x="470.0" y="724.0" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" font-weight="600" fill="#0F172A">
+<tspan x="470.0" dy="0">queueId известен?</tspan>
+</text>
+<rect x="180.0" y="820.0" width="270.0" height="70.0" rx="18.0" fill="#F1F5F9" stroke="#0369A1" stroke-width="1.6"/>
+<text x="315.0" y="850.0" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="600" fill="#0F172A">
+<tspan x="315.0" dy="0">Fallback</tspan>
+<tspan x="315.0" dy="18">локальный алгоритм</tspan>
+</text>
+<rect x="525.0" y="820.0" width="270.0" height="70.0" rx="18.0" fill="#E0F2FE" stroke="#0369A1" stroke-width="1.6"/>
+<text x="660.0" y="850.0" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="600" fill="#0F172A">
+<tspan x="660.0" dy="0">Принять результат</tspan>
+<tspan x="660.0" dy="18">serviceId + queueId</tspan>
+</text>
+<circle cx="470" cy="940" r="13" fill="#FFFFFF" stroke="#334155" stroke-width="2"/><circle cx="470" cy="940" r="7" fill="#334155"/>
+<path d="M 470.0 132.0 L 470.0 160.0" fill="none" stroke="#334155" stroke-width="1.6" marker-end="url(#arrow)"/>
+<path d="M 470.0 222.0 L 470.0 250.0" fill="none" stroke="#334155" stroke-width="1.6" marker-end="url(#arrow)"/>
+<path d="M 470.0 350.0 L 470.0 390.0" fill="none" stroke="#334155" stroke-width="1.6" marker-end="url(#arrow)"/>
+<text x="470.0" y="362.0" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" font-weight="400" fill="#64748B" >да</text>
+<path d="M 470.0 490.0 L 470.0 530.0" fill="none" stroke="#334155" stroke-width="1.6" marker-end="url(#arrow)"/>
+<text x="470.0" y="502.0" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" font-weight="400" fill="#64748B" >да</text>
+<path d="M 470.0 630.0 L 470.0 672.0" fill="none" stroke="#334155" stroke-width="1.6" marker-end="url(#arrow)"/>
+<text x="470.0" y="643.0" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" font-weight="400" fill="#64748B" >да</text>
+<path d=" M 575.0 720.0 L 660.0 720.0 L 660.0 820.0" fill="none" stroke="#334155" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round" marker-end="url(#arrow)"/>
+<text x="660.0" y="770.0" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" font-weight="400" fill="#64748B" >да</text>
+<path d=" M 365.0 300.0 L 315.0 300.0 L 315.0 820.0" fill="none" stroke="#334155" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round" marker-end="url(#arrow)"/>
+<text x="315.0" y="560.0" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" font-weight="400" fill="#64748B" >нет</text>
+<path d=" M 360.0 440.0 L 315.0 440.0 L 315.0 820.0" fill="none" stroke="#334155" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round" marker-end="url(#arrow)"/>
+<text x="315.0" y="630.0" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" font-weight="400" fill="#64748B" >нет</text>
+<path d=" M 355.0 580.0 L 315.0 580.0 L 315.0 820.0" fill="none" stroke="#334155" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round" marker-end="url(#arrow)"/>
+<text x="315.0" y="700.0" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" font-weight="400" fill="#64748B" >нет</text>
+<path d=" M 365.0 720.0 L 315.0 720.0 L 315.0 820.0" fill="none" stroke="#334155" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round" marker-end="url(#arrow)"/>
+<text x="315.0" y="770.0" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" font-weight="400" fill="#64748B" >нет</text>
+<path d=" M 315.0 890.0 L 315.0 940.0 L 470.0 940.0" fill="none" stroke="#334155" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round" marker-end="url(#arrow)"/>
+<path d=" M 660.0 890.0 L 660.0 940.0 L 470.0 940.0" fill="none" stroke="#334155" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round" marker-end="url(#arrow)"/>
 </svg>

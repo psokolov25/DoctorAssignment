@@ -1,68 +1,64 @@
-<?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="1180" height="500" viewBox="0 0 1180 500">
-  <defs>
-    <marker id="arrow" markerWidth="12" markerHeight="10" refX="10" refY="5" orient="auto" markerUnits="strokeWidth">
-      <path d="M 1 1 L 10 5 L 1 9" fill="none" stroke="#334155" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
-    </marker>
-    <marker id="triangle" markerWidth="14" markerHeight="12" refX="12" refY="6" orient="auto" markerUnits="strokeWidth">
-      <path d="M 1 6 L 12 1 L 12 11 Z" fill="#F8FAFC" stroke="#334155" stroke-width="1.5"/>
-    </marker>
-    <marker id="green-dot" markerWidth="10" markerHeight="10" refX="5" refY="5" orient="auto">
-      <circle cx="5" cy="5" r="4" fill="#16A34A"/>
-    </marker>
-    <filter id="card-shadow" x="-15%" y="-15%" width="130%" height="130%">
-      <feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="#94A3B8" flood-opacity="0.16"/>
-    </filter>
-  </defs>
-  <rect x="0" y="0" width="1180" height="500" fill="#F8FAFC"/>
-  <text x="590.0" y="34" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="21" font-weight="700" fill="#111827">Пересборка кэша отделения</text>
-<rect x="100" y="70" width="120" height="54" rx="8" ry="8" fill="#FFFFFF" stroke="#0369A1" stroke-width="1.5"/>
-<rect x="100" y="70" width="120" height="28" rx="8" ry="8" fill="#E0F2FE" stroke="#0369A1" stroke-width="1.5"/>
-<rect x="100" y="90" width="120" height="8" fill="#E0F2FE" stroke="none"/>
-<text x="160.0" y="88" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="700" fill="#111827" style=""><tspan x="160.0" dy="0">Старт</tspan></text>
-<text x="160.0" y="109" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#4B5563" style=""><tspan x="160.0" dy="0">/ cron</tspan></text>
-<rect x="310" y="70" width="120" height="54" rx="8" ry="8" fill="#FFFFFF" stroke="#0369A1" stroke-width="1.5"/>
-<rect x="310" y="70" width="120" height="28" rx="8" ry="8" fill="#E0F2FE" stroke="#0369A1" stroke-width="1.5"/>
-<rect x="310" y="90" width="120" height="8" fill="#E0F2FE" stroke="none"/>
-<text x="370.0" y="88" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="700" fill="#111827" style=""><tspan x="370.0" dy="0">CacheUpdate</tspan></text>
-<text x="370.0" y="109" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#4B5563" style=""><tspan x="370.0" dy="0">service</tspan></text>
-<rect x="520" y="70" width="120" height="54" rx="8" ry="8" fill="#FFFFFF" stroke="#0369A1" stroke-width="1.5"/>
-<rect x="520" y="70" width="120" height="28" rx="8" ry="8" fill="#E0F2FE" stroke="#0369A1" stroke-width="1.5"/>
-<rect x="520" y="90" width="120" height="8" fill="#E0F2FE" stroke="none"/>
-<text x="580.0" y="88" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="700" fill="#111827" style=""><tspan x="580.0" dy="0">BranchCache</tspan></text>
-<text x="580.0" y="109" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#4B5563" style=""><tspan x="580.0" dy="0">updater</tspan></text>
-<rect x="730" y="70" width="120" height="54" rx="8" ry="8" fill="#FFFFFF" stroke="#0369A1" stroke-width="1.5"/>
-<rect x="730" y="70" width="120" height="28" rx="8" ry="8" fill="#E0F2FE" stroke="#0369A1" stroke-width="1.5"/>
-<rect x="730" y="90" width="120" height="8" fill="#E0F2FE" stroke="none"/>
-<text x="790.0" y="88" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="700" fill="#111827" style=""><tspan x="790.0" dy="0">Metadata</tspan></text>
-<text x="790.0" y="109" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#4B5563" style=""><tspan x="790.0" dy="0">gateway</tspan></text>
-<rect x="940" y="70" width="120" height="54" rx="8" ry="8" fill="#FFFFFF" stroke="#0369A1" stroke-width="1.5"/>
-<rect x="940" y="70" width="120" height="28" rx="8" ry="8" fill="#E0F2FE" stroke="#0369A1" stroke-width="1.5"/>
-<rect x="940" y="90" width="120" height="8" fill="#E0F2FE" stroke="none"/>
-<text x="1000.0" y="88" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="700" fill="#111827" style=""><tspan x="1000.0" dy="0">Cache</tspan></text>
-<text x="1000.0" y="109" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="400" fill="#4B5563" style=""><tspan x="1000.0" dy="0">container</tspan></text>
-<line x1="160.0" y1="125" x2="160.0" y2="390" stroke="#CBD5E1" stroke-width="1.2" stroke-linecap="round" stroke-dasharray="6 5"/>
-<line x1="370.0" y1="125" x2="370.0" y2="390" stroke="#CBD5E1" stroke-width="1.2" stroke-linecap="round" stroke-dasharray="6 5"/>
-<line x1="580.0" y1="125" x2="580.0" y2="390" stroke="#CBD5E1" stroke-width="1.2" stroke-linecap="round" stroke-dasharray="6 5"/>
-<line x1="790.0" y1="125" x2="790.0" y2="390" stroke="#CBD5E1" stroke-width="1.2" stroke-linecap="round" stroke-dasharray="6 5"/>
-<line x1="1000.0" y1="125" x2="1000.0" y2="390" stroke="#CBD5E1" stroke-width="1.2" stroke-linecap="round" stroke-dasharray="6 5"/>
-<line x1="160.0" y1="155" x2="370.0" y2="155" stroke="#334155" stroke-width="1.35" stroke-linecap="round" marker-end="url(#arrow)"/>
-<text x="265.0" y="148" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" font-weight="400" fill="#4B5563" style=""><tspan x="265.0" dy="0">обновить branch</tspan></text>
-<line x1="370.0" y1="190" x2="580.0" y2="190" stroke="#334155" stroke-width="1.35" stroke-linecap="round" marker-end="url(#arrow)"/>
-<text x="475.0" y="183" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" font-weight="400" fill="#4B5563" style=""><tspan x="475.0" dy="0">пересобрать кэш</tspan></text>
-<line x1="580.0" y1="225" x2="790.0" y2="225" stroke="#334155" stroke-width="1.35" stroke-linecap="round" marker-end="url(#arrow)"/>
-<text x="685.0" y="218" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" font-weight="400" fill="#4B5563" style=""><tspan x="685.0" dy="0">прочитать услуги</tspan></text>
-<line x1="790.0" y1="255" x2="580.0" y2="255" stroke="#334155" stroke-width="1.35" stroke-linecap="round" stroke-dasharray="6 5" marker-end="url(#arrow)"/>
-<text x="685.0" y="248" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" font-weight="400" fill="#4B5563" style=""><tspan x="685.0" dy="0">список услуг</tspan></text>
-<line x1="580.0" y1="285" x2="790.0" y2="285" stroke="#334155" stroke-width="1.35" stroke-linecap="round" marker-end="url(#arrow)"/>
-<text x="685.0" y="278" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" font-weight="400" fill="#4B5563" style=""><tspan x="685.0" dy="0">очереди, профили, рабочие места</tspan></text>
-<line x1="790.0" y1="315" x2="580.0" y2="315" stroke="#334155" stroke-width="1.35" stroke-linecap="round" stroke-dasharray="6 5" marker-end="url(#arrow)"/>
-<text x="685.0" y="308" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" font-weight="400" fill="#4B5563" style=""><tspan x="685.0" dy="0">справочники</tspan></text>
-<path d="M 580.0 340 L 635.0 340 L 635.0 370 L 580.0 370" fill="none" stroke="#334155" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow)"/>
-<text x="652.0" y="348" text-anchor="start" font-family="Segoe UI, Arial, sans-serif" font-size="10" font-weight="400" fill="#4B5563" style=""><tspan x="652.0" dy="0">собрать новый</tspan></text>
-<text x="652.0" y="363" text-anchor="start" font-family="Segoe UI, Arial, sans-serif" font-size="10" font-weight="400" fill="#4B5563" style=""><tspan x="652.0" dy="0">BranchAssignmentCache</tspan></text>
-<line x1="580.0" y1="405" x2="1000.0" y2="405" stroke="#334155" stroke-width="1.35" stroke-linecap="round" marker-end="url(#arrow)"/>
-<text x="790.0" y="398" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" font-weight="400" fill="#4B5563" style=""><tspan x="790.0" dy="0">атомарно заменить ссылку</tspan></text>
-<rect x="160" y="430" width="780" height="38" rx="7" ry="7" fill="#FEF3C7" stroke="#B45309" stroke-width="1.2" filter="url(#card-shadow)"/>
-<text x="174" y="454" text-anchor="start" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="400" fill="#111827" style=""><tspan x="174" dy="0">Инвариант: обработчики событий не читают полусобранный кэш; сначала создается новый объект, затем заменяется ссылка.</tspan></text>
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="840" viewBox="0 0 1280 840" role="img" aria-label="Пересборка кэша отделения">
+<defs>
+  <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#334155"/></marker>
+  <marker id="arrow-dashed" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#475569"/></marker>
+</defs>
+<rect x="0.0" y="0.0" width="1280.0" height="840.0" rx="0.0" fill="#FFFFFF" stroke="none" stroke-width="1"/>
+<rect x="24.0" y="24.0" width="1232.0" height="792.0" rx="18.0" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="1"/>
+<text x="640.0" y="60.0" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="25" font-weight="700" fill="#0F172A" >Пересборка кэша отделения</text>
+<rect x="10.0" y="100.0" width="140.0" height="62.0" rx="10.0" fill="#E0F2FE" stroke="#0369A1" stroke-width="1.5"/>
+<text x="80.0" y="125.0" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="700" fill="#0F172A">
+<tspan x="80.0" dy="0">Старт</tspan>
+<tspan x="80.0" dy="18">/ cron</tspan>
+</text>
+<path d="M 80.0 172.0 L 80.0 750.0" fill="none" stroke="#94A3B8" stroke-width="1.7" stroke-dasharray="7 6" stroke-linecap="round"/>
+<rect x="290.0" y="100.0" width="140.0" height="62.0" rx="10.0" fill="#E0F2FE" stroke="#0369A1" stroke-width="1.5"/>
+<text x="360.0" y="125.0" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="700" fill="#0F172A">
+<tspan x="360.0" dy="0">CacheUpdate</tspan>
+<tspan x="360.0" dy="18">service</tspan>
+</text>
+<path d="M 360.0 172.0 L 360.0 750.0" fill="none" stroke="#94A3B8" stroke-width="1.7" stroke-dasharray="7 6" stroke-linecap="round"/>
+<rect x="570.0" y="100.0" width="140.0" height="62.0" rx="10.0" fill="#E0F2FE" stroke="#0369A1" stroke-width="1.5"/>
+<text x="640.0" y="125.0" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="700" fill="#0F172A">
+<tspan x="640.0" dy="0">BranchCache</tspan>
+<tspan x="640.0" dy="18">updater</tspan>
+</text>
+<path d="M 640.0 172.0 L 640.0 750.0" fill="none" stroke="#94A3B8" stroke-width="1.7" stroke-dasharray="7 6" stroke-linecap="round"/>
+<rect x="850.0" y="100.0" width="140.0" height="62.0" rx="10.0" fill="#E0F2FE" stroke="#0369A1" stroke-width="1.5"/>
+<text x="920.0" y="125.0" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="700" fill="#0F172A">
+<tspan x="920.0" dy="0">Metadata</tspan>
+<tspan x="920.0" dy="18">gateway</tspan>
+</text>
+<path d="M 920.0 172.0 L 920.0 750.0" fill="none" stroke="#94A3B8" stroke-width="1.7" stroke-dasharray="7 6" stroke-linecap="round"/>
+<rect x="1130.0" y="100.0" width="140.0" height="62.0" rx="10.0" fill="#DCFCE7" stroke="#15803D" stroke-width="1.5"/>
+<text x="1200.0" y="125.0" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="700" fill="#0F172A">
+<tspan x="1200.0" dy="0">Cache</tspan>
+<tspan x="1200.0" dy="18">container</tspan>
+</text>
+<path d="M 1200.0 172.0 L 1200.0 750.0" fill="none" stroke="#94A3B8" stroke-width="1.7" stroke-dasharray="7 6" stroke-linecap="round"/>
+<path d="M 80.0 196.0 L 360.0 196.0" fill="none" stroke="#334155" stroke-width="1.55" marker-end="url(#arrow)"/>
+<text x="220.0" y="187.0" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" font-weight="400" fill="#475569" >обновить branch</text>
+<path d="M 360.0 244.0 L 640.0 244.0" fill="none" stroke="#334155" stroke-width="1.55" marker-end="url(#arrow)"/>
+<text x="500.0" y="235.0" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" font-weight="400" fill="#475569" >пересобрать кэш</text>
+<path d="M 640.0 292.0 L 920.0 292.0" fill="none" stroke="#334155" stroke-width="1.55" marker-end="url(#arrow)"/>
+<text x="780.0" y="283.0" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" font-weight="400" fill="#475569" >прочитать услуги</text>
+<path d="M 920.0 340.0 L 640.0 340.0" fill="none" stroke="#64748B" stroke-width="1.55" stroke-dasharray="6 6" marker-end="url(#arrow-dashed)"/>
+<text x="780.0" y="331.0" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" font-weight="400" fill="#475569" >список услуг</text>
+<path d="M 640.0 388.0 L 920.0 388.0" fill="none" stroke="#334155" stroke-width="1.55" marker-end="url(#arrow)"/>
+<text x="780.0" y="379.0" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" font-weight="400" fill="#475569" >очереди, профили, рабочие места</text>
+<path d="M 920.0 436.0 L 640.0 436.0" fill="none" stroke="#64748B" stroke-width="1.55" stroke-dasharray="6 6" marker-end="url(#arrow-dashed)"/>
+<text x="780.0" y="427.0" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" font-weight="400" fill="#475569" >справочники</text>
+<path d=" M 640.0 484.0 L 678.0 484.0 L 678.0 508.0 L 646.0 508.0" fill="none" stroke="#334155" stroke-width="1.4" stroke-linejoin="round" stroke-linecap="round" marker-end="url(#arrow)"/>
+<text x="708.0" y="476.0" text-anchor="start" font-family="Segoe UI, Arial, sans-serif" font-size="13" font-weight="400" fill="#475569" >собрать BranchAssignmentCache</text>
+<path d="M 640.0 532.0 L 1200.0 532.0" fill="none" stroke="#334155" stroke-width="1.55" marker-end="url(#arrow)"/>
+<text x="920.0" y="523.0" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" font-weight="400" fill="#475569" >атомарно заменить ссылку</text>
+<path d="M 1200.0 580.0 L 360.0 580.0" fill="none" stroke="#64748B" stroke-width="1.55" stroke-dasharray="6 6" marker-end="url(#arrow-dashed)"/>
+<text x="780.0" y="571.0" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" font-weight="400" fill="#475569" >новый кэш активен</text>
+<path d="M 360.0 628.0 L 80.0 628.0" fill="none" stroke="#64748B" stroke-width="1.55" stroke-dasharray="6 6" marker-end="url(#arrow-dashed)"/>
+<text x="220.0" y="619.0" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" font-weight="400" fill="#475569" >итог обновления</text>
+<rect x="260.0" y="650.0" width="800.0" height="70.0" rx="8.0" fill="#FFF7ED" stroke="#C2410C" stroke-width="1.4"/>
+<text x="660.0" y="678.5" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" font-weight="400" fill="#7C2D12">
+<tspan x="660.0" dy="0">Обработчики событий не читают полусобранный кэш: сначала создается</tspan>
+<tspan x="660.0" dy="17">новый объект, затем выполняется атомарная замена ссылки.</tspan>
+</text>
 </svg>

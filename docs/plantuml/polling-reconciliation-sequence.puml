@@ -1,105 +1,35 @@
 @startuml
+!include common-style.puml
+!pragma teoz true
 title Последовательность плановой reconciliation-обработки
-
-' Единый профиль диаграмм документации Doctor Assistant.
-' Акцент: аккуратная business/UML-нотация, прозрачные подписи стрелок,
-' ровная сетка, короткие технические подписи и читаемый шрифт без засечек.
-skinparam backgroundColor #F8FAFC
-skinparam shadowing false
-skinparam defaultFontName "Segoe UI"
-skinparam defaultFontSize 13
-skinparam defaultTextAlignment center
-skinparam wrapWidth 170
-skinparam maxMessageSize 120
-skinparam linetype ortho
-skinparam ArrowColor #334155
-skinparam ArrowThickness 1.2
-skinparam packageStyle rectangle
-skinparam componentStyle uml2
-skinparam classAttributeIconSize 0
-skinparam handwritten false
-skinparam RoundCorner 6
-skinparam nodesep 38
-skinparam ranksep 46
-skinparam package {
-  BackgroundColor #FFFFFF
-  BorderColor #7C3AED
-  FontColor #111827
-}
-skinparam component {
-  BackgroundColor #E0F2FE
-  BorderColor #0369A1
-  FontColor #111827
-}
-skinparam interface {
-  BackgroundColor #F8FAFC
-  BorderColor #64748B
-  FontColor #111827
-}
-skinparam database {
-  BackgroundColor #DCFCE7
-  BorderColor #15803D
-  FontColor #111827
-}
-skinparam artifact {
-  BackgroundColor #FEF3C7
-  BorderColor #B45309
-  FontColor #111827
-}
-skinparam node {
-  BackgroundColor #FFFFFF
-  BorderColor #64748B
-  FontColor #111827
-}
-skinparam note {
-  BackgroundColor #FEF3C7
-  BorderColor #B45309
-  FontColor #111827
-}
-skinparam actor {
-  BorderColor #475569
-  FontColor #111827
-}
-skinparam sequence {
-  ArrowColor #334155
-  ArrowThickness 1.2
-  LifeLineBorderColor #CBD5E1
-  LifeLineBackgroundColor transparent
-  ParticipantBackgroundColor #E0F2FE
-  ParticipantBorderColor #0369A1
-  ParticipantFontColor #111827
-  GroupBorderColor #94A3B8
-  GroupBackgroundColor transparent
-  GroupFontColor #334155
-  BoxBackgroundColor transparent
-  BoxBorderColor #CBD5E1
-}
-skinparam responseMessageBelowArrow true
-
 hide footbox
 
 participant "@Scheduled" as T
 participant "Polling\njob" as J
 participant "Assignment\nproperties" as P
-participant "Cache\ncontainer" as C
+database "Cache\ncontainer" as C
 participant "Branch\nlock" as L
 participant "Assignment\ncycle" as A
+
 T -> J : cron
-J -> P : enabled + polling
-P --> J : effective flags
+J -> P : enabled\n+ polling
+P --> J : effective\nflags
+
 opt расписание включено
-  J -> C : актуальные кэши
+  J -> C : актуальные\nкэши
   C --> J : BranchAssignmentCache[]
+
   loop активное рабочее место
-    J -> L : занять branch
-    L --> J : branch свободен
-    J -> A : TriggerSource=POLLING
-    A --> J : processed / skipped
-    J -> L : освободить branch
+    J -> L : занять\nbranch
+    L --> J : branch\nсвободен
+    J -> A : TriggerSource\n= POLLING
+    A --> J : processed\n/ skipped
+    J -> L : освободить\nbranch
   end
 end
+
 note over J,A
-  Reconciliation закрывает потерянные события, сетевые разрывы
-  и позднее появление визитов в очереди.
+Reconciliation закрывает потерянные события, сетевые разрывы и позднее
+появление визитов в очереди «Врач не назначен».
 end note
 @enduml

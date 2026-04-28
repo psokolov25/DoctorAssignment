@@ -74,6 +74,7 @@ visit-details-path: "/rest/entrypoint/branches/{branchId}/visits/{visitId}/"
   "id": 30283,
   "ticketId": "Щ028",
   "currentVisitService": {
+    "id": 227634,
     "serviceId": 117,
     "serviceInternalName": "Врач не в системе"
   },
@@ -91,53 +92,34 @@ visit-details-path: "/rest/entrypoint/branches/{branchId}/visits/{visitId}/"
 
 - `id` - id визита;
 - `ticketId`/ticket number - body для med-robot plain text режима;
+- `currentVisitService.id` - id текущей записи услуги визита; используется как fingerprint маршрутного шага для защиты от дублей;
 - `currentVisitService.serviceId` - определение transfer-only и path service для med-robot;
 - `unservedVisitServices[*].serviceId` - локальный маршрут визита;
 - `routeOrder` - приоритет локального выбора.
 
-## Добавление услуги в маршрут визита
+## Маршрутный fingerprint визита
 
-Используется только для услуги, выбранной med-robot, если такой услуги нет в `unservedVisitServices`, и она не является текущей.
+Для визитов, которые многократно возвращаются в служебную услугу **«Врач не в системе»** (`serviceId=117`), важно различать старый дубль и новый маршрутный шаг. Поэтому служба читает `currentVisitService.id` из ответа Orchestra.
 
-```http
-POST /rest/entrypoint/branches/{branchId}/visits/{visitId}/services/{serviceOrigId}/
-Content-Type: application/json
-Accept: application/json
-Authorization: Basic ...
-Content-Length: 0
+```json
+{
+  "id": 30354,
+  "ticketId": "Р002",
+  "currentVisitService": {
+    "id": 227634,
+    "serviceId": 117,
+    "serviceInternalName": "Врач не в системе"
+  }
+}
 ```
 
-Конфигурация:
+Если после прохождения очередной услуги тот же `visitId` снова получил новый `currentVisitService.id`, сервис имеет право снова вызвать med-robot. Если `currentVisitService.id` тот же самый, повтор в пределах `processed-visit-ttl-seconds` считается дублем.
 
-```yaml
-add-service-path: "/rest/entrypoint/branches/{branchId}/visits/{visitId}/services/{serviceOrigId}/"
-```
+## Отдельный `POST add-service`
 
-Поддерживается также placeholder `{serviceId}` для совместимости:
+Текущая реализация не вызывает отдельный `POST add-service` перед назначением услуги. Если med-robot в plain text режиме вернул услугу вне `unservedVisitServices`, следующий шаг - обычный `assign-service` по выбранному `serviceId`, затем `transfer-visit` в выбранную очередь.
 
-```yaml
-add-service-path: "/rest/entrypoint/branches/{branchId}/visits/{visitId}/services/{serviceId}/"
-```
-
-### Типовой успешный лог
-
-```text
-Add service to visit request branchId=1 visitId=30283 serviceId=39 path=/rest/entrypoint/branches/1/visits/30283/services/39/ payload=<empty>
-Add service to visit response branchId=1 visitId=30283 serviceId=39 status=200 responseBody=...
-```
-
-### Типовая ошибка
-
-```text
-500 Internal Server Error
-ERROR_MESSAGE: java.lang.Integer cannot be cast to java.lang.Long
-```
-
-Это ошибка REST endpoint-а Orchestra. Поведение службы определяется:
-
-```yaml
-add-missing-robot-service-failure-mode: CONTINUE_WITH_ASSIGN
-```
+Если на конкретной инсталляции Orchestra `assign-service` не может назначить услугу, отсутствующую в маршруте, нужно отдельно добавлять поддержку `POST add-service` в `VisitWorkflowGateway` и фиксировать контракт этого endpoint-а тестами.
 
 ## Назначение услуги визиту
 

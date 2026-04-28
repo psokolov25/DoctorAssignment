@@ -73,7 +73,7 @@ application:
 5. Проверить runtime-аудит.
 6. Проверить, что служба читает кэш и визиты.
 7. Проверить HTTP-заголовки med-robot.
-8. Проверить add-service/assign/transfer на одном тестовом визите.
+8. Проверить med-robot, assign или transfer-only, затем transfer на одном тестовом визите.
 9. Переключить `dry-run: false`.
 
 ## Production-конфигурация: пример
@@ -124,8 +124,6 @@ application:
     service-point-open-trigger-enabled: false
     set-work-profile-trigger-enabled: false
     recheck-visit-before-transfer: true
-    add-missing-robot-service-to-visit: true
-    add-missing-robot-service-failure-mode: CONTINUE_WITH_ASSIGN
     abort-cycle-on-forbidden-mutation: true
     treat-inactive-user-state-as-failure: true
     treat-no-started-service-point-session-as-failure: true
@@ -137,7 +135,6 @@ application:
       visit-details-path: "/rest/entrypoint/branches/{branchId}/visits/{visitId}/"
       visit-by-id-path: "/rest/entrypoint/branches/{branchId}/visits/{visitId}/"
       assign-service-path: "/rest/entrypoint/branches/{branchId}/visits/{visitId}/services/{serviceId}/"
-      add-service-path: "/rest/entrypoint/branches/{branchId}/visits/{visitId}/services/{serviceOrigId}/"
       transfer-visit-path: "/rest/entrypoint/branches/{branchId}/queues/{queueId}/visits/"
 ```
 
@@ -201,10 +198,10 @@ Rollback:
    - чтение визита из unknown queue;
    - вызов med-robot;
    - отсутствие 415;
-   - add-service только при необходимости;
+   - корректный `currentService=117` для plain text режима;
    - assign или transfer-only;
    - transfer в ожидаемую очередь.
-6. Проверить, что нет циклической обработки одного и того же визита.
+6. Проверить, что повторная обработка блокирует только тот же `currentVisitService.id`, а новый маршрутный шаг того же `visitId` допускает новый вызов med-robot.
 
 ## Безопасность
 

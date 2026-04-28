@@ -88,7 +88,7 @@
 | `allowed-branches` | list | `[1]` | белый список branch id; пустой список означает все |
 | `stale-cache-duration-seconds` | number | `300` | TTL branch cache |
 | `event-deduplication-ttl-seconds` | number | `120` | TTL дедупликации событий |
-| `processed-visit-ttl-seconds` | number | `900` | TTL защиты от повторной обработки визита |
+| `processed-visit-ttl-seconds` | number | `900` | TTL защиты от повторной обработки одного маршрутного шага визита |
 | `service-priority-by-key` | map | `{ "4": 10 }` | приоритеты услуг при локальном выборе |
 
 ## Trigger flags
@@ -110,20 +110,35 @@
 | `treat-inactive-user-state-as-failure` | boolean | `true` | считать `userState=INACTIVE` контекстной ошибкой assign |
 | `treat-no-started-service-point-session-as-failure` | boolean | `true` | считать `NO_STARTED_SERVICE_POINT_SESSION` контекстной ошибкой assign |
 
-## Добавление отсутствующей услуги med-robot
+## Маршрутная дедупликация обработанных визитов
 
-| Параметр | Тип | Значения | Назначение |
-|---|---|---|---|
-| `add-missing-robot-service-to-visit` | boolean | `true` / `false` | добавлять услугу в маршрут, если med-robot вернул serviceId вне `unservedVisitServices` и не равный текущей услуге |
-| `add-missing-robot-service-failure-mode` | enum | `CONTINUE_WITH_ASSIGN`, `SKIP_VISIT`, `PROPAGATE_ERROR` | что делать при ошибке REST-точки Orchestra `POST add-service` |
+`processed-visit-ttl-seconds` не означает запрет на повторную обработку всего `visitId`. Сервис защищает от дублей конкретный маршрутный шаг.
 
-### `add-missing-robot-service-failure-mode`
+Ключ `ProcessedVisitRegistry` строится из:
 
-| Значение | Поведение | Когда выбирать |
-|---|---|---|
-| `CONTINUE_WITH_ASSIGN` | логировать ошибку add-service и продолжать assign/transfer | рекомендуемый режим для нестабильной или непроверенной REST-точки add-service |
-| `SKIP_VISIT` | пропустить текущий визит | если нельзя безопасно назначать услугу без явного добавления в маршрут |
-| `PROPAGATE_ERROR` | пробросить ошибку наверх | для отладки и жесткого тестирования контракта |
+- `branchId`;
+- `visitId`;
+- `staffId`;
+- `processingFingerprint`.
+
+Fingerprint:
+
+1. если в ответе Orchestra есть `currentVisitService.id`, используется `currentVisitServiceRecordId=<id>`;
+2. если `currentVisitService.id` отсутствует, используется fallback по `currentServiceId`, `queueId` и `unservedServices`.
+
+Практический эффект: один и тот же визит может снова попасть в очередь **«Врач не в системе»** после очередной услуги. Если `currentVisitService.id` изменился, это новый маршрутный шаг и med-robot может быть вызван повторно.
+
+Диагностический лог:
+
+```text
+Visit 30354 already processed recently for doctor 1 processingFingerprint=currentVisitServiceRecordId=227634
+```
+
+## Статус отдельного `POST add-service`
+
+В текущей реализации отдельный `POST add-service` перед назначением услуги **не выполняется**. Если med-robot в plain text режиме вернул услугу, которой нет в `unservedVisitServices`, Doctor Assistant передает этот `serviceId` в обычный `assign-service`, а затем выполняет `transfer-visit`.
+
+Следовательно, параметры вида `add-missing-robot-service-to-visit` и `add-missing-robot-service-failure-mode` не являются рабочими настройками текущего кода. Если конкретная инсталляция Orchestra требует обязательного добавления услуги в маршрут, нужно отдельно доработать `VisitWorkflowGateway` и `VisitAssignmentExecutor`, а затем вернуть эти параметры в справочник конфигурации.
 
 ## Activation step
 
@@ -191,13 +206,12 @@ resolvedSourceEntryPointIds=1->1
 | `visit-details-path` | GET | `/rest/entrypoint/branches/{branchId}/visits/{visitId}/` | получить детали визита |
 | `visit-by-id-path` | GET | `/rest/entrypoint/branches/{branchId}/visits/{visitId}/` | перечитать визит по id |
 | `assign-service-path` | PUT | `/rest/entrypoint/branches/{branchId}/visits/{visitId}/services/{serviceId}/` | назначить услугу визиту |
-| `add-service-path` | POST | `/rest/entrypoint/branches/{branchId}/visits/{visitId}/services/{serviceOrigId}/` | добавить услугу в маршрут визита |
 | `transfer-visit-path` | PUT | `/rest/entrypoint/branches/{branchId}/queues/{queueId}/visits/` | перевести визит в очередь |
 
 Поддерживаемые placeholders:
 
 ```text
-{branchId}, {queueId}, {targetQueueId}, {visitId}, {serviceId}, {serviceOrigId}
+{branchId}, {queueId}, {targetQueueId}, {visitId}, {serviceId}
 ```
 
 ## Проверочный production-профиль
@@ -238,14 +252,11 @@ application:
     polling-cron: "0 */1 * * * ?"
     source-entry-point-id-by-branch:
       "1": 1
-    add-missing-robot-service-to-visit: true
-    add-missing-robot-service-failure-mode: CONTINUE_WITH_ASSIGN
     experimental-endpoints:
       enabled: true
       queue-visits-path: "/rest/entrypoint/branches/{branchId}/queues/{queueId}/visits/full/"
       visit-details-path: "/rest/entrypoint/branches/{branchId}/visits/{visitId}/"
       visit-by-id-path: "/rest/entrypoint/branches/{branchId}/visits/{visitId}/"
       assign-service-path: "/rest/entrypoint/branches/{branchId}/visits/{visitId}/services/{serviceId}/"
-      add-service-path: "/rest/entrypoint/branches/{branchId}/visits/{visitId}/services/{serviceOrigId}/"
       transfer-visit-path: "/rest/entrypoint/branches/{branchId}/queues/{queueId}/visits/"
 ```

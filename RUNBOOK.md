@@ -2,7 +2,7 @@
 
 Документ предназначен для дежурного инженера, 2-й линии и разработчика, который разбирает инциденты **Med Doctor Assignment Service** на стенде или в production.
 
-## Главные логи
+## 1. Главные логи
 
 | Файл | Назначение |
 |---|---|
@@ -11,19 +11,17 @@
 | `log/med-robot-http.log` | HTTP TRACE/DEBUG запросы к Orchestra и med-robot |
 | `log/archived/*` | архивные логи по датам |
 
-В спорных ситуациях всегда нужны минимум два файла за один период времени:
+Для анализа почти всегда нужны два файла за один и тот же период:
 
-1. business log;
-2. HTTP log.
+1. business log - почему алгоритм принял решение;
+2. HTTP log - какой запрос реально ушел во внешнюю систему и какой ответ пришел.
 
-Business log показывает решение алгоритма, HTTP log показывает фактический запрос и ответ внешней системы.
+## 2. Проверка после старта
 
-## Проверка после старта
-
-Найдите строку:
+Найдите строку runtime-аудита:
 
 ```text
-Runtime configuration marker=2026-04-27-entrypoint-source-id-diagnostics
+Runtime configuration marker=2026-04-28-route-step-dedup-fix
 ```
 
 Проверьте поля:
@@ -38,15 +36,14 @@ Runtime configuration marker=2026-04-27-entrypoint-source-id-diagnostics
 | `medRobotRequestBodyMode` | `TICKET_NUMBER_PLAIN_TEXT` для передачи номера талона |
 | `medRobotPlainTextPolicy` | обычно `default` |
 | `medRobotErrorHandlingMode` | `FALLBACK_TO_LOCAL` или `SKIP_VISIT` |
-| `addMissingRobotServiceToVisit` | `true`, если нужно добавлять выбранную robot услугу в маршрут |
-| `addMissingRobotServiceFailureMode` | обычно `CONTINUE_WITH_ASSIGN` |
-| `sourceEntryPointIdByBranch` | карта branch -> entry point id |
+| `medRobotRequireKnownQueue` | обычно `true` |
+| `medRobotRequireDoctorAvailableService` | обычно `false` для режима доверия robot-выбору |
 | `resolvedSourceEntryPointIds` | например `1->1` |
 | `replayMutationCookiesForPut` | обычно `false` |
 
 Если runtime marker старый или `gatewayCodeSource` указывает не на ожидаемый jar, сначала перезапустите правильный артефакт. Не анализируйте бизнес-ошибки на старой сборке.
 
-## Базовый health-check цикла
+## 3. Базовый health-check цикла
 
 В business log должны появляться строки:
 
@@ -64,36 +61,86 @@ Finish assignment cycle source=POLLING branchId=1 processed=...
 4. проверьте, что branch входит в `allowed-branches`;
 5. проверьте, что кэш branch успешно построен.
 
-## Диагностика med-robot
+## 4. Диагностика med-robot
 
-### Проверить, вызывается ли робот
+### 4.1. Проверить, вызывается ли робот
 
-Ищите:
+Ищите строку запроса:
 
 ```text
-Request med-robot optimal service branch=1 currentService=... bodyMode=TICKET_NUMBER_PLAIN_TEXT contentType=text/plain accept=application/json ticketNumber=... policy=default
+Request med-robot optimal service branch=1 currentService=117 bodyMode=TICKET_NUMBER_PLAIN_TEXT contentType=text/plain accept=application/json ticketNumber=Р002 policy=default
 ```
 
-Если такой строки нет:
+Если такой строки нет, проверьте возможные причины:
 
-- `application.med-robot.enabled=false`;
-- текущий jar старый;
-- для JSON-режима локальный предварительный выбор не нашел услугу;
-- для plain text режима у визита нет номера талона;
-- текущий визит был пропущен раньше: не тот branch, уже обработан, queue changed, lock занят.
+| Причина | Признак в логе | Что делать |
+|---|---|---|
+| med-robot отключен | `medRobotEnabled=false` в runtime-аудите | включить `application.med-robot.enabled=true` |
+| запущен старый jar | старый runtime marker | перезапустить свежий артефакт |
+| JSON-режим без локального выбора | `local pre-selection did not find a service in JSON-array mode` | включить `TICKET_NUMBER_PLAIN_TEXT` |
+| нет номера талона | `plain text selection is skipped ... has no ticket number` | проверить `ticketId` в ответе Orchestra |
+| нет текущей услуги | `plain text selection is skipped ... has no current service id` | проверить `currentVisitService.serviceId` |
+| тот же маршрутный шаг уже обработан | `already processed recently ... processingFingerprint=...` | сравнить `currentVisitService.id` в HTTP log |
+| визит ушел из unknown queue до transfer | `Skip visit ... because queue already changed` | проверить гонки и второй обработчик |
 
-### 415 Unsupported Media Type
+### 4.2. Сценарий «визит в Врач не в системе, currentService=117, но робот не вызывается»
+
+Для этого сценария правильная конфигурация:
+
+```yaml
+application:
+  med-robot:
+    enabled: true
+    request-body-mode: TICKET_NUMBER_PLAIN_TEXT
+    plain-text-policy: default
+```
+
+Ожидаемые поля в HTTP-ответе Orchestra по визиту:
+
+```json
+{
+  "id": 30354,
+  "ticketId": "Р002",
+  "currentVisitService": {
+    "id": 227634,
+    "serviceId": 117,
+    "serviceInternalName": "Врач не в системе"
+  },
+  "unservedVisitServices": []
+}
+```
+
+Ожидаемый business log:
+
+```text
+Request med-robot optimal service branch=1 currentService=117 bodyMode=TICKET_NUMBER_PLAIN_TEXT contentType=text/plain accept=application/json ticketNumber=Р002 policy=default
+Med-robot selected service=140 queue=384 visit=30354 routeOrder=null localService=null localQueue=null currentService=117
+```
+
+Если вместо запроса видна строка:
+
+```text
+Visit 30354 already processed recently for doctor 1 processingFingerprint=currentVisitServiceRecordId=227634
+```
+
+значит сработала защита от повторной обработки того же маршрутного шага. Сравните `currentVisitService.id`:
+
+- если `currentVisitService.id` тот же - это дубль polling/event в пределах `processed-visit-ttl-seconds`;
+- если `currentVisitService.id` новый, но fingerprint в логе старый - запущен неактуальный jar или визит не перечитался перед dedup;
+- если `currentVisitService.id` отсутствует в ответе Orchestra, dedup использует fallback fingerprint по `currentServiceId`, `queueId` и `unservedServices`.
+
+### 4.3. 415 Unsupported Media Type
 
 Симптом в HTTP log:
 
 ```text
 Content-Type: application/json
 Accept: text/plain
-Request Body: Щ028
+Request Body: Р002
 Unsupported Media Type. Allowed types: [text/plain]
 ```
 
-Причина в старом jar: plain text body ушел с JSON `Content-Type`; для Micronaut client это означает, что на методе был перепутан `@Consumes` и `@Produces`.
+Причина: plain text body ушел с JSON `Content-Type`; для Micronaut client это означает, что на методе были перепутаны `@Consumes` и `@Produces`.
 
 Действия:
 
@@ -101,7 +148,7 @@ Unsupported Media Type. Allowed types: [text/plain]
 2. Проверить HTTP log: должно быть `Content-Type: text/plain`, `Accept: application/json`.
 3. Проверить, что запущен свежий jar с исправленным `MedRobotRestClient`.
 
-### Ошибка med-robot и продолжение без робота
+### 4.4. Ошибка med-robot и продолжение без робота
 
 Если включено:
 
@@ -128,65 +175,37 @@ No local service selection for visit ... after med-robot error; return empty sel
 error-handling-mode: SKIP_VISIT
 ```
 
-## Диагностика добавления услуги в визит
+## 5. Маршрутная дедупликация визитов
 
-### Когда должен быть POST add-service
+`ProcessedVisitRegistry` защищает не просто `visitId`, а конкретный маршрутный шаг визита.
 
-POST add-service выполняется только если:
+Ключ обработки включает:
 
-- выбор пришел от med-robot;
-- `add-missing-robot-service-to-visit=true`;
-- выбранной услуги нет в `unservedVisitServices`;
-- выбранная услуга не равна `currentVisitService`.
+- `branchId`;
+- `visitId`;
+- `staffId`;
+- `processingFingerprint`.
 
-Лог:
+Fingerprint строится так:
 
-```text
-Selected med-robot service 39 is absent in visit 30283 unserved route and is not current service. Add service to visit before assign/transfer.
-Add service to visit request branchId=1 visitId=30283 serviceId=39 path=... payload=<empty>
-```
+1. если есть `currentVisitService.id`, используется `currentVisitServiceRecordId=<id>`;
+2. если его нет, используется fallback: `currentServiceId=<id>|queueId=<id>|unserved=<serviceId:externalKey:routeOrder,...>`.
 
-Если med-robot вернул текущую услугу, add-service не нужен и не должен вызываться.
+Практический смысл: один и тот же `visitId` может повторно вернуться в **«Врач не в системе»** после прохождения очередной услуги. Если Orchestra выдала новый `currentVisitService.id`, это новый маршрутный шаг, и med-robot должен вызываться снова.
 
-### 500 `Integer cannot be cast to Long`
-
-Симптом:
-
-```text
-POST /rest/entrypoint/branches/1/visits/30283/services/39/
-500 Internal Server Error
-ERROR_MESSAGE: java.lang.Integer cannot be cast to java.lang.Long
-```
-
-Это ошибка Orchestra endpoint-а `POST add service to visit`, а не med-robot.
-
-Рекомендуемый режим:
+TTL задается параметром:
 
 ```yaml
-add-missing-robot-service-failure-mode: CONTINUE_WITH_ASSIGN
+application:
+  assignment:
+    processed-visit-ttl-seconds: 900
 ```
 
-Тогда служба пишет warning и продолжает assign/transfer:
+Уменьшать TTL нужно осторожно: слишком маленькое значение увеличит риск повторной обработки дублей событий; слишком большое значение при отсутствии `currentVisitService.id` может дольше блокировать легитимный повтор.
 
-```text
-Continue visit 30283 with assign/transfer after failed add-service ... because addMissingRobotServiceFailureMode=CONTINUE_WITH_ASSIGN
-```
+## 6. Диагностика assign-service
 
-Если безопаснее пропускать такие визиты:
-
-```yaml
-add-missing-robot-service-failure-mode: SKIP_VISIT
-```
-
-Для жесткой отладки контракта:
-
-```yaml
-add-missing-robot-service-failure-mode: PROPAGATE_ERROR
-```
-
-## Диагностика assign-service
-
-### `userState=INACTIVE`
+### 6.1. `userState=INACTIVE`
 
 Если assign вернул HTTP 200, но body содержит:
 
@@ -205,17 +224,15 @@ add-missing-robot-service-failure-mode: PROPAGATE_ERROR
 treat-inactive-user-state-as-failure: true
 ```
 
-### `NO_STARTED_SERVICE_POINT_SESSION`
+### 6.2. `NO_STARTED_SERVICE_POINT_SESSION`
 
 Обрабатывается аналогично `INACTIVE`.
-
-Параметр:
 
 ```yaml
 treat-no-started-service-point-session-as-failure: true
 ```
 
-### Массовые 403 после первого отказа
+### 6.3. Массовые 403 после первого отказа
 
 Если mutating REST начал возвращать 403, лучше остановить текущий цикл:
 
@@ -225,9 +242,9 @@ abort-cycle-on-forbidden-mutation: true
 
 Это не исправляет причину 403, но предотвращает серию одинаковых ошибок по всем визитам очереди.
 
-## Диагностика transfer-visit
+## 7. Диагностика transfer-visit
 
-### Проверить `fromId`
+### 7.1. Проверить `fromId`
 
 В логах должно быть:
 
@@ -248,9 +265,9 @@ source-entry-point-id-by-branch:
 default-source-entry-point-id: 1
 ```
 
-Если в ошибке фигурирует `14`, проверьте, не является ли `14` на самом деле `serviceId`, а не `entryPointId`. В логах рядом всегда есть подписи `serviceId`, `queueId`, `sourceEntryPointId`.
+Если в ошибке фигурирует неожиданный `14`, проверьте, не является ли `14` на самом деле `serviceId`, а не `entryPointId`. В логах рядом всегда есть подписи `serviceId`, `queueId`, `sourceEntryPointId`.
 
-### 204 No Content
+### 7.2. 204 No Content
 
 Это штатный успешный ответ transfer:
 
@@ -260,51 +277,35 @@ Transfer visit response ... status=204 bodyReadMode=exchange-byte-array response
 
 Не нужно считать пустое тело ошибкой.
 
-## Диагностика «робот пропускается»
-
-Сообщение:
-
-```text
-Med-robot selection is skipped because local pre-selection did not find a service
-```
-
-Допустимо только для `UNSERVED_SERVICE_IDS_JSON_ARRAY`.
-
-Для режима `TICKET_NUMBER_PLAIN_TEXT` проверьте:
-
-1. `medRobotRequestBodyMode=TICKET_NUMBER_PLAIN_TEXT` в runtime-аудите.
-2. Есть ли `ticketNumber` у визита.
-3. Не старый ли jar запущен.
-4. Не выключен ли `application.med-robot.enabled`.
-
-## Диагностика «визит не обработан»
+## 8. Диагностика «визит не обработан»
 
 Проверьте по порядку:
 
 1. Визит действительно находится в очереди `unknown-doctor-queue-id`.
 2. Branch входит в `allowed-branches`.
-3. Не сработал `ProcessedVisitRegistry` по `processed-visit-ttl-seconds`.
+3. Не сработал `ProcessedVisitRegistry`; если сработал - проверить `processingFingerprint` и `currentVisitService.id`.
 4. Не занят branch-level lock.
 5. Есть `DoctorContext`: staff, servicePoint, workProfile.
 6. Для врача найдены доступные услуги.
-7. Для визита прочитались детали.
+7. Для визита прочитались детали, включая `ticketId` и `currentVisitService.serviceId`.
 8. med-robot или локальный алгоритм вернул `SelectedDoctorService`.
-9. Не было ошибки add-service/assign/transfer.
+9. Не было ошибки assign/transfer.
 10. Post-check не показал, что визит остался в старой очереди.
 
-## Быстрая таблица симптомов
+## 9. Быстрая таблица симптомов
 
 | Симптом | Вероятная причина | Где смотреть | Действие |
 |---|---|---|---|
+| med-robot вообще не вызывается | выключен флаг, старый jar, нет ticket/current service, дедупликация | runtime audit + business log | идти по разделу 4 |
+| `already processed recently ... currentVisitServiceRecordId=...` | дубль того же маршрутного шага | business + HTTP log | сравнить `currentVisitService.id` |
+| `local pre-selection did not find a service in JSON-array mode` | выбран JSON-режим при пустом маршруте | business log + runtime audit | включить `TICKET_NUMBER_PLAIN_TEXT` |
 | `415 Unsupported Media Type` от med-robot | неверный `Content-Type` | HTTP log | проверить plain text client и jar |
-| `local pre-selection did not find a service` | JSON-режим или старый jar | business log + runtime audit | включить `TICKET_NUMBER_PLAIN_TEXT`, перезапустить свежий jar |
-| `Integer cannot be cast to Long` | ошибка Orchestra add-service endpoint-а | HTTP log | `CONTINUE_WITH_ASSIGN` или проверка контракта add-service |
 | `userState=INACTIVE` | не готов server-side операторский контекст | assign response body | ждать корректной сессии, проверить activation |
 | `NO_STARTED_SERVICE_POINT_SESSION` | service point session не стартовала в EntryPoint-контуре | assign response body | проверить порядок событий и session start |
 | transfer ушел с неожиданным `fromId` | неверная карта source entry point | runtime audit + transfer log | исправить `source-entry-point-id-by-branch` |
 | processed=0 при наличии визитов | визиты пропущены фильтрами или ошибками выбора | business log | идти по чек-листу «визит не обработан» |
 
-## Какие данные приложить к инциденту
+## 10. Какие данные приложить к инциденту
 
 Для анализа нужны:
 
@@ -313,5 +314,6 @@ Med-robot selection is skipped because local pre-selection did not find a servic
 3. Business log за 2-3 минуты вокруг инцидента.
 4. HTTP log за тот же период.
 5. `visitId`, `ticketId`, `branchId`, `staffId`, `servicePointId`, `workProfileId`.
-6. Ожидаемая услуга/очередь и фактическая услуга/очередь.
-7. Версия jar или путь `gatewayCodeSource`.
+6. Для визита: `currentVisitService.id`, `currentVisitService.serviceId`, `queueId`, `unservedVisitServices`.
+7. Ожидаемая услуга/очередь и фактическая услуга/очередь.
+8. Версия jar или путь `gatewayCodeSource`.

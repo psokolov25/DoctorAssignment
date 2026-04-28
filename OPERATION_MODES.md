@@ -161,8 +161,8 @@ Accept: application/json
 `serviceId` в path выбирается так:
 
 1. локальный кандидат, если он найден;
-2. `currentVisitService.serviceId`, если он входит в доступные врачу услуги;
-3. первая услуга из отсортированного набора услуг, доступных врачу.
+2. `currentVisitService.serviceId`, если локального кандидата нет;
+3. если нет ни локального кандидата, ни текущей услуги, med-robot не вызывается, потому что endpoint требует service id в URL.
 
 ## 4. Обход очереди «Врач не назначен» и неполного маршрута визита
 
@@ -172,29 +172,25 @@ Accept: application/json
 
 ```text
 ticketId = Р004
-currentVisitService = "Врач не назначен" / "Врач не в системе"
+currentVisitService.serviceId = 117 / "Врач не в системе"
 unservedVisitServices = []
 ```
 
 В старой схеме такой визит пропускался. В режиме `TICKET_NUMBER_PLAIN_TEXT` служба передаёт талон в med-robot, получает целевую услугу и продолжает workflow.
 
-### 4.1. Добавление отсутствующей услуги
+### 4.1. Отсутствующая услуга в `unservedVisitServices`
 
-```yaml
-application:
-  assignment:
-    add-missing-robot-service-to-visit: true
-    experimental-endpoints:
-      add-service-path: "/rest/entrypoint/branches/{branchId}/visits/{visitId}/services/{serviceId}/"
-```
+В текущей реализации отдельный `POST add-service` перед назначением услуги не выполняется. Если med-robot в plain text режиме вернул услугу, которой нет в `unservedVisitServices`, Doctor Assistant передает выбранный `serviceId` в обычный `assign-service`, а затем выполняет `transfer-visit`.
 
 Правило:
 
-| Ситуация | Действие |
+| Ситуация | Действие текущего кода |
 |---|---|
-| Услуги нет в `unservedVisitServices` и она не является `currentVisitService` | Сначала `POST add-service`, затем обычный workflow. |
-| Услуги нет в `unservedVisitServices`, но она уже является `currentVisitService` | Не добавлять повторно; перейти к `transfer-only`. |
+| Услуги нет в `unservedVisitServices` и она не является `currentVisitService` | `PUT assign-service` выбранной услуги, затем `transfer-visit`. |
+| Услуга уже является `currentVisitService` | `assign-service` не нужен; выполняется `transfer-only`. |
 | Услуга уже есть в `unservedVisitServices` | Обычная ветка `assign-service -> transfer-visit`. |
+
+Если конкретная инсталляция Orchestra требует сначала добавить услугу в маршрут, это отдельная доработка `VisitWorkflowGateway`/`VisitAssignmentExecutor` и отдельный контрактный тест на `POST add-service`.
 
 ### 4.2. Граница режима
 
@@ -206,7 +202,7 @@ application:
 |---|---|---|
 | `assign + transfer` | Целевая услуга отличается от текущей | `PUT assign-service` -> `PUT/POST transfer-visit` |
 | `transfer-only` | Целевая услуга уже является текущей | только `transfer-visit` |
-| `add-service + assign + transfer` | Робот вернул отсутствующую услугу | `POST add-service` -> `assign-service` -> `transfer-visit` |
+| `assign + transfer` для услуги вне локального маршрута | Робот в plain text режиме вернул услугу, отсутствующую в `unservedVisitServices` | `PUT assign-service` -> `transfer-visit` |
 | `dry-run` | Проверка без изменений | мутации не отправляются |
 
 Перед мутациями рекомендуется включать defensive recheck:
@@ -246,15 +242,11 @@ application:
 
 Если med-robot вернул `null/null`, `0/0` или неполную пару `serviceId`/`queueId`, служба возвращается к локальному алгоритму. Если локального кандидата нет, визит пропускается в текущем цикле.
 
-### 6.3. Ошибка добавления услуги
+### 6.3. Услуга med-robot отсутствует в локальном маршруте
 
-Для `POST add-service` рекомендуется отдельная политика обработки ошибки:
+В plain text режиме это штатная ситуация: локальный маршрут может быть пустым, а med-robot выбирает следующую услугу по номеру талона. Текущий код не делает отдельный `POST add-service`; он сразу вызывает `assign-service` выбранного `serviceId`.
 
-| Политика | Назначение |
-|---|---|
-| `CONTINUE_WITH_ASSIGN` | Логировать ошибку и продолжить с `assign-service`, если Orchestra допускает такой сценарий. |
-| `SKIP_VISIT` | Пропустить визит, если ошибка означает небезопасное состояние маршрута. |
-| `PROPAGATE_ERROR` | Пробросить ошибку наверх; удобно для отладки, но шумно для production. |
+Если `assign-service` на такой услуге падает из-за ограничений конкретной Orchestra, это не ошибка med-robot. Нужно либо доработать endpoint добавления услуги в маршрут, либо согласовать с Orchestra корректный контракт назначения услуги вне `unservedVisitServices`.
 
 ### 6.4. Ошибки контекста Orchestra
 
@@ -358,7 +350,6 @@ application:
     enabled: true
   assignment:
     polling-enabled: true
-    add-missing-robot-service-to-visit: true
 ```
 
 Подходит, если номер талона является надёжным ключом для med-robot / МИС, а локальный маршрут визита в Orchestra может быть неполным.

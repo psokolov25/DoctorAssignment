@@ -1,17 +1,21 @@
 # Интеграция Doctor Assistant с med-robot
 
-## Назначение
+Документ описывает фактический контракт и эксплуатационное поведение интеграции **Med Doctor Assignment Service** с внешним сервисом **med-robot**. Особый акцент сделан на сценарии, где визит находится в очереди **«Врач не в системе»**, а его текущая услуга также равна служебной услуге **«Врач не в системе»** (`serviceId=117`).
 
-Doctor Assistant может работать в двух режимах выбора услуги и очереди для визита из очереди «врач не назначен»:
+## 1. Назначение интеграции
 
-1. **Локальный режим** — старая схема: услуга выбирается по маршруту визита, доступным врачу услугам и локальным приоритетам.
-2. **Режим med-robot** — Doctor Assistant отправляет в med-robot либо JSON-массив непройденных услуг, либо номер талона в `text/plain` режиме и получает оптимальную пару `serviceId`/`queueId`. После этого штатный executor назначает выбранную услугу визиту и переводит визит в выбранную очередь.
+Doctor Assistant может выбирать следующую услугу для визита двумя способами.
 
-Интеграция сделана обратимо: при отключенном `application.med-robot.enabled` сервис ведет себя по прежней схеме.
+| Режим | Что делает | Когда использовать |
+|---|---|---|
+| Локальный выбор | выбирает услугу из `unservedVisitServices` по доступным врачу услугам, `routeOrder` и локальным приоритетам | когда маршрут визита полностью и корректно приходит из Orchestra |
+| med-robot | отправляет в med-robot контекст визита и получает оптимальную пару `serviceId`/`queueId` | когда следующую услугу должен выбирать внешний алгоритм, в том числе при пустом `unservedVisitServices` |
 
-## REST-контракт med-robot
+Интеграция обратима: при `application.med-robot.enabled=false` сервис не обращается к med-robot и использует только локальный алгоритм.
 
-Используется одна REST-точка:
+## 2. REST-контракт med-robot
+
+Используется endpoint:
 
 ```http
 POST /prorobot/optimalqueue/{branchId}/service/{serviceId}
@@ -19,221 +23,243 @@ POST /prorobot/optimalqueue/{branchId}/service/{serviceId}
 
 Где:
 
-- `branchId` — отделение Orchestra/Doctor Assistant;
-- `serviceId` в path — предварительная текущая услуга;
-- формат тела определяется настройкой `application.med-robot.request-body-mode`.
+- `{branchId}` - id отделения Orchestra;
+- `{serviceId}` в path - исходная услуга для выбора следующей очереди;
+- формат тела запроса определяется `application.med-robot.request-body-mode`.
 
-### JSON-режим
+### 2.1. Как выбирается `serviceId` для path
+
+Код использует следующий порядок:
+
+1. если локальный алгоритм уже нашел предварительную услугу, в path передается эта услуга;
+2. если локальный выбор пустой, но у визита есть `currentVisitService.serviceId`, в path передается текущая услуга визита;
+3. если нет ни локального выбора, ни текущей услуги, med-robot вызвать нельзя, потому что endpoint требует `{serviceId}` в URL.
+
+Для проблемного сценария **«Врач не в системе»** это означает:
+
+```text
+currentVisitService.serviceId=117
+request-body-mode=TICKET_NUMBER_PLAIN_TEXT
+=> POST /prorobot/optimalqueue/{branchId}/service/117?policy=default
+```
+
+Именно этот режим позволяет спросить med-robot о следующей услуге даже тогда, когда `unservedVisitServices=[]`.
+
+## 3. Форматы тела запроса
+
+### 3.1. `UNSERVED_SERVICE_IDS_JSON_ARRAY`
 
 ```http
-POST /prorobot/optimalqueue/{branchId}/service/{serviceId}
+POST /prorobot/optimalqueue/1/service/301
 Content-Type: application/json
 Accept: application/json
 
-[301, 302, 303]
+[301,302,303]
 ```
 
-### Plain text режим по номеру талона
+JSON-режим предназначен для случаев, когда Orchestra возвращает полноценный список непройденных услуг. В этом режиме Doctor Assistant сначала обязан найти локальную предварительную услугу. Если `unservedVisitServices` пустой или локальный выбор не найден, med-robot не вызывается.
+
+Типовой диагностический лог:
+
+```text
+Med-robot selection is skipped because local pre-selection did not find a service in JSON-array mode. Enable application.med-robot.request-body-mode=TICKET_NUMBER_PLAIN_TEXT if med-robot must be called by ticket number.
+```
+
+### 3.2. `TICKET_NUMBER_PLAIN_TEXT`
 
 ```http
-POST /prorobot/optimalqueue/{branchId}/service/{serviceId}?policy=default
+POST /prorobot/optimalqueue/1/service/117?policy=default
 Content-Type: text/plain
 Accept: application/json
 
-Щ028
+Р002
 ```
 
-В Micronaut declarative client для исходящего запроса важно не путать аннотации: `@Produces`
-задает `Content-Type`, а `@Consumes` задает `Accept`. Поэтому plain text метод клиента должен
-быть объявлен как `@Produces(text/plain)` + `@Consumes(application/json)`.
+Plain text режим предназначен для текущей интеграции с Orchestra, где визит может находиться в очереди **«Врач не в системе»**, иметь `currentVisitService.serviceId=117`, но при этом не иметь списка `unservedVisitServices`.
 
-Ответ:
+В этом режиме Doctor Assistant вызывает med-robot, если выполнены условия:
+
+- `application.med-robot.enabled=true`;
+- `application.med-robot.request-body-mode=TICKET_NUMBER_PLAIN_TEXT`;
+- у визита есть `currentVisitService.serviceId`;
+- у визита есть `ticketId` / номер талона.
+
+Типовой успешный лог запроса:
+
+```text
+Request med-robot optimal service branch=1 currentService=117 bodyMode=TICKET_NUMBER_PLAIN_TEXT contentType=text/plain accept=application/json ticketNumber=Р002 policy=default
+```
+
+Важно для Micronaut declarative client: `@Produces(text/plain)` задает исходящий `Content-Type`, а `@Consumes(application/json)` задает `Accept`. Если эти аннотации перепутать, med-robot вернет `415 Unsupported Media Type`.
+
+## 4. Ответ med-robot
+
+Ожидаемый ответ:
 
 ```json
 {
-  "serviceId": 302,
-  "queueId": 902
+  "serviceId": 140,
+  "queueId": 384
 }
 ```
 
-Если med-robot вернул `null/null`, `0/0`, ошибку или недопустимую пару, поведение зависит от флагов возврата к локальному алгоритму.
+Doctor Assistant проверяет ответ перед мутациями Orchestra.
 
-## Документационные диаграммы
-
-Для внедрения и сопровождения интеграции подготовлен расширенный набор диаграмм. Все подписи даны на русском языке; программные имена оставлены только там, где они нужны для сопоставления с кодом, REST-точками и настройками.
-
-Визуальное оформление приведено к единому UML-приближенному профилю: прямоугольные элементы без декоративного скругления, ортогональные связи, фиксированные размеры блоков, ручные переносы длинных подписей, отдельные зоны для `alt`/`loop` на sequence-диаграммах и вынесенные примечания. Это сделано специально, чтобы при просмотре в Markdown, XWiki, GitLab или IDE не было наездов подписей, скрытых текстов и пересечений стрелок с элементами.
-
-| Диаграмма | Что показывает |
+| Проверка | Поведение |
 |---|---|
-| `docs/diagrams/architecture-overview.svg` | общую архитектуру Doctor Assistant, Orchestra и med-robot |
-| `docs/diagrams/assignment-sequence.svg` | последовательность назначения визита врачу |
-| `docs/diagrams/cache-refresh-sequence.svg` | пересборку локального кэша отделения перед принятием решений |
-| `docs/diagrams/deployment-view.svg` | схему внедрения Doctor Assistant рядом с Orchestra и med-robot |
-| `docs/diagrams/med-robot-selection-sequence.svg` | детальную последовательность локального предварительного выбора, REST-вызова med-robot, проверок ответа и fallback |
-| `docs/diagrams/polling-reconciliation-sequence.svg` | плановую reconciliation-обработку по cron и защиту от конкуренции с event-driven циклом |
-| `docs/diagrams/domain-class-diagram.svg` | ключевые классы доменного контура назначения и их связи |
-| `docs/diagrams/package-dependency-map.svg` | пакеты сервиса и допустимые направления зависимостей между ними |
-| `docs/diagrams/orchestration-swimlane.svg` | распределение ответственности между Orchestra, Doctor Assistant и med-robot |
-| `docs/diagrams/visit-lifecycle-state.svg` | состояния визита от очереди «врач не назначен» до готовности к вызову |
-| `docs/diagrams/med-robot-fallback-decision.svg` | дерево решений при ответе med-robot и возврате к локальному алгоритму |
-| `docs/diagrams/operation-modes-map.svg` | режимы запуска: события, расписание, смешанный режим, с роботом и без робота |
-| `docs/diagrams/data-contract-map.svg` | REST-контракт med-robot, тело запроса, ответ и проверки валидности |
-| `docs/diagrams/failure-recovery-flow.svg` | поведение при отказах без остановки всей службы |
-| `docs/diagrams/rest-mutation-flow.svg` | REST-мутации Orchestra: активация контекста, назначение услуги и перевод визита |
-| `docs/diagrams/observability-checklist.svg` | какие признаки должны быть видны в логах при эксплуатации |
+| `serviceId` и `queueId` заполнены и больше нуля | ответ можно рассматривать дальше |
+| `require-known-queue=true` | `queueId` должен присутствовать в кэше очередей отделения |
+| `require-doctor-available-service=true` | `serviceId` должен входить в услуги текущего врача |
+| JSON-режим | `serviceId` должен входить в `unservedVisitServices` |
+| plain text режим | `serviceId` может отсутствовать в `unservedVisitServices`, потому что выбор идет по номеру талона |
 
-Исходники лежат рядом в `docs/plantuml/*.puml`, поэтому диаграммы можно редактировать как код и версионировать вместе с изменениями интеграции.
+Типовой лог успешного выбора:
 
-## Настройки application.yml
+```text
+Med-robot selected service=140 queue=384 visit=30354 routeOrder=null localService=null localQueue=null currentService=117
+Visit 30354 matchFound=true selectedService=140 targetQueue=384 success=true reason=med-robot-current-service-117
+```
+
+## 5. Исполнение выбранной услуги в Orchestra
+
+После выбора `SelectedDoctorService` текущий executor работает так:
+
+1. перечитывает визит перед переводом, если включен `recheck-visit-before-transfer`;
+2. если `currentVisitService.serviceId` уже равен выбранной услуге, пропускает `assign-service` и выполняет только `transfer-visit`;
+3. если текущая услуга отличается, вызывает `assign-service`;
+4. вызывает `transfer-visit` в очередь `queueId`, выбранную med-robot;
+5. выполняет post-check фактической очереди, если endpoint перечитывания визита доступен.
+
+Текущая реализация **не выполняет отдельный `POST add-service` перед assign**. Если конкретная инсталляция Orchestra требует обязательного добавления услуги в маршрут до `assign-service`, это отдельная доработка `VisitWorkflowGateway`/`VisitAssignmentExecutor`. В текущем коде med-robot может вернуть услугу вне `unservedVisitServices` в plain text режиме, и далее выполняется обычный `assign-service` по выбранному `serviceId`.
+
+## 6. Повторное попадание того же визита в «Врач не в системе»
+
+В автономных медосмотрах один и тот же `visitId` может несколько раз возвращаться в очередь **«Врач не в системе»** после прохождения очередной услуги. Для сервиса это не дубль, а новый маршрутный шаг.
+
+Для различения дубля и нового шага используется fingerprint обработки:
+
+1. если Orchestra вернула `currentVisitService.id`, fingerprint строится как `currentVisitServiceRecordId=<id>`;
+2. если `currentVisitService.id` отсутствует, fallback fingerprint строится по `currentServiceId`, `queueId` и списку `unservedServices`.
+
+Пример полей из Orchestra:
+
+```json
+{
+  "id": 30354,
+  "ticketId": "Р002",
+  "currentVisitService": {
+    "id": 227634,
+    "serviceId": 117,
+    "serviceInternalName": "Врач не в системе"
+  },
+  "unservedVisitServices": []
+}
+```
+
+Если тот же `visitId` снова вернулся в `117`, но `currentVisitService.id` изменился, Doctor Assistant должен снова обратиться к med-robot. Если `currentVisitService.id` тот же самый и TTL еще не истек, это считается дублем события или polling-цикла.
+
+Диагностический лог дубля:
+
+```text
+Visit 30354 already processed recently for doctor 1 processingFingerprint=currentVisitServiceRecordId=227634
+```
+
+## 7. Настройки `application.med-robot`
 
 ```yaml
 application:
   med-robot:
-    # false — старая локальная схема без обращения к med-robot.
-    # true  — уточнять услугу и очередь через med-robot.
-    enabled: false
-
-    # Базовый URL REST API med-robot.
-    url: http://localhost:8082
-
-    # Контракт из med-robot.
+    enabled: true
+    url: http://192.168.7.135:8082
     optimal-service-path: /prorobot/optimalqueue/{branchId}/service/{serviceId}
-
-    # Опционально, если REST API med-robot закрыт базовой HTTP-авторизацией (Basic Auth).
-    # username: robot
-    # password: secret
-
-    # Если med-robot недоступен или вернул HTTP/сетевую ошибку,
-    # продолжить старым локальным алгоритмом.
-    fallback-to-local-on-error: true
-
-    # Если med-robot не выбрал услугу/очередь, продолжить старым локальным алгоритмом.
+    request-body-mode: TICKET_NUMBER_PLAIN_TEXT
+    plain-text-policy: default
+    error-handling-mode: FALLBACK_TO_LOCAL
     fallback-to-local-on-empty-response: true
-
-    # true — принимать только услугу, доступную текущему врачу;
-    # false — доверять med-robot как оптимизатору очереди отделения.
     require-doctor-available-service: false
-
-    # Проверять, что очередь из ответа med-robot есть в кэш отделения.
     require-known-queue: true
-
-  websocket:
-    # Event-driven режим через события Orchestra.
-    # Для режима только по расписанию выключить.
-    enabled: true
-
-  assignment:
-    # Включает периодическую reconciliation-задачу.
-    polling-enabled: true
-
-    # Пример запуска раз в 10 минут.
-    polling-cron: "0 */10 * * * ?"
 ```
 
-## Типовые режимы эксплуатации
+| Параметр | Назначение |
+|---|---|
+| `enabled` | включает или полностью отключает обращение к med-robot |
+| `url` | базовый URL med-robot без завершающего слэша |
+| `optimal-service-path` | path template endpoint-а выбора оптимальной очереди |
+| `request-body-mode` | `UNSERVED_SERVICE_IDS_JSON_ARRAY` или `TICKET_NUMBER_PLAIN_TEXT` |
+| `plain-text-policy` | query-параметр `policy` в plain text режиме |
+| `error-handling-mode` | `FALLBACK_TO_LOCAL` или `SKIP_VISIT` при ошибке med-robot |
+| `fallback-to-local-on-empty-response` | использовать локальный выбор, если med-robot вернул пустую пару |
+| `require-doctor-available-service` | строгая проверка, что выбранная услуга доступна текущему врачу |
+| `require-known-queue` | проверка, что очередь из ответа med-robot есть в кэше отделения |
 
-### Старая схема без med-robot
+Для текущего сценария с `serviceId=117` рекомендуется:
 
 ```yaml
-application:
-  med-robot:
-    enabled: false
+request-body-mode: TICKET_NUMBER_PLAIN_TEXT
+plain-text-policy: default
+require-doctor-available-service: false
+require-known-queue: true
 ```
 
-Doctor Assistant не обращается к med-robot и назначает визит как раньше.
+## 8. Матрица поведения
 
-### События + med-robot
+| Ситуация | Режим | Поведение |
+|---|---|---|
+| `application.med-robot.enabled=false` | любой | med-robot не вызывается |
+| `unservedVisitServices=[]`, есть `ticketId`, есть `currentVisitService.serviceId=117` | `TICKET_NUMBER_PLAIN_TEXT` | med-robot вызывается по номеру талона |
+| `unservedVisitServices=[]`, JSON-режим | `UNSERVED_SERVICE_IDS_JSON_ARRAY` | med-robot не вызывается, потому что нечего передать в JSON-массиве |
+| нет `ticketId` | `TICKET_NUMBER_PLAIN_TEXT` | med-robot не вызывается, остается локальный выбор или пропуск |
+| med-robot вернул HTTP/сетевую ошибку | `FALLBACK_TO_LOCAL` | используется локальный выбор, если он есть |
+| med-robot вернул HTTP/сетевую ошибку | `SKIP_VISIT` | визит пропускается в текущем цикле |
+| med-robot вернул `serviceId`, но `queueId` неизвестен кэшу | `require-known-queue=true` | ответ отклоняется, включается fallback |
+| med-robot вернул услугу вне услуг врача | `require-doctor-available-service=true` | ответ отклоняется, включается fallback |
+| тот же `visitId` вернулся в `117` с новым `currentVisitService.id` | любой robot-режим | это новый маршрутный шаг, med-robot может быть вызван повторно |
+| тот же `visitId`, тот же `currentVisitService.id`, TTL не истек | любой | считается дублем, визит пропускается |
 
-```yaml
-application:
-  med-robot:
-    enabled: true
-  websocket:
-    enabled: true
-  assignment:
-    polling-enabled: true
+## 9. Диагностика: почему med-robot не вызывается
+
+Проверяйте по порядку.
+
+1. Runtime-аудит после старта:
+
+```text
+Runtime configuration marker=2026-04-28-route-step-dedup-fix ... medRobotEnabled=true medRobotRequestBodyMode=TICKET_NUMBER_PLAIN_TEXT ...
 ```
 
-Основной запуск идет по событиям Orchestra, опрос по расписанию остается страховкой от потерянных событий.
+2. Business log должен содержать одну из строк:
 
-### Только события, без расписания
-
-```yaml
-application:
-  websocket:
-    enabled: true
-  assignment:
-    polling-enabled: false
+```text
+Request med-robot optimal service ...
+Med-robot plain text selection is skipped because visit ... has no ticket number
+Med-robot plain text selection is skipped because visit ... has no current service id
+Med-robot selection is skipped because local pre-selection did not find a service in JSON-array mode ...
+Visit ... already processed recently for doctor ... processingFingerprint=...
 ```
 
-`PollingReconciliationJob` не выполняет доменную обработку.
+3. Если видите `already processed recently`, сравните `currentVisitService.id` в HTTP log. Новый `currentVisitService.id` должен приводить к новому fingerprint и повторному вызову робота.
 
-### Только расписание, например раз в 10 минут
+4. Если видите `Content-Type: application/json` при plain text body, запущен старый jar или неверный `MedRobotRestClient`.
 
-```yaml
-application:
-  websocket:
-    enabled: false
-  assignment:
-    polling-enabled: true
-    polling-cron: "0 */10 * * * ?"
-```
+## 10. Компоненты интеграции
 
-Doctor Assistant не подписывается на websocket-события, а периодически проходит по runtime cache рабочих мест и запускает assignment cycle.
+- `MedRobotProperties` - настройки `application.med-robot`.
+- `MedRobotRequestBodyMode` - enum форматов тела запроса.
+- `MedRobotRestClient` - Micronaut REST-клиент med-robot.
+- `MedRobotRestConfiguration` - Basic Auth фильтр для med-robot.
+- `MedRobotOptimalServiceGateway` / `MedRobotOptimalServiceGatewayImpl` - gateway-слой вызова med-robot.
+- `MedRobotAwareDoctorServiceSelectionService` - доменный выбор услуги с med-robot и fallback.
+- `VisitDetails.currentVisitServiceRecordId` - id текущей записи услуги визита для маршрутной дедупликации.
+- `ProcessedVisitRegistry` - TTL-защита от повторной обработки одного и того же маршрутного шага.
+- `RuntimeConfigurationLogger` - стартовый аудит effective-конфигурации.
 
-## Правила безопасности выбора
+## 11. Тестовое покрытие
 
-При включенном med-robot результат дополнительно проверяется:
+Основные группы тестов:
 
-- выбранная услуга должна присутствовать в непройденном маршруте визита;
-- если `require-doctor-available-service=true`, услуга должна входить в доступные услуги текущего врача;
-- если `require-known-queue=true`, очередь должна присутствовать в кэше отделения.
-
-Если проверка не пройдена, используется логика возврата к локальному алгоритму.
-
-## Измененные/добавленные компоненты
-
-- `MedRobotProperties` — настройки `application.med-robot`.
-- `MedRobotRestClient` — Micronaut REST-клиент к REST-точке med-robot.
-- `MedRobotRestConfiguration` — опциональный фильтр базовой HTTP-авторизации (Basic Auth).
-- `MedRobotOptimalServiceGateway` / `MedRobotOptimalServiceGatewayImpl` — gateway-слой интеграции.
-- `DoctorServiceSelectionService` — доменная абстракция выбора услуги.
-- `MedRobotAwareDoctorServiceSelectionService` — wrapper над старым `DoctorServiceMatcher` с обращением к med-robot.
-- `AssignmentProperties.pollingEnabled` — отдельный флаг включения/отключения расписания.
-- `PollingReconciliationJob` — теперь проверяет `assignment.enabled` и `assignment.polling-enabled`.
-- `RuntimeConfigurationLogger` — на старте пишет эффективные флаги med-robot и опроса по расписанию.
-
-## Матрица возврата к локальному алгоритму
-
-| Ситуация | Настройка | Поведение |
-| --- | --- | --- |
-| `application.med-robot.enabled=false` | не требуется | med-robot не вызывается, работает старый локальный алгоритм. |
-| Локальный алгоритм не нашел предварительную услугу | не требуется | med-robot не вызывается, потому что в path REST-точки нужен текущий `serviceId`. |
-| med-robot вернул HTTP/сетевую ошибку | `fallback-to-local-on-error=true` | используется локально выбранная услуга и очередь. |
-| med-robot вернул HTTP/сетевую ошибку | `fallback-to-local-on-error=false` | визит не назначается в этом цикле. |
-| med-robot вернул `null/null`, `0/0` или неполную пару | `fallback-to-local-on-empty-response=true` | используется локально выбранная услуга и очередь. |
-| med-robot вернул `null/null`, `0/0` или неполную пару | `fallback-to-local-on-empty-response=false` | визит не назначается в этом цикле. |
-| med-robot вернул услугу, которой нет в непройденном маршруте визита | `fallback-to-local-on-empty-response=true` | используется локально выбранная услуга и очередь. |
-| med-robot вернул очередь, которой нет в кэше отделения | `require-known-queue=true` | результат med-robot отклоняется, дальше применяется логика возврата к локальному алгоритму. |
-| med-robot вернул услугу вне доступных услуг текущего врача | `require-doctor-available-service=true` | результат med-robot отклоняется, дальше применяется логика возврата к локальному алгоритму. |
-
-## Детерминированность запроса
-
-Doctor Assistant передает в med-robot не исходный `HashSet`, а отсортированный набор service id. Это не меняет семантику
-контракта, потому что med-robot принимает множество услуг, но делает логи и тесты повторяемыми: один и тот же визит
-формирует одинаковое тело запроса `[301, 302, 303]` и одинаковый диагностический вывод.
-
-## Тестовое покрытие
-
-Интеграция закрыта следующими группами тестов:
-
-- `MedRobotAwareDoctorServiceSelectionServiceTest` — unit-тесты локального/robot выбора и режимов возврата к локальному алгоритму, валидации
-  неизвестной очереди, проверки услуги вне маршрута и строгого режима `require-doctor-available-service`;
-- `AutonomousMedicalExamAssignmentServiceTest` — сквозные тесты доменного цикла назначения с med-robot и возврат к локальному алгоритму при
-  ошибке робота;
-- `MedRobotPropertiesTest` — безопасные значения по умолчанию для `application.med-robot`;
-- `PollingReconciliationJobTest` — явное включение/выключение расписания через `application.assignment.polling-enabled`;
-- `MedRobotRestClientContractTest` — фиксация REST-контракта клиента med-robot;
-- `MedRobotRestConfigurationTest` — проверка Basic Auth фильтра для REST-вызовов med-robot;
-- `DocumentationAssetsTest` — контроль UTF-8, русских подписей, единого визуального стиля диаграмм, наличия SVG/PUML-файлов и ссылок на них из `README.md` и документа по med-robot.
+- `MedRobotAwareDoctorServiceSelectionServiceTest` - выбор через med-robot, fallback, plain text режим, пустой маршрут и валидация очереди;
+- `MedRobotRestClientContractTest` - фиксация `Content-Type`/`Accept` для JSON и plain text вызова;
+- `MedRobotRestConfigurationTest` - Basic Auth для med-robot;
+- `MedRobotPropertiesTest` - binding и значения по умолчанию;
+- `VisitDetailsJsonMappingTest` - чтение `currentVisitService.serviceId` и `currentVisitService.id` из ответа Orchestra;
+- `AutonomousMedicalExamAssignmentServiceTest` - сквозной доменный цикл выбора, назначения и перевода визита;
+- `RuntimeConfigurationLoggerTest` - наличие диагностических параметров в стартовом аудите.

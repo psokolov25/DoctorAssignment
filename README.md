@@ -255,7 +255,7 @@ state machine вокруг посадки врача:
 
 - `BranchLockManager` — не допускает конкурентную обработку одного branch несколькими потоками;
 - `EventDeduplicator` — подавляет повторы событий Orchestra;
-- `ProcessedVisitRegistry` — предотвращает повторную обработку одного визита в коротком окне времени;
+- `ProcessedVisitRegistry` — предотвращает повторную обработку одного и того же маршрутного шага визита в коротком окне времени; ключ учитывает `visitId`, врача и fingerprint текущего шага, а при наличии `currentVisitService.id` использует именно его;
 - `PollingReconciliationJob` — периодический страхующий запуск, если событие было потеряно или пришло в неудачный момент;
 - `OrchestraDataCacheUpdateService` — отказоустойчивый bootstrap и refresh branch cache: при недоступности Orchestra не роняет процесс, а сохраняет сервис в рабочем состоянии и планирует повторную попытку подключения/прогрева кэша.
 
@@ -329,6 +329,23 @@ state machine вокруг посадки врача:
 фактически менять `currentVisitService` визита. Поэтому текущая реализация считает `assign` **эффективно успешным**,
 если HTTP-статус равен `200`, а в response body уже видно, что `currentVisitService.serviceId` совпал с запрошенной
 услугой. В этом случае сервис не abort-ит цикл и сразу продолжает `transfer`.
+
+### 4.5. Повторное возвращение визита в «Врач не в системе»
+
+Для автономных медосмотров нормально, что один и тот же `visitId` после прохождения очередной услуги снова возвращается в служебную очередь **«Врач не в системе»**. При этом текущая услуга снова может быть `currentVisitService.serviceId=117`, но это уже новый маршрутный шаг.
+
+Чтобы не заблокировать такой легитимный повтор, защита `ProcessedVisitRegistry` работает по fingerprint маршрутного шага:
+
+1. если Orchestra вернула `currentVisitService.id`, используется `currentVisitServiceRecordId=<id>`;
+2. если `currentVisitService.id` отсутствует, используется fallback по `currentServiceId`, `queueId` и `unservedServices`.
+
+Пример: если визит `30354` уже был обработан на шаге `currentVisitService.id=227634`, повторный polling того же шага будет пропущен. Если после следующей услуги визит снова оказался в `117`, но Orchestra выдала новый `currentVisitService.id`, сервис снова может обратиться к med-robot за следующей услугой.
+
+Диагностический лог дубля:
+
+```text
+Visit 30354 already processed recently for doctor 1 processingFingerprint=currentVisitServiceRecordId=227634
+```
 
 ## 5. Подтвержденные и неподтвержденные API
 
@@ -418,6 +435,7 @@ state machine вокруг посадки врача:
 - список разрешенных branch;
 - конфигурируемые приоритеты услуг;
 - пути для REST-точек рабочего процесса визита;
+- TTL защиты от повторной обработки именно маршрутного шага визита, а не всего `visitId`;
 - составной триггер посадки (`user-service-point-session-start-trigger-enabled`, `user-session-settle-window-ms`);
 - триггер расширения профиля (`work-profile-expanded-trigger-enabled`);
 - правила раннего завершения цикла при контекстных ошибках mutation;
@@ -437,17 +455,17 @@ state machine вокруг посадки врача:
 Управляет опциональной интеграцией с внешним сервисом `med-robot`:
 
 - `enabled=false` — полностью старая схема выбора услуги без обращения к роботу;
-- `enabled=true` — локальный алгоритм выбирает предварительную текущую услугу, затем Doctor Assistant вызывает
-  `POST /prorobot/optimalqueue/{branchId}/service/{serviceId}` и передает JSON-массив id непройденных услуг визита;
-- `fallback-to-local-on-error=true` — при сетевой/HTTP-ошибке med-robot цикл не останавливается, а продолжает работу
-  старым локальным алгоритмом;
-- `fallback-to-local-on-empty-response=true` — ответ `null/null`, `0/0` или невалидная пара service/queue не блокирует
-  назначение, если локальная схема смогла выбрать услугу;
-- `require-known-queue=true` — очередь из ответа med-robot должна быть известна кэш отделения;
-- `require-doctor-available-service=true` — строгий режим, в котором услуга из ответа med-robot должна входить в текущий
-  рабочий профиль врача.
+- `enabled=true` — Doctor Assistant вызывает `POST /prorobot/optimalqueue/{branchId}/service/{serviceId}` и получает от med-robot пару `serviceId`/`queueId`;
+- `request-body-mode=UNSERVED_SERVICE_IDS_JSON_ARRAY` — в тело передается JSON-массив непройденных услуг, режим требует локального предварительного выбора;
+- `request-body-mode=TICKET_NUMBER_PLAIN_TEXT` — в тело передается номер талона, режим позволяет вызывать med-robot даже при пустом `unservedVisitServices`, если у визита есть `ticketId` и `currentVisitService.serviceId`;
+- `plain-text-policy=default` — query-параметр `policy` для plain text endpoint-а;
+- `error-handling-mode=FALLBACK_TO_LOCAL` — при сетевой/HTTP-ошибке med-robot использовать локальный выбор, если он есть;
+- `error-handling-mode=SKIP_VISIT` — при ошибке med-robot пропустить визит в текущем цикле;
+- `fallback-to-local-on-empty-response=true` — ответ `null/null`, `0/0` или невалидная пара service/queue не блокирует назначение, если локальная схема смогла выбрать услугу;
+- `require-known-queue=true` — очередь из ответа med-robot должна быть известна кэшу отделения;
+- `require-doctor-available-service=false` — рекомендуемый режим для доверия robot-выбору в масштабе отделения.
 
-Пример включения med-robot с расписанием раз в 10 минут и без websocket-событий:
+Для сценария, где визит находится в очереди **«Врач не в системе»**, а `currentVisitService.serviceId=117`, рекомендуемый режим:
 
 ```yaml
 application:
@@ -455,9 +473,12 @@ application:
     enabled: true
     url: http://med-robot:8082
     optimal-service-path: /prorobot/optimalqueue/{branchId}/service/{serviceId}
-    fallback-to-local-on-error: true
+    request-body-mode: TICKET_NUMBER_PLAIN_TEXT
+    plain-text-policy: default
+    error-handling-mode: FALLBACK_TO_LOCAL
     fallback-to-local-on-empty-response: true
     require-known-queue: true
+    require-doctor-available-service: false
   websocket:
     enabled: false
   assignment:
@@ -465,7 +486,9 @@ application:
     polling-cron: "0 */10 * * * ?"
 ```
 
-Подробный контракт, матрица возврата к локальному алгоритму и эксплуатационные режимы описаны в `MED_ROBOT_INTEGRATION.md`.
+В этом случае ожидаемый запрос к med-robot выглядит как `POST /prorobot/optimalqueue/1/service/117?policy=default` с телом `Р002` и заголовками `Content-Type: text/plain`, `Accept: application/json`.
+
+Подробный контракт, матрица fallback и диагностика причин, по которым робот может не вызываться, описаны в `MED_ROBOT_INTEGRATION.md` и `RUNBOOK.md`.
 
 
 
@@ -510,6 +533,12 @@ java -jar target/med-doctor-assignment-service-*.jar
 6. **`assign-service` оценивается не только по `userState`, но и по фактическому состоянию визита.**
    Если Orchestra уже сменила `currentVisitService` на нужную услугу, сервис продолжает `transfer`, даже если
    `userState` выглядит как неидеальный серверный контекст.
+
+7. **Повторная обработка защищает маршрутный шаг, а не весь визит.**
+   Один `visitId` может несколько раз возвращаться в `serviceId=117` / «Врач не в системе». Повтор блокируется только для того же `currentVisitService.id` в пределах `processed-visit-ttl-seconds`; новый `currentVisitService.id` означает новый шаг и допускает новый вызов med-robot.
+
+8. **Plain text режим med-robot является основным для пустого `unservedVisitServices`.**
+   Если у визита есть `ticketId` и `currentVisitService.serviceId`, med-robot вызывается по номеру талона даже без локального предварительного выбора.
 
 ### 7.3. Наблюдаемый выигрыш по скорости
 
@@ -699,7 +728,8 @@ Micronaut поднимает сервер на `micronaut.server.port`, по у�
 - список `allowed-branches` использовать как предохранитель при поэтапном rollout;
 - `dry-run=true` применять при первичной проверке конфигурации;
 - `stale-cache-duration-seconds` не делать слишком маленьким, иначе возрастет нагрузка на Orchestra;
-- `event-deduplication-ttl-seconds` и `processed-visit-ttl-seconds` подбирать под реальную частоту событий.
+- `event-deduplication-ttl-seconds` подбирать под реальную частоту событий;
+- `processed-visit-ttl-seconds` подбирать с учетом того, что при наличии `currentVisitService.id` блокируется только повтор того же маршрутного шага, а не все последующие появления того же `visitId` в очереди «Врач не в системе».
 
 ## 11. Тесты
 
@@ -717,7 +747,8 @@ Micronaut поднимает сервер на `micronaut.server.port`, по у�
 - возврат к локальному алгоритму при ошибке или невалидном ответе `med-robot`;
 - включение и выключение режима опроса по расписанию через `application.assignment.polling-enabled`;
 - эффективный `assign-service`, когда фактическое состояние визита важнее формального `userState`;
-- REST-контракт клиента med-robot: базовый URL, путь и тело запроса;
+- REST-контракт клиента med-robot: базовый URL, путь, тело запроса и заголовки `Content-Type`/`Accept`;
+- чтение `currentVisitService.serviceId` и `currentVisitService.id` из JSON-ответа Orchestra;
 - фильтр Basic Auth для REST-вызовов med-robot;
 - читаемость UTF-8-документации и SVG/PlantUML-диаграмм.
 
@@ -746,7 +777,7 @@ Micronaut поднимает сервер на `micronaut.server.port`, по у�
   контекстной ошибкой и блокирует последующий transfer в том же цикле.
 - `application.assignment.treat-no-started-service-point-session-as-failure=true` — ответ assign с
   `userState=NO_STARTED_SERVICE_POINT_SESSION` обрабатывается как такой же контекстный отказ и завершает цикл раньше.
-- На старте сервис пишет строку `Runtime configuration marker=2026-04-28-orchestra-reconnect-docs-refresh ...`, чтобы по логу сразу
+- На старте сервис пишет строку `Runtime configuration marker=2026-04-28-route-step-dedup-fix ...`, чтобы по логу сразу
   проверить, какой именно артефакт запущен и какие effective-флаги реально подхватились.
 - `transfer-visit` читает ответ через `exchange(..., byte[].class)` и трактует `204 No Content` как штатный ответ без
   попытки десериализовать пустое тело.

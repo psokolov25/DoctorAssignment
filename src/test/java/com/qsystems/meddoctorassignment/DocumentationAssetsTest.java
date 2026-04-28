@@ -47,11 +47,23 @@ public class DocumentationAssetsTest {
 
   @Test
   void plantumlDiagramsUseRussianExplanationsAndSharedVisualStyle() throws IOException {
+    Path sharedStyle = Paths.get("docs/plantuml/common-style.puml");
+    Assertions.assertTrue(Files.exists(sharedStyle), "Общий стиль PlantUML не найден: " + sharedStyle);
+
+    String sharedStyleText = new String(Files.readAllBytes(sharedStyle), StandardCharsets.UTF_8);
+    Assertions.assertTrue(
+        sharedStyleText.contains("Segoe UI"),
+        "В общем стиле PlantUML не задан актуальный читаемый шрифт: " + sharedStyle);
+    Assertions.assertTrue(
+        sharedStyleText.contains("#F8FAFC"),
+        "В общем стиле PlantUML не задан общий фон диаграммы: " + sharedStyle);
+
     for (DiagramAsset diagram : DIAGRAMS) {
       Path file = diagram.plantumlPath();
       String text = new String(Files.readAllBytes(file), StandardCharsets.UTF_8);
-      Assertions.assertTrue(text.contains("Segoe UI"), "Не задан актуальный читаемый шрифт: " + file);
-      Assertions.assertTrue(text.contains("#F8FAFC"), "Не задан общий фон диаграммы: " + file);
+      Assertions.assertTrue(
+          text.contains("!include common-style.puml"),
+          "Диаграмма не подключает общий стиль PlantUML: " + file);
       Assertions.assertTrue(containsCyrillic(text), "Диаграмма должна содержать русские пояснения: " + file);
     }
   }

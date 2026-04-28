@@ -55,6 +55,12 @@ application:
     # Тело запроса — JSON-массив id непройденных услуг визита.
     optimal-service-path: /prorobot/optimalqueue/{branchId}/service/{serviceId}
 
+    # Для текущего Orchestra в очереди "Врач не назначен" unservedVisitServices часто пустой.
+    # Поэтому med-robot должен вызываться по номеру талона в text/plain, а не по JSON-массиву услуг.
+    request-body-mode: TICKET_NUMBER_PLAIN_TEXT
+    plain-text-policy: default
+    error-handling-mode: FALLBACK_TO_LOCAL
+
     # Опциональная Basic Auth для закрытого REST API med-robot.
     # username: robot
     # password: secret

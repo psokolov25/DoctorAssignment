@@ -28,7 +28,7 @@ import org.slf4j.LoggerFactory;
 public class RuntimeConfigurationLogger implements ApplicationEventListener<StartupEvent> {
 
   private static final Logger log = LoggerFactory.getLogger(RuntimeConfigurationLogger.class);
-  private static final String BUILD_MARKER = "2026-04-28-orchestra-reconnect-docs-refresh";
+  private static final String BUILD_MARKER = "2026-04-28-med-robot-plain-text-content-type-fix";
 
   private final AssignmentProperties assignmentProperties;
   private final MedRobotProperties medRobotProperties;
@@ -58,7 +58,7 @@ public class RuntimeConfigurationLogger implements ApplicationEventListener<Star
   @Override
   public void onApplicationEvent(StartupEvent event) {
     log.info(
-        "Runtime configuration marker={} gatewayClass={} gatewayCodeSource={} activationGatewayClass={} activationGatewayCodeSource={} activationEnabled={} activationMethod={} activationPath={} activationFailCycleOnError={} userServicePointSessionStartTriggerEnabled={} workProfileExpandedTriggerEnabled={} setWorkProfileTriggerEnabled={} servicePointOpenTriggerEnabled={} userSessionSettleWindowMs={} abortCycleOnForbiddenMutation={} treatInactiveUserStateAsFailure={} treatNoStartedServicePointSessionAsFailure={} replayMutationCookiesForPut={} replayReadCookiesForGet={} orchestraUrl={} orchestraBranchesForCache={} orchestraReconnectDelayMs={} websocketEnabled={} websocketReconnectDelayMs={} websocketSendCookiesInHandshake={} pollingEnabled={} pollingCron={} medRobotEnabled={} medRobotUrl={} medRobotOptimalServicePath={} medRobotFallbackOnError={} medRobotFallbackOnEmpty={} medRobotRequireDoctorAvailableService={} medRobotRequireKnownQueue={}",
+        "Runtime configuration marker={} gatewayClass={} gatewayCodeSource={} activationGatewayClass={} activationGatewayCodeSource={} activationEnabled={} activationMethod={} activationPath={} activationFailCycleOnError={} userServicePointSessionStartTriggerEnabled={} workProfileExpandedTriggerEnabled={} setWorkProfileTriggerEnabled={} servicePointOpenTriggerEnabled={} userSessionSettleWindowMs={} abortCycleOnForbiddenMutation={} treatInactiveUserStateAsFailure={} treatNoStartedServicePointSessionAsFailure={} replayMutationCookiesForPut={} replayReadCookiesForGet={} orchestraUrl={} orchestraBranchesForCache={} orchestraReconnectDelayMs={} websocketEnabled={} websocketReconnectDelayMs={} websocketSendCookiesInHandshake={} pollingEnabled={} pollingCron={} medRobotEnabled={} medRobotUrl={} medRobotOptimalServicePath={} medRobotRequestBodyMode={} medRobotPlainTextPolicy={} medRobotErrorHandlingMode={} medRobotFallbackOnError={} medRobotFallbackOnEmpty={} medRobotRequireDoctorAvailableService={} medRobotRequireKnownQueue={}",
         BUILD_MARKER,
         visitWorkflowGateway.getClass().getName(),
         resolveCodeSource(visitWorkflowGateway.getClass()),
@@ -95,6 +95,9 @@ public class RuntimeConfigurationLogger implements ApplicationEventListener<Star
         medRobotProperties.isEnabled(),
         medRobotProperties.getUrl(),
         medRobotProperties.getOptimalServicePath(),
+        medRobotProperties.getRequestBodyMode(),
+        medRobotProperties.getPlainTextPolicy(),
+        medRobotProperties.getErrorHandlingMode(),
         medRobotProperties.isFallbackToLocalOnError(),
         medRobotProperties.isFallbackToLocalOnEmptyResponse(),
         medRobotProperties.isRequireDoctorAvailableService(),

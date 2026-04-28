@@ -71,7 +71,7 @@ Finish assignment cycle source=POLLING branchId=1 processed=...
 Ищите:
 
 ```text
-Request med-robot optimal service branch=1 currentService=... bodyMode=TICKET_NUMBER_PLAIN_TEXT ticketNumber=... policy=default
+Request med-robot optimal service branch=1 currentService=... bodyMode=TICKET_NUMBER_PLAIN_TEXT contentType=text/plain accept=application/json ticketNumber=... policy=default
 ```
 
 Если такой строки нет:
@@ -93,7 +93,7 @@ Request Body: Щ028
 Unsupported Media Type. Allowed types: [text/plain]
 ```
 
-Причина: plain text body ушел как JSON.
+Причина в старом jar: plain text body ушел с JSON `Content-Type`; для Micronaut client это означает, что на методе был перепутан `@Consumes` и `@Produces`.
 
 Действия:
 

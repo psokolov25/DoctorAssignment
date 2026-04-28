@@ -5,26 +5,47 @@
 Doctor Assistant может работать в двух режимах выбора услуги и очереди для визита из очереди «врач не назначен»:
 
 1. **Локальный режим** — старая схема: услуга выбирается по маршруту визита, доступным врачу услугам и локальным приоритетам.
-2. **Режим med-robot** — Doctor Assistant сначала выполняет локальный предварительный выбор текущей услуги, затем отправляет в med-robot список непройденных услуг визита и получает оптимальную пару `serviceId`/`queueId`. После этого штатный executor назначает выбранную услугу визиту и переводит визит в выбранную очередь.
+2. **Режим med-robot** — Doctor Assistant отправляет в med-robot либо JSON-массив непройденных услуг, либо номер талона в `text/plain` режиме и получает оптимальную пару `serviceId`/`queueId`. После этого штатный executor назначает выбранную услугу визиту и переводит визит в выбранную очередь.
 
 Интеграция сделана обратимо: при отключенном `application.med-robot.enabled` сервис ведет себя по прежней схеме.
 
 ## REST-контракт med-robot
 
-По исходникам `med-robot-Revision2` используется следующая REST-точка:
+Используется одна REST-точка:
 
 ```http
 POST /prorobot/optimalqueue/{branchId}/service/{serviceId}
-Content-Type: application/json
-
-[301, 302, 303]
 ```
 
 Где:
 
 - `branchId` — отделение Orchestra/Doctor Assistant;
-- `serviceId` в path — текущая услуга, выбранная локальным алгоритмом как предварительный кандидат;
-- тело запроса — JSON-массив идентификаторов непройденных услуг визита.
+- `serviceId` в path — предварительная текущая услуга;
+- формат тела определяется настройкой `application.med-robot.request-body-mode`.
+
+### JSON-режим
+
+```http
+POST /prorobot/optimalqueue/{branchId}/service/{serviceId}
+Content-Type: application/json
+Accept: application/json
+
+[301, 302, 303]
+```
+
+### Plain text режим по номеру талона
+
+```http
+POST /prorobot/optimalqueue/{branchId}/service/{serviceId}?policy=default
+Content-Type: text/plain
+Accept: application/json
+
+Щ028
+```
+
+В Micronaut declarative client для исходящего запроса важно не путать аннотации: `@Produces`
+задает `Content-Type`, а `@Consumes` задает `Accept`. Поэтому plain text метод клиента должен
+быть объявлен как `@Produces(text/plain)` + `@Consumes(application/json)`.
 
 Ответ:
 

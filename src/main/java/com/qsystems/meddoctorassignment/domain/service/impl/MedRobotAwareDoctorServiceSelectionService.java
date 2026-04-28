@@ -4,6 +4,7 @@ import com.qsystems.meddoctorassignment.adapter.gateway.MedRobotOptimalServiceGa
 import com.qsystems.meddoctorassignment.adapter.medrobot.dto.MedRobotOptimalServiceResponse;
 import com.qsystems.meddoctorassignment.cache.model.BranchAssignmentCache;
 import com.qsystems.meddoctorassignment.config.MedRobotProperties;
+import com.qsystems.meddoctorassignment.config.MedRobotRequestBodyMode;
 import com.qsystems.meddoctorassignment.domain.model.SelectedDoctorService;
 import com.qsystems.meddoctorassignment.domain.model.VisitDetails;
 import com.qsystems.meddoctorassignment.domain.model.VisitUnservedService;
@@ -49,36 +50,63 @@ public class MedRobotAwareDoctorServiceSelectionService implements DoctorService
     if (!medRobotProperties.isEnabled()) {
       return localSelection;
     }
-    if (!localSelection.isPresent()) {
-      log.info("Med-robot selection is skipped because local pre-selection did not find a service");
-      return Optional.empty();
-    }
 
     Set<Integer> unservedServiceIds = resolveUnservedServiceIds(visitDetails, branchCache);
-    if (unservedServiceIds.isEmpty()) {
-      log.warn("Med-robot selection is skipped because visit {} has no resolvable unserved service ids", visitDetails.getId());
+    Integer currentServiceForRobot = resolveCurrentServiceForRobot(localSelection, visitDetails);
+
+    if (medRobotProperties.getRequestBodyMode()
+        == MedRobotRequestBodyMode.UNSERVED_SERVICE_IDS_JSON_ARRAY) {
+      if (!localSelection.isPresent()) {
+        log.info(
+            "Med-robot selection is skipped because local pre-selection did not find a service "
+                + "in JSON-array mode. Enable application.med-robot.request-body-mode="
+                + "TICKET_NUMBER_PLAIN_TEXT if med-robot must be called by ticket number.");
+        return Optional.empty();
+      }
+      if (unservedServiceIds.isEmpty()) {
+        log.warn(
+            "Med-robot selection is skipped because visit {} has no resolvable unserved service ids",
+            Long.valueOf(visitDetails.getId()));
+        return localSelection;
+      }
+    } else {
+      if (currentServiceForRobot == null) {
+        log.warn(
+            "Med-robot plain text selection is skipped because visit {} has no current service id",
+            Long.valueOf(visitDetails.getId()));
+        return localSelection;
+      }
+      if (isBlank(visitDetails.getTicketNumber())) {
+        log.warn(
+            "Med-robot plain text selection is skipped because visit {} has no ticket number",
+            Long.valueOf(visitDetails.getId()));
+        return localSelection;
+      }
+    }
+
+    if (currentServiceForRobot == null) {
+      log.info("Med-robot selection is skipped because current service for robot request is absent");
       return localSelection;
     }
 
-    SelectedDoctorService local = localSelection.get();
     try {
-      log.info(
-          "Request med-robot optimal service branch={} currentService={} unservedServices={}",
-          branchCache.getBranchId(),
-          Integer.valueOf(local.getServiceId()),
-          unservedServiceIds);
       MedRobotOptimalServiceResponse response =
           medRobotGateway.selectOptimalService(
-              branchCache.getBranchId(), local.getServiceId(), unservedServiceIds);
+              branchCache.getBranchId(),
+              currentServiceForRobot.intValue(),
+              unservedServiceIds,
+              visitDetails != null ? visitDetails.getTicketNumber() : null);
       return toSelection(
           response,
           visitDetails,
           doctorAvailableServices,
           branchCache,
-          local,
+          localSelection,
+          currentServiceForRobot.intValue(),
           unservedServiceIds);
     } catch (Exception exception) {
-      return fallbackAfterRobotError(visitDetails, branchCache, localSelection, local, exception);
+      return fallbackAfterRobotError(
+          visitDetails, branchCache, localSelection, currentServiceForRobot.intValue(), exception);
     }
   }
 
@@ -87,7 +115,8 @@ public class MedRobotAwareDoctorServiceSelectionService implements DoctorService
       VisitDetails visitDetails,
       Set<Integer> doctorAvailableServices,
       BranchAssignmentCache branchCache,
-      SelectedDoctorService localSelection,
+      Optional<SelectedDoctorService> localSelection,
+      int currentServiceForRobot,
       Set<Integer> unservedServiceIds) {
     if (response == null || !response.hasSelectedServiceAndQueue()) {
       log.warn(
@@ -100,7 +129,9 @@ public class MedRobotAwareDoctorServiceSelectionService implements DoctorService
 
     int serviceId = response.getServiceId().intValue();
     int queueId = response.getQueueId().intValue();
-    if (!unservedServiceIds.contains(Integer.valueOf(serviceId))) {
+    boolean plainTextMode =
+        medRobotProperties.getRequestBodyMode() == MedRobotRequestBodyMode.TICKET_NUMBER_PLAIN_TEXT;
+    if (!plainTextMode && !unservedServiceIds.contains(Integer.valueOf(serviceId))) {
       log.warn(
           "Med-robot returned service {} that is absent in visit {} unserved route",
           Integer.valueOf(serviceId),
@@ -126,49 +157,58 @@ public class MedRobotAwareDoctorServiceSelectionService implements DoctorService
 
     Integer routeOrder = findRouteOrder(visitDetails, branchCache, serviceId);
     log.info(
-        "Med-robot selected service={} queue={} visit={} routeOrder={} localService={} localQueue={}",
+        "Med-robot selected service={} queue={} visit={} routeOrder={} localService={} localQueue={} currentService={}",
         Integer.valueOf(serviceId),
         Integer.valueOf(queueId),
         Long.valueOf(visitDetails.getId()),
         routeOrder,
-        Integer.valueOf(localSelection.getServiceId()),
-        Integer.valueOf(localSelection.getTargetQueueId()));
+        localSelection.isPresent() ? Integer.valueOf(localSelection.get().getServiceId()) : null,
+        localSelection.isPresent() ? Integer.valueOf(localSelection.get().getTargetQueueId()) : null,
+        Integer.valueOf(currentServiceForRobot));
     return Optional.of(
         new SelectedDoctorService(
             serviceId,
             queueId,
             routeOrder,
-            "med-robot-current-service-" + localSelection.getServiceId()));
+            "med-robot-current-service-" + currentServiceForRobot));
   }
 
   private Optional<SelectedDoctorService> fallbackAfterRobotError(
       VisitDetails visitDetails,
       BranchAssignmentCache branchCache,
       Optional<SelectedDoctorService> localSelection,
-      SelectedDoctorService local,
+      int currentServiceForRobot,
       Exception exception) {
     log.error(
         "Med-robot optimal service request failed for branch={} currentService={} visit={}: {}",
         Integer.valueOf(branchCache.getBranchId()),
-        Integer.valueOf(local.getServiceId()),
-        Long.valueOf(visitDetails.getId()),
+        Integer.valueOf(currentServiceForRobot),
+        visitDetails != null ? Long.valueOf(visitDetails.getId()) : null,
         exception.getMessage(),
         exception);
-    if (medRobotProperties.isFallbackToLocalOnError()) {
+    if (medRobotProperties.isFallbackToLocalOnError() && localSelection.isPresent()) {
       log.warn(
           "Fallback to local service selection for visit {} after med-robot error",
-          Long.valueOf(visitDetails.getId()));
+          visitDetails != null ? Long.valueOf(visitDetails.getId()) : null);
       return localSelection;
     }
     return Optional.empty();
   }
 
   private Optional<SelectedDoctorService> fallbackOnEmptyResponse(
-      SelectedDoctorService localSelection) {
-    if (medRobotProperties.isFallbackToLocalOnEmptyResponse()) {
-      return Optional.of(localSelection);
+      Optional<SelectedDoctorService> localSelection) {
+    if (medRobotProperties.isFallbackToLocalOnEmptyResponse() && localSelection.isPresent()) {
+      return localSelection;
     }
     return Optional.empty();
+  }
+
+  private Integer resolveCurrentServiceForRobot(
+      Optional<SelectedDoctorService> localSelection, VisitDetails visitDetails) {
+    if (localSelection != null && localSelection.isPresent()) {
+      return Integer.valueOf(localSelection.get().getServiceId());
+    }
+    return visitDetails != null ? visitDetails.getCurrentServiceId() : null;
   }
 
   private Set<Integer> resolveUnservedServiceIds(
@@ -214,5 +254,9 @@ public class MedRobotAwareDoctorServiceSelectionService implements DoctorService
       }
     }
     return null;
+  }
+
+  private boolean isBlank(String value) {
+    return value == null || value.trim().isEmpty();
   }
 }

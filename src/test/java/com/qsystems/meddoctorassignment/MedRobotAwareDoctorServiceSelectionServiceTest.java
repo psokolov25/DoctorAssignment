@@ -6,6 +6,7 @@ import com.qsystems.meddoctorassignment.adapter.orchestra.dto.TinyQueue;
 import com.qsystems.meddoctorassignment.cache.model.BranchAssignmentCache;
 import com.qsystems.meddoctorassignment.config.AssignmentProperties;
 import com.qsystems.meddoctorassignment.config.MedRobotProperties;
+import com.qsystems.meddoctorassignment.config.MedRobotRequestBodyMode;
 import com.qsystems.meddoctorassignment.domain.model.SelectedDoctorService;
 import com.qsystems.meddoctorassignment.domain.model.VisitDetails;
 import com.qsystems.meddoctorassignment.domain.model.VisitUnservedService;
@@ -169,6 +170,26 @@ public class MedRobotAwareDoctorServiceSelectionServiceTest {
     Assertions.assertEquals(901, selected.get().getTargetQueueId());
   }
 
+  @Test
+  void callsMedRobotByTicketNumberWhenPlainTextModeAndLocalSelectionIsEmpty() {
+    Fixture fixture = new Fixture();
+    fixture.properties.setEnabled(true);
+    fixture.properties.setRequestBodyMode(MedRobotRequestBodyMode.TICKET_NUMBER_PLAIN_TEXT);
+    fixture.gateway.response = response(302, 902);
+    VisitDetails visit = new VisitDetails(1002L, 900, new ArrayList<VisitUnservedService>());
+    visit.setCurrentServiceId(Integer.valueOf(117));
+    visit.setTicketNumber("Р001");
+
+    Optional<SelectedDoctorService> selected = fixture.select(visit);
+
+    Assertions.assertTrue(selected.isPresent());
+    Assertions.assertEquals(302, selected.get().getServiceId());
+    Assertions.assertEquals(902, selected.get().getTargetQueueId());
+    Assertions.assertEquals(1, fixture.gateway.callCount);
+    Assertions.assertEquals(117, fixture.gateway.lastCurrentServiceId);
+    Assertions.assertEquals("Р001", fixture.gateway.lastTicketNumber);
+  }
+
   private static VisitDetails defaultVisit() {
     return
         new VisitDetails(
@@ -225,14 +246,16 @@ public class MedRobotAwareDoctorServiceSelectionServiceTest {
     private int lastBranchId;
     private int lastCurrentServiceId;
     private List<Integer> lastUnservedServiceIds = new ArrayList<Integer>();
+    private String lastTicketNumber;
 
     @Override
     public MedRobotOptimalServiceResponse selectOptimalService(
-        int branchId, int currentServiceId, Set<Integer> unservedServiceIds) {
+        int branchId, int currentServiceId, Set<Integer> unservedServiceIds, String ticketNumber) {
       callCount++;
       lastBranchId = branchId;
       lastCurrentServiceId = currentServiceId;
       lastUnservedServiceIds = new ArrayList<Integer>(unservedServiceIds);
+      lastTicketNumber = ticketNumber;
       if (failure != null) {
         throw failure;
       }

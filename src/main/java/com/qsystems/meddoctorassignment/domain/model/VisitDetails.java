@@ -16,6 +16,9 @@ public class VisitDetails {
   private Integer queueId;
   private Integer currentServiceId;
 
+  @JsonAlias({"ticketNumber", "ticketId"})
+  private String ticketNumber;
+
   @JsonAlias({"unservedServices", "unservedVisitServices"})
   private List<VisitUnservedService> unservedServices = new ArrayList<VisitUnservedService>();
 
@@ -49,6 +52,14 @@ public class VisitDetails {
 
   public void setCurrentServiceId(Integer currentServiceId) {
     this.currentServiceId = currentServiceId;
+  }
+
+  public String getTicketNumber() {
+    return ticketNumber;
+  }
+
+  public void setTicketNumber(String ticketNumber) {
+    this.ticketNumber = ticketNumber;
   }
 
   public List<VisitUnservedService> getUnservedServices() {

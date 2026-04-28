@@ -1,8 +1,12 @@
 package com.qsystems.meddoctorassignment;
 
 import com.qsystems.meddoctorassignment.adapter.medrobot.MedRobotRestClient;
+import io.micronaut.http.MediaType;
 import io.micronaut.http.annotation.Body;
+import io.micronaut.http.annotation.Consumes;
 import io.micronaut.http.annotation.Post;
+import io.micronaut.http.annotation.Produces;
+import io.micronaut.http.annotation.QueryValue;
 import io.micronaut.http.client.annotation.Client;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
@@ -21,20 +25,38 @@ public class MedRobotRestClientContractTest {
     Assertions.assertEquals("${application.med-robot.url}", annotationValue(client, "value"));
 
     Method method =
-        MedRobotRestClient.class.getMethod("selectOptimalService", int.class, int.class, Set.class);
+        MedRobotRestClient.class.getMethod("selectOptimalServiceJson", int.class, int.class, Set.class);
     Post post = method.getAnnotation(Post.class);
     Assertions.assertNotNull(post);
     Assertions.assertEquals("${application.med-robot.optimal-service-path}", annotationValue(post, "value"));
   }
 
   @Test
-  void medRobotClientSendsUnservedServiceIdsAsRequestBody() throws Exception {
+  void medRobotClientSendsUnservedServiceIdsAsJsonRequestBody() throws Exception {
     Method method =
-        MedRobotRestClient.class.getMethod("selectOptimalService", int.class, int.class, Set.class);
+        MedRobotRestClient.class.getMethod("selectOptimalServiceJson", int.class, int.class, Set.class);
     Parameter[] parameters = method.getParameters();
 
     Assertions.assertEquals(Set.class, parameters[2].getType());
     Assertions.assertTrue(hasAnnotation(parameters[2], Body.class));
+    Assertions.assertEquals(MediaType.APPLICATION_JSON, annotationValue(method.getAnnotation(Produces.class), "value"));
+    Assertions.assertEquals(MediaType.APPLICATION_JSON, annotationValue(method.getAnnotation(Consumes.class), "value"));
+  }
+
+  @Test
+  void medRobotClientCanSendTicketNumberAsPlainTextRequestBody() throws Exception {
+    Method method =
+        MedRobotRestClient.class.getMethod(
+            "selectOptimalServicePlainText", int.class, int.class, String.class, String.class);
+    Post post = method.getAnnotation(Post.class);
+    Assertions.assertNotNull(post);
+    Assertions.assertEquals("${application.med-robot.optimal-service-path}{?policy}", annotationValue(post, "value"));
+
+    Parameter[] parameters = method.getParameters();
+    Assertions.assertTrue(hasAnnotation(parameters[2], QueryValue.class));
+    Assertions.assertTrue(hasAnnotation(parameters[3], Body.class));
+    Assertions.assertEquals(MediaType.TEXT_PLAIN, annotationValue(method.getAnnotation(Produces.class), "value"));
+    Assertions.assertEquals(MediaType.APPLICATION_JSON, annotationValue(method.getAnnotation(Consumes.class), "value"));
   }
 
   private static String annotationValue(Annotation annotation, String methodName) throws Exception {

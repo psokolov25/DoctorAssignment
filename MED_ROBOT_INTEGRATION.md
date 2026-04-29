@@ -263,3 +263,27 @@ Visit ... already processed recently for doctor ... processingFingerprint=...
 - `VisitDetailsJsonMappingTest` - чтение `currentVisitService.serviceId` и `currentVisitService.id` из ответа Orchestra;
 - `AutonomousMedicalExamAssignmentServiceTest` - сквозной доменный цикл выбора, назначения и перевода визита;
 - `RuntimeConfigurationLoggerTest` - наличие диагностических параметров в стартовом аудите.
+
+## 12. Связанные архитектурные диаграммы проекта
+
+Этот раздел фиксирует полный набор подготовленных SVG-диаграмм, которые используются в документации и проверяются документационными тестами. Пути приведены явно, чтобы при сопровождении документации было видно, какие схемы должны оставаться актуальными после изменения workflow, REST-контрактов или интеграции с med-robot.
+
+| Диаграмма | SVG-файл |
+| --- | --- |
+| Общая архитектура | `docs/diagrams/architecture-overview.svg` |
+| Диаграмма пакетов и направлений зависимостей | `docs/diagrams/package-dependency-map.svg` |
+| Диаграмма классов доменного контура назначения | `docs/diagrams/domain-class-diagram.svg` |
+| Последовательность назначения | `docs/diagrams/assignment-sequence.svg` |
+| Подробная последовательность выбора через med-robot | `docs/diagrams/med-robot-selection-sequence.svg` |
+| Пересборка кэша | `docs/diagrams/cache-refresh-sequence.svg` |
+| Последовательность плановой reconciliation-обработки | `docs/diagrams/polling-reconciliation-sequence.svg` |
+| Схема внедрения | `docs/diagrams/deployment-view.svg` |
+| Процесс работы по зонам ответственности | `docs/diagrams/orchestration-swimlane.svg` |
+| Состояния визита | `docs/diagrams/visit-lifecycle-state.svg` |
+| Дерево решений | `docs/diagrams/med-robot-fallback-decision.svg` |
+| Карта режимов запуска | `docs/diagrams/operation-modes-map.svg` |
+| Карта данных и REST-контракта | `docs/diagrams/data-contract-map.svg` |
+| Отказы и восстановление | `docs/diagrams/failure-recovery-flow.svg` |
+| REST-мутации Orchestra | `docs/diagrams/rest-mutation-flow.svg` |
+| Наблюдаемость и эксплуатационная проверка | `docs/diagrams/observability-checklist.svg` |
+

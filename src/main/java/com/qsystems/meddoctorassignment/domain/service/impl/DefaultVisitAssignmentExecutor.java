@@ -59,11 +59,28 @@ public class DefaultVisitAssignmentExecutor implements VisitAssignmentExecutor {
         }
 
         // Перед изменением визита еще раз убеждаемся, что он не ушел в другую очередь.
+        // Для повторного возврата того же visitId в очередь "Врач не в системе" учитываем
+        // не только краткую карточку визита, но и только что прочитанный маршрутный снимок.
+        // В Orchestra краткая карточка может отставать от деталей маршрута после смены
+        // currentVisitServiceRecordId, поэтому recheck не должен блокировать новый маршрутный шаг,
+        // если VisitDetails уже показывает нахождение визита в unknown-doctor queue.
         if (assignmentProperties.isRecheckVisitBeforeTransfer()) {
             Optional<VisitSummary> actualVisit = visitWorkflowGateway.findVisit(doctorContext.getBranchId(), visitSummary.getId());
-            if (actualVisit.isPresent() && actualVisit.get().getQueueId() != null && actualVisit.get().getQueueId().intValue() != unknownDoctorQueueId) {
+            if (actualVisit.isPresent()
+                    && actualVisit.get().getQueueId() != null
+                    && actualVisit.get().getQueueId().intValue() != unknownDoctorQueueId
+                    && !visitDetailsQueueMatchesUnknownDoctorQueue(visitDetails, unknownDoctorQueueId)) {
                 log.warn("Skip visit {} because queue already changed from unknown-doctor queue {}", visitSummary.getId(), unknownDoctorQueueId);
                 return false;
+            }
+            if (actualVisit.isPresent()
+                    && actualVisit.get().getQueueId() != null
+                    && actualVisit.get().getQueueId().intValue() != unknownDoctorQueueId
+                    && visitDetailsQueueMatchesUnknownDoctorQueue(visitDetails, unknownDoctorQueueId)) {
+                log.info("Continue visit {} processing because VisitDetails queue={} confirms a new unknown-doctor route step despite summary queue={}",
+                        visitSummary.getId(),
+                        visitDetails.getQueueId(),
+                        actualVisit.get().getQueueId());
             }
         }
 
@@ -125,5 +142,11 @@ public class DefaultVisitAssignmentExecutor implements VisitAssignmentExecutor {
         }
 
         return true;
+    }
+
+    private boolean visitDetailsQueueMatchesUnknownDoctorQueue(VisitDetails visitDetails, int unknownDoctorQueueId) {
+        return visitDetails != null
+                && visitDetails.getQueueId() != null
+                && visitDetails.getQueueId().intValue() == unknownDoctorQueueId;
     }
 }

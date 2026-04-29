@@ -81,7 +81,7 @@ application:
   websocket:
     # Включает event-driven режим через SockJS/STOMP.
     # Если false, сервис будет работать только через polling fallback.
-    enabled: false
+    enabled: true
 
     # Базовый STOMP topic, под которым Orchestra публикует события.
     # Подписка формируется как <topic>/<eventName>/*.

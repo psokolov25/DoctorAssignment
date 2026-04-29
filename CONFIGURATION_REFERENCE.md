@@ -260,3 +260,93 @@ application:
       assign-service-path: "/rest/entrypoint/branches/{branchId}/visits/{visitId}/services/{serviceId}/"
       transfer-visit-path: "/rest/entrypoint/branches/{branchId}/queues/{queueId}/visits/"
 ```
+
+## Профили конфигурации для тестового стенда
+
+Полная процедура описана в `docs/TEST_STAND_SETUP.md`. Здесь приведены только конфигурационные профили, которые удобно копировать в `application-test.yml`.
+
+### Профиль 1: первый безопасный запуск
+
+```yaml
+application:
+  websocket:
+    enabled: false
+  med-robot:
+    enabled: false
+  assignment:
+    enabled: true
+    dry-run: true
+    polling-enabled: true
+    polling-cron: "0 */1 * * * ?"
+    max-visits-per-cycle: 3
+    allowed-branches: [1]
+    unknown-doctor-queue-id: 292
+    source-entry-point-id-by-branch:
+      1: 1
+```
+
+Назначение профиля - проверить учетную запись, REST-доступ к Orchestra, refresh кэша отделения и чтение очереди без изменения состояния визитов.
+
+### Профиль 2: проверка websocket-корреляции
+
+```yaml
+application:
+  websocket:
+    enabled: true
+    subscribed-events:
+      - USER_SERVICE_POINT_SESSION_START
+      - SET_WORK_PROFILE
+  assignment:
+    dry-run: true
+    service-point-open-trigger-enabled: false
+    set-work-profile-trigger-enabled: false
+    user-service-point-session-start-trigger-enabled: true
+    work-profile-expanded-trigger-enabled: true
+    user-session-settle-window-ms: 2000
+```
+
+Назначение профиля - подтвердить, что реальная посадка врача формирует безопасный trigger `USER_SESSION_READY`, а не преждевременный raw-trigger.
+
+### Профиль 3: проверка med-robot
+
+```yaml
+application:
+  med-robot:
+    enabled: true
+    request-body-mode: TICKET_NUMBER_PLAIN_TEXT
+    error-handling-mode: FALLBACK_TO_LOCAL
+    fallback-to-local-on-empty-response: true
+    require-doctor-available-service: false
+    require-known-queue: true
+  assignment:
+    dry-run: true
+```
+
+Этот профиль нужен для стендов, где `unservedVisitServices` у визита часто пустой, а med-robot должен выбирать очередь по номеру талона.
+
+### Профиль 4: один реальный тестовый визит
+
+```yaml
+application:
+  assignment:
+    dry-run: false
+    max-visits-per-cycle: 1
+    allowed-branches: [1]
+    recheck-visit-before-transfer: true
+    abort-cycle-on-forbidden-mutation: true
+```
+
+Включайте профиль только после подтверждения `unknown-doctor-queue-id`, `source-entry-point-id-by-branch`, рабочих REST endpoint-ов и успешного dry-run.
+
+### Обязательные защитные настройки тестового стенда
+
+| Параметр | Рекомендуемо | Причина |
+|---|---:|---|
+| `assignment.dry-run` | `true` на первом запуске | исключает случайные мутации. |
+| `assignment.allowed-branches` | только тестовое отделение | ограничивает область воздействия. |
+| `assignment.max-visits-per-cycle` | `1..3` | предотвращает массовую обработку при ошибке. |
+| `assignment.recheck-visit-before-transfer` | `true` | защищает от гонок. |
+| `assignment.abort-cycle-on-forbidden-mutation` | `true` | не допускает шквал одинаковых 403/500. |
+| `assignment.service-point-open-trigger-enabled` | `false` | `SERVICE_POINT_OPEN` считается диагностическим, не основным trigger. |
+| `websocket.send-cookies-in-handshake` | `false` | не смешивать REST-cookie и SockJS. |
+| `orchestra.replay-mutation-cookies` | `false` | не повторять проблемные mutating-cookie. |

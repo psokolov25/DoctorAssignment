@@ -62,6 +62,50 @@ application:
     password: ${ORCHESTRA_PASSWORD}
 ```
 
+
+
+## Усиленная настройка тестового стенда
+
+Первый запуск на тестовом стенде должен доказывать корректность конфигурации, а не сразу менять визиты. Поэтому начальный профиль обязан быть ограниченным:
+
+```yaml
+application:
+  websocket:
+    enabled: false
+  med-robot:
+    enabled: false
+  assignment:
+    dry-run: true
+    polling-enabled: true
+    max-visits-per-cycle: 3
+    allowed-branches: [1]
+```
+
+Порядок стендовой проверки:
+
+1. Подтвердить `branchId`, `unknown-doctor-queue-id`, `source entry point id`.
+2. Запустить сервис с внешним `application-test.yml`.
+3. Проверить refresh branch cache по логам.
+4. Проверить чтение очереди «Врач не назначен».
+5. Проверить dry-run решение без реальных REST PUT/POST мутаций.
+6. Включить websocket и проверить связку `USER_SERVICE_POINT_SESSION_START -> SET_WORK_PROFILE`.
+7. Включить med-robot, если он нужен, и проверить формат тела запроса.
+8. Включить `dry-run=false` только для одного отделения и одного визита.
+9. Сохранить логи успешного сценария.
+
+Контрольные строки:
+
+```text
+Start cache refresh for branch
+Finish cache refresh for branch
+Start assignment cycle
+Visits in unknown-doctor queue
+Dry-run enabled
+Finish assignment cycle
+```
+
+Подробный документ по стенду: `docs/TEST_STAND_SETUP.md`.
+
 ## Первый запуск на стенде
 
 Рекомендуемый порядок:

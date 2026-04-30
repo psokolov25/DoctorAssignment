@@ -111,12 +111,12 @@ application:
     unknown-doctor-queue-id: 292
 
     # Максимальное количество визитов, обрабатываемых за один цикл.
-    # Текущее безопасное значение: за один запуск обрабатываем только 3 визита.
+    # Нужен как предохранитель от слишком длинной обработки одного события.
     max-visits-per-cycle: 3
 
-    # Порядок обработки визитов до применения max-visits-per-cycle.
-    # OLDEST_FIRST означает: сначала визиты с максимальным waitingTime, затем с меньшим visit id.
-    # Поддерживаются: AS_RETURNED, OLDEST_FIRST, NEWEST_FIRST, ID_ASC, ID_DESC.
+    # Порядок обработки визитов перед применением лимита.
+    # OLDEST_FIRST = сначала самые старые по waitingTime, затем меньший visitId.
+    # Доступно: AS_RETURNED, OLDEST_FIRST, NEWEST_FIRST, ID_ASC, ID_DESC.
     visit-processing-sort-order: OLDEST_FIRST
 
     # Включает периодическую reconciliation-задачу.

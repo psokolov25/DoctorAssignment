@@ -32,7 +32,8 @@ public class AssignmentProperties {
     private int maxVisitsPerCycle = 3;
 
     /**
-     * Порядок отбора визитов перед применением {@link #maxVisitsPerCycle}.
+     * Порядок отбора визитов перед применением maxVisitsPerCycle.
+     * По умолчанию берём 3 самых старых визита из очереди.
      */
     private VisitProcessingSortOrder visitProcessingSortOrder = VisitProcessingSortOrder.OLDEST_FIRST;
 

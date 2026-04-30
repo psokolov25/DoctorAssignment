@@ -61,38 +61,6 @@ public class AutonomousMedicalExamAssignmentServiceTest {
         Assertions.assertTrue(fixture.gateways.transferredOperations.get(0).endsWith("|901"));
     }
 
-    @Test
-    void processesOnlyConfiguredNumberOfOldestVisitsFirst() {
-        Fixture fixture = new Fixture();
-        fixture.prepareBranchTopology();
-        fixture.assignmentProperties.setDryRun(false);
-        fixture.assignmentProperties.setMaxVisitsPerCycle(3);
-        fixture.assignmentProperties.setVisitProcessingSortOrder(VisitProcessingSortOrder.OLDEST_FIRST);
-
-        fixture.gateways.waitingVisitsByQueue.put("7|900", Arrays.asList(
-                visit(7001L, 900, "A-001", 5),
-                visit(7002L, 900, "A-002", 40),
-                visit(7003L, 900, "A-003", 10),
-                visit(7004L, 900, "A-004", 30),
-                visit(7005L, 900, "A-005", 20)
-        ));
-
-        for (long visitId = 7001L; visitId <= 7005L; visitId++) {
-            fixture.gateways.visitDetailsById.put(Long.valueOf(visitId),
-                    new VisitDetails(visitId, 900, Arrays.asList(new VisitUnservedService(301, null, 1))));
-            fixture.gateways.visitById.put(Long.valueOf(visitId),
-                    new VisitSummary(visitId, 900, "WAITING", "A-" + visitId));
-        }
-
-        DoctorContext context = fixture.openDoctor(7, 41220000000007L, 45, 15);
-        fixture.service.process(context);
-
-        Assertions.assertEquals(3, fixture.gateways.assignedOperations.size());
-        Assertions.assertTrue(fixture.gateways.assignedOperations.get(0).contains("|7002|"));
-        Assertions.assertTrue(fixture.gateways.assignedOperations.get(1).contains("|7004|"));
-        Assertions.assertTrue(fixture.gateways.assignedOperations.get(2).contains("|7005|"));
-    }
-
 
     @Test
     void processesSameVisitAgainWhenCurrentVisitServiceRecordChanges() {
@@ -295,6 +263,160 @@ public class AutonomousMedicalExamAssignmentServiceTest {
         Assertions.assertTrue(fixture.gateways.transferredOperations.get(0).endsWith("|901"));
     }
 
+    @Test
+    void readsVisitsOnlyFromConfiguredUnknownDoctorQueue() {
+        Fixture fixture = new Fixture();
+        fixture.prepareBranchTopology();
+        fixture.assignmentProperties.setDryRun(false);
+        fixture.assignmentProperties.setMaxVisitsPerCycle(3);
+
+        fixture.gateways.waitingVisitsByQueue.put("7|900", Collections.singletonList(visit(6101L, 900, "A-6101", 10)));
+        fixture.gateways.waitingVisitsByQueue.put("7|999", Collections.singletonList(visit(9999L, 999, "FOREIGN", 999)));
+        fixture.addVisitRoute(6101L, 900, 301, 1);
+
+        fixture.service.process(fixture.openDoctor(7, 41220000000007L, 45, 15));
+
+        Assertions.assertEquals(Collections.singletonList("7|900"), fixture.gateways.waitingVisitRequests);
+        Assertions.assertEquals(Collections.singletonList("7|6101"), fixture.gateways.visitDetailsRequests);
+        Assertions.assertEquals(Collections.singletonList("7|6101|301|45|41220000000007"), fixture.gateways.assignedOperations);
+        Assertions.assertEquals(Collections.singletonList("7|900|6101|901"), fixture.gateways.transferredOperations);
+        Assertions.assertEquals(Integer.valueOf(901), fixture.gateways.visitById.get(Long.valueOf(6101L)).getQueueId());
+    }
+
+    @Test
+    void sortsOldestFirstWithTieBreakAndAppliesLimitBeforeDetailsRead() {
+        Fixture fixture = new Fixture();
+        fixture.prepareBranchTopology();
+        fixture.assignmentProperties.setDryRun(false);
+        fixture.assignmentProperties.setMaxVisitsPerCycle(3);
+        fixture.assignmentProperties.setVisitProcessingSortOrder(VisitProcessingSortOrder.OLDEST_FIRST);
+
+        fixture.gateways.waitingVisitsByQueue.put("7|900", Arrays.asList(
+                visit(7001L, 900, "A-7001", null),
+                visit(7002L, 900, "A-7002", 30),
+                visit(7003L, 900, "A-7003", 30),
+                visit(7004L, 900, "A-7004", 5),
+                visit(7005L, 900, "A-7005", 60)
+        ));
+        fixture.addVisitRoutes(900, 7001L, 7002L, 7003L, 7004L, 7005L);
+
+        fixture.service.process(fixture.openDoctor(7, 41220000000007L, 45, 15));
+
+        Assertions.assertEquals(Arrays.asList("7|7005", "7|7002", "7|7003"), fixture.gateways.visitDetailsRequests);
+        Assertions.assertEquals(Arrays.asList(
+                "7|7005|301|45|41220000000007",
+                "7|7002|301|45|41220000000007",
+                "7|7003|301|45|41220000000007"
+        ), fixture.gateways.assignedOperations);
+        Assertions.assertFalse(fixture.gateways.visitDetailsRequests.contains("7|7004"));
+        Assertions.assertFalse(fixture.gateways.visitDetailsRequests.contains("7|7001"));
+    }
+
+    @Test
+    void sortsNewestFirstWithNullWaitingTimeLastAndReverseIdTieBreak() {
+        Fixture fixture = new Fixture();
+        fixture.prepareBranchTopology();
+        fixture.assignmentProperties.setDryRun(false);
+        fixture.assignmentProperties.setMaxVisitsPerCycle(4);
+        fixture.assignmentProperties.setVisitProcessingSortOrder(VisitProcessingSortOrder.NEWEST_FIRST);
+
+        fixture.gateways.waitingVisitsByQueue.put("7|900", Arrays.asList(
+                visit(7101L, 900, "A-7101", 20),
+                visit(7102L, 900, "A-7102", 5),
+                visit(7103L, 900, "A-7103", 5),
+                visit(7104L, 900, "A-7104", null)
+        ));
+        fixture.addVisitRoutes(900, 7101L, 7102L, 7103L, 7104L);
+
+        fixture.service.process(fixture.openDoctor(7, 41220000000007L, 45, 15));
+
+        Assertions.assertEquals(Arrays.asList("7|7103", "7|7102", "7|7101", "7|7104"), fixture.gateways.visitDetailsRequests);
+    }
+
+    @Test
+    void keepsAsReturnedOrderWhenConfigured() {
+        Fixture fixture = new Fixture();
+        fixture.prepareBranchTopology();
+        fixture.assignmentProperties.setDryRun(false);
+        fixture.assignmentProperties.setMaxVisitsPerCycle(3);
+        fixture.assignmentProperties.setVisitProcessingSortOrder(VisitProcessingSortOrder.AS_RETURNED);
+
+        fixture.gateways.waitingVisitsByQueue.put("7|900", Arrays.asList(
+                visit(7203L, 900, "A-7203", 100),
+                visit(7201L, 900, "A-7201", 1),
+                visit(7202L, 900, "A-7202", 50)
+        ));
+        fixture.addVisitRoutes(900, 7201L, 7202L, 7203L);
+
+        fixture.service.process(fixture.openDoctor(7, 41220000000007L, 45, 15));
+
+        Assertions.assertEquals(Arrays.asList("7|7203", "7|7201", "7|7202"), fixture.gateways.visitDetailsRequests);
+    }
+
+    @Test
+    void supportsIdBasedSortingModes() {
+        Fixture ascFixture = new Fixture();
+        ascFixture.prepareBranchTopology();
+        ascFixture.assignmentProperties.setDryRun(false);
+        ascFixture.assignmentProperties.setMaxVisitsPerCycle(3);
+        ascFixture.assignmentProperties.setVisitProcessingSortOrder(VisitProcessingSortOrder.ID_ASC);
+        ascFixture.gateways.waitingVisitsByQueue.put("7|900", Arrays.asList(
+                visit(7303L, 900, "A-7303", 1),
+                visit(7301L, 900, "A-7301", 100),
+                visit(7302L, 900, "A-7302", 50)
+        ));
+        ascFixture.addVisitRoutes(900, 7301L, 7302L, 7303L);
+        ascFixture.service.process(ascFixture.openDoctor(7, 41220000000007L, 45, 15));
+        Assertions.assertEquals(Arrays.asList("7|7301", "7|7302", "7|7303"), ascFixture.gateways.visitDetailsRequests);
+
+        Fixture descFixture = new Fixture();
+        descFixture.prepareBranchTopology();
+        descFixture.assignmentProperties.setDryRun(false);
+        descFixture.assignmentProperties.setMaxVisitsPerCycle(3);
+        descFixture.assignmentProperties.setVisitProcessingSortOrder(VisitProcessingSortOrder.ID_DESC);
+        descFixture.gateways.waitingVisitsByQueue.put("7|900", Arrays.asList(
+                visit(7401L, 900, "A-7401", 100),
+                visit(7403L, 900, "A-7403", 1),
+                visit(7402L, 900, "A-7402", 50)
+        ));
+        descFixture.addVisitRoutes(900, 7401L, 7402L, 7403L);
+        descFixture.service.process(descFixture.openDoctor(7, 41220000000007L, 45, 15));
+        Assertions.assertEquals(Arrays.asList("7|7403", "7|7402", "7|7401"), descFixture.gateways.visitDetailsRequests);
+    }
+
+    @Test
+    void performsFullSeatingWorkflowWithRouteSelectionRecheckAndPostCheck() {
+        Fixture fixture = new Fixture();
+        fixture.prepareBranchTopology();
+        fixture.addDoctorServiceToCachedTopology(302, 902, "кабинет врача 2");
+        fixture.assignmentProperties.setDryRun(false);
+        fixture.assignmentProperties.setMaxVisitsPerCycle(1);
+        fixture.assignmentProperties.setVisitProcessingSortOrder(VisitProcessingSortOrder.OLDEST_FIRST);
+
+        fixture.gateways.waitingVisitsByQueue.put("7|900", Collections.singletonList(visit(8001L, 900, "A-8001", 120)));
+        fixture.gateways.visitDetailsById.put(Long.valueOf(8001L), new VisitDetails(8001L, 900, Arrays.asList(
+                new VisitUnservedService(301, null, 2),
+                new VisitUnservedService(302, null, 1)
+        )));
+        fixture.gateways.visitById.put(Long.valueOf(8001L), visit(8001L, 900, "A-8001", 120));
+
+        fixture.service.process(fixture.openDoctor(7, 41220000000007L, 45, 15));
+
+        Assertions.assertEquals(Collections.singletonList("7|8001"), fixture.gateways.visitDetailsRequests);
+        Assertions.assertEquals(Arrays.asList("7|8001", "7|8001"), fixture.gateways.findVisitRequests);
+        Assertions.assertEquals(Collections.singletonList("7|8001|302|45|41220000000007"), fixture.gateways.assignedOperations);
+        Assertions.assertEquals(Collections.singletonList("7|900|8001|902"), fixture.gateways.transferredOperations);
+        Assertions.assertEquals(Integer.valueOf(902), fixture.gateways.visitById.get(Long.valueOf(8001L)).getQueueId());
+        Assertions.assertEquals(Arrays.asList(
+                "getWaitingVisits|7|900",
+                "getVisitDetails|7|8001",
+                "findVisit|7|8001",
+                "assignServiceToVisit|7|8001|302|45|41220000000007",
+                "transferVisitToQueue|7|900|8001|902",
+                "findVisit|7|8001"
+        ), fixture.gateways.workflowOperations);
+    }
+
     private static VisitSummary visit(long id, Integer queueId, String ticketNumber, Integer waitingTime) {
         VisitSummary visitSummary = new VisitSummary(id, queueId, "WAITING", ticketNumber);
         visitSummary.setWaitingTime(waitingTime);
@@ -368,6 +490,44 @@ public class AutonomousMedicalExamAssignmentServiceTest {
             gateways.servicePointsByBranch.put(7, Collections.singletonList(servicePoint));
 
             updateService.refreshConfiguredBranches();
+        }
+
+        void addVisitRoutes(int queueId, long... visitIds) {
+            for (long visitId : visitIds) {
+                addVisitRoute(visitId, queueId, 301, 1);
+            }
+        }
+
+        void addVisitRoute(long visitId, int queueId, int serviceId, Integer routeOrder) {
+            fixtureVisitDetails(visitId, queueId, serviceId, routeOrder);
+            VisitSummary summary = new VisitSummary(visitId, queueId, "WAITING", "A-" + visitId);
+            gateways.visitById.put(Long.valueOf(visitId), summary);
+        }
+
+        private void fixtureVisitDetails(long visitId, int queueId, int serviceId, Integer routeOrder) {
+            gateways.visitDetailsById.put(Long.valueOf(visitId),
+                    new VisitDetails(visitId, queueId, Arrays.asList(new VisitUnservedService(serviceId, null, routeOrder))));
+        }
+
+        void addDoctorServiceToCachedTopology(int serviceId, int queueId, String queueName) {
+            com.qsystems.meddoctorassignment.adapter.orchestra.dto.TinyQueue queue = new com.qsystems.meddoctorassignment.adapter.orchestra.dto.TinyQueue();
+            queue.setId(queueId);
+            queue.setName(queueName);
+
+            com.qsystems.meddoctorassignment.cache.model.BranchAssignmentCache cache = cacheContainer.getOrCreateBranchCache(7);
+            cache.getQueueMap().put(Integer.valueOf(queueId), queue);
+            cache.getServiceIdToQueueId().put(Integer.valueOf(serviceId), Integer.valueOf(queueId));
+
+            java.util.Set<Integer> serviceIds = new java.util.HashSet<Integer>();
+            serviceIds.add(Integer.valueOf(serviceId));
+            cache.getQueueIdToServiceIds().put(Integer.valueOf(queueId), serviceIds);
+
+            java.util.Set<Integer> workProfileQueues = cache.getWorkProfileToQueueIds().get(Integer.valueOf(15));
+            if (workProfileQueues == null) {
+                workProfileQueues = new java.util.HashSet<Integer>();
+                cache.getWorkProfileToQueueIds().put(Integer.valueOf(15), workProfileQueues);
+            }
+            workProfileQueues.add(Integer.valueOf(queueId));
         }
 
         DoctorContext openDoctor(int branchId, long servicePointId, int staffId, int workProfileId) {

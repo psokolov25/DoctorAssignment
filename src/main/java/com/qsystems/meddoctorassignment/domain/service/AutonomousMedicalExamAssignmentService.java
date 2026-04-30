@@ -169,10 +169,10 @@ public class AutonomousMedicalExamAssignmentService {
             int limit = Math.min(visits.size(), configuredLimit);
             log.info("Visits in unknown-doctor queue {} count={} sortOrder={} maxVisitsPerCycle={} processingLimit={}",
                     branchCache.getUnknownDoctorQueueId(),
-                    visits.size(),
+                    Integer.valueOf(visits.size()),
                     resolveVisitProcessingSortOrder(),
-                    configuredLimit,
-                    limit);
+                    Integer.valueOf(configuredLimit),
+                    Integer.valueOf(limit));
 
             int processed = 0;
             Duration processedTtl = Duration.ofSeconds(assignmentProperties.getProcessedVisitTtlSeconds());
@@ -294,7 +294,7 @@ public class AutonomousMedicalExamAssignmentService {
 
     private Comparator<VisitSummary> oldestFirstComparator() {
         return new Comparator<VisitSummary>() {
-            @Override
+            
             public int compare(VisitSummary left, VisitSummary right) {
                 int waitingTimeCompare = compareWaitingTimeDescNullsLast(left, right);
                 if (waitingTimeCompare != 0) {
@@ -307,7 +307,7 @@ public class AutonomousMedicalExamAssignmentService {
 
     private Comparator<VisitSummary> newestFirstComparator() {
         return new Comparator<VisitSummary>() {
-            @Override
+            
             public int compare(VisitSummary left, VisitSummary right) {
                 int waitingTimeCompare = compareWaitingTimeAscNullsLast(left, right);
                 if (waitingTimeCompare != 0) {
@@ -320,7 +320,7 @@ public class AutonomousMedicalExamAssignmentService {
 
     private Comparator<VisitSummary> idAscComparator() {
         return new Comparator<VisitSummary>() {
-            @Override
+            
             public int compare(VisitSummary left, VisitSummary right) {
                 return Long.compare(left.getId(), right.getId());
             }
@@ -329,7 +329,7 @@ public class AutonomousMedicalExamAssignmentService {
 
     private Comparator<VisitSummary> idDescComparator() {
         return new Comparator<VisitSummary>() {
-            @Override
+            
             public int compare(VisitSummary left, VisitSummary right) {
                 return Long.compare(right.getId(), left.getId());
             }

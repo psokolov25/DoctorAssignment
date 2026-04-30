@@ -80,8 +80,8 @@
 |---|---|---|---|
 | `enabled` | boolean | `true` | глобально включает алгоритм назначения |
 | `unknown-doctor-queue-id` | number | `312` | queue id очереди «врач не назначен» |
-| `max-visits-per-cycle` | number | `3` | максимум визитов за один цикл |
-| `visit-processing-sort-order` | enum | `OLDEST_FIRST` | порядок обработки визитов перед применением лимита (`AS_RETURNED`, `OLDEST_FIRST`, `NEWEST_FIRST`, `ID_ASC`, `ID_DESC`) |
+| `max-visits-per-cycle` | number | `3` | максимум визитов за один цикл; лимит применяется после сортировки |
+| `visit-processing-sort-order` | enum | `OLDEST_FIRST` | порядок обработки визитов: `AS_RETURNED`, `OLDEST_FIRST`, `NEWEST_FIRST`, `ID_ASC`, `ID_DESC` |
 | `polling-enabled` | boolean | `true` | включает scheduled reconciliation |
 | `polling-cron` | cron | `0 */1 * * * ?` | расписание polling |
 | `branch-lock-timeout-ms` | number | `5000` | ожидание lock на branch |
@@ -280,7 +280,6 @@ application:
     polling-enabled: true
     polling-cron: "0 */1 * * * ?"
     max-visits-per-cycle: 3
-    visit-processing-sort-order: OLDEST_FIRST
     allowed-branches: [1]
     unknown-doctor-queue-id: 292
     source-entry-point-id-by-branch:
@@ -333,7 +332,6 @@ application:
   assignment:
     dry-run: false
     max-visits-per-cycle: 1
-    visit-processing-sort-order: OLDEST_FIRST
     allowed-branches: [1]
     recheck-visit-before-transfer: true
     abort-cycle-on-forbidden-mutation: true

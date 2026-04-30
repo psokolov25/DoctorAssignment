@@ -45,9 +45,9 @@ public class AssignmentPropertiesTest {
         Assertions.assertFalse(properties.isSetWorkProfileTriggerEnabled());
         Assertions.assertTrue(properties.isUserServicePointSessionStartTriggerEnabled());
         Assertions.assertTrue(properties.isPollingEnabled());
-        Assertions.assertEquals(2000L, properties.getUserSessionSettleWindowMs());
         Assertions.assertEquals(3, properties.getMaxVisitsPerCycle());
         Assertions.assertEquals(VisitProcessingSortOrder.OLDEST_FIRST, properties.getVisitProcessingSortOrder());
+        Assertions.assertEquals(2000L, properties.getUserSessionSettleWindowMs());
         Assertions.assertTrue(properties.isAbortCycleOnForbiddenMutation());
         Assertions.assertTrue(properties.isTreatInactiveUserStateAsFailure());
         Assertions.assertTrue(properties.isTreatNoStartedServicePointSessionAsFailure());

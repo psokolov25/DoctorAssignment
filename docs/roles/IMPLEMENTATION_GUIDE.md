@@ -74,7 +74,6 @@ application:
     polling-enabled: true
     polling-cron: "0 */1 * * * ?"
     max-visits-per-cycle: 3
-    visit-processing-sort-order: OLDEST_FIRST
     allowed-branches: [1]
     recheck-visit-before-transfer: true
     abort-cycle-on-forbidden-mutation: true
@@ -138,7 +137,6 @@ application:
   assignment:
     dry-run: false
     max-visits-per-cycle: 1
-    visit-processing-sort-order: OLDEST_FIRST
     allowed-branches: [1]
 ```
 

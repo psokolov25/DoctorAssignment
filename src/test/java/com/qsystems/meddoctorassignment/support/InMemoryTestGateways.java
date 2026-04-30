@@ -1,10 +1,10 @@
 package com.qsystems.meddoctorassignment.support;
 
+import com.qsystems.meddoctorassignment.adapter.gateway.MedRobotOptimalServiceGateway;
 import com.qsystems.meddoctorassignment.adapter.gateway.OperatorContextActivationGateway;
 import com.qsystems.meddoctorassignment.adapter.gateway.OrchestraMetadataGateway;
 import com.qsystems.meddoctorassignment.adapter.gateway.ServicePointContextGateway;
 import com.qsystems.meddoctorassignment.adapter.gateway.VisitWorkflowGateway;
-import com.qsystems.meddoctorassignment.adapter.gateway.MedRobotOptimalServiceGateway;
 import com.qsystems.meddoctorassignment.adapter.medrobot.dto.MedRobotOptimalServiceResponse;
 import com.qsystems.meddoctorassignment.adapter.orchestra.dto.ServiceData;
 import com.qsystems.meddoctorassignment.adapter.orchestra.dto.ServicePointData;
@@ -38,6 +38,26 @@ public class InMemoryTestGateways implements OrchestraMetadataGateway, ServicePo
     public final Map<Long, VisitSummary> visitById = new HashMap<Long, VisitSummary>();
     public final Map<String, MedRobotOptimalServiceResponse> medRobotResponses = new HashMap<String, MedRobotOptimalServiceResponse>();
     public final List<String> medRobotRequests = new ArrayList<String>();
+
+    /**
+     * Журнал чтения очереди. Формат: branchId|queueId.
+     */
+    public final List<String> waitingVisitRequests = new ArrayList<String>();
+
+    /**
+     * Журнал чтения деталей визита. Формат: branchId|visitId.
+     */
+    public final List<String> visitDetailsRequests = new ArrayList<String>();
+
+    /**
+     * Журнал повторного чтения визита для defensive recheck/post-check. Формат: branchId|visitId.
+     */
+    public final List<String> findVisitRequests = new ArrayList<String>();
+
+    /**
+     * Сквозная трасса workflow для автономных тестов без внешних служб.
+     */
+    public final List<String> workflowOperations = new ArrayList<String>();
 
     public boolean medRobotFail;
 
@@ -111,11 +131,17 @@ public class InMemoryTestGateways implements OrchestraMetadataGateway, ServicePo
 
     @Override
     public List<VisitSummary> getWaitingVisits(int branchId, int queueId) {
-        return getOrEmpty(waitingVisitsByQueue.get(branchId + "|" + queueId));
+        String request = branchId + "|" + queueId;
+        waitingVisitRequests.add(request);
+        workflowOperations.add("getWaitingVisits|" + request);
+        return getOrEmpty(waitingVisitsByQueue.get(request));
     }
 
     @Override
     public VisitDetails getVisitDetails(int branchId, long visitId) {
+        String request = branchId + "|" + visitId;
+        visitDetailsRequests.add(request);
+        workflowOperations.add("getVisitDetails|" + request);
         if (visitId == failVisitId) {
             throw new IllegalStateException("simulated downstream failure");
         }
@@ -138,12 +164,16 @@ public class InMemoryTestGateways implements OrchestraMetadataGateway, ServicePo
         if (visitId == blockedAssignVisitId) {
             throw new MutationContextException("simulated inactive operator context for visit " + visitId);
         }
-        assignedOperations.add(branchId + "|" + visitId + "|" + serviceId + "|" + staffId + "|" + servicePointId);
+        String operation = branchId + "|" + visitId + "|" + serviceId + "|" + staffId + "|" + servicePointId;
+        workflowOperations.add("assignServiceToVisit|" + operation);
+        assignedOperations.add(operation);
     }
 
     @Override
     public void transferVisitToQueue(int branchId, long visitId, int sourceQueueId, int targetQueueId) {
-        transferredOperations.add(branchId + "|" + sourceQueueId + "|" + visitId + "|" + targetQueueId);
+        String operation = branchId + "|" + sourceQueueId + "|" + visitId + "|" + targetQueueId;
+        workflowOperations.add("transferVisitToQueue|" + operation);
+        transferredOperations.add(operation);
         VisitSummary summary = visitById.get(visitId);
         if (summary != null) {
             summary.setQueueId(targetQueueId);
@@ -152,6 +182,9 @@ public class InMemoryTestGateways implements OrchestraMetadataGateway, ServicePo
 
     @Override
     public Optional<VisitSummary> findVisit(int branchId, long visitId) {
+        String request = branchId + "|" + visitId;
+        findVisitRequests.add(request);
+        workflowOperations.add("findVisit|" + request);
         return Optional.ofNullable(visitById.get(visitId));
     }
 

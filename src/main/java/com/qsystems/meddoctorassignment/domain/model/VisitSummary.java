@@ -17,7 +17,7 @@ public class VisitSummary {
 
     /**
      * Время ожидания в очереди в формате Orchestra.
-     * Используется только для относительной сортировки: большее значение означает более старый визит.
+     * Для сортировки считаем, что большее значение означает более старый визит.
      */
     @JsonAlias({"waitingTime", "waitTime"})
     private Integer waitingTime;
@@ -76,8 +76,9 @@ public class VisitSummary {
     }
 
     /**
-     * На части endpoint-ов Orchestra queue id приходит не отдельным полем, а внутри {@code parameterMap}.
-     * Этот setter позволяет мягко достроить модель без жесткой привязки к одному варианту ответа.
+     * На части endpoint-ов Orchestra queue id и waitingTime приходят не отдельными полями,
+     * а внутри {@code parameterMap}. Этот setter мягко достраивает модель без жесткой привязки
+     * к одному варианту ответа.
      */
     @JsonSetter("parameterMap")
     public void setParameterMap(Map<String, Object> parameterMap) {

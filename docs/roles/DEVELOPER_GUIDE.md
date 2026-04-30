@@ -116,7 +116,6 @@ application:
   assignment:
     dry-run: true
     max-visits-per-cycle: 3
-    visit-processing-sort-order: OLDEST_FIRST
     allowed-branches: [1]
   websocket:
     enabled: false

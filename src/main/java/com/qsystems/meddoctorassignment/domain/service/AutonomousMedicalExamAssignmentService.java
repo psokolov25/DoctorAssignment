@@ -6,6 +6,7 @@ import com.qsystems.meddoctorassignment.cache.model.BranchAssignmentCache;
 import com.qsystems.meddoctorassignment.cache.model.ServicePointRuntimeState;
 import com.qsystems.meddoctorassignment.cache.service.OrchestraDataCacheUpdateService;
 import com.qsystems.meddoctorassignment.config.AssignmentProperties;
+import com.qsystems.meddoctorassignment.config.VisitProcessingSortOrder;
 import com.qsystems.meddoctorassignment.domain.exception.MutationContextException;
 import com.qsystems.meddoctorassignment.domain.model.SelectedDoctorService;
 import com.qsystems.meddoctorassignment.domain.model.VisitDetails;
@@ -16,6 +17,9 @@ import com.qsystems.meddoctorassignment.util.ProcessedVisitRegistry;
 import io.micronaut.http.client.exceptions.HttpClientResponseException;
 import jakarta.inject.Singleton;
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -160,11 +164,17 @@ public class AutonomousMedicalExamAssignmentService {
                 return;
             }
 
-            List<VisitSummary> visits = unknownDoctorQueueVisitProvider.getWaitingVisits(doctorContext, branchCache);
-            log.info("Visits in unknown-doctor queue {} count={}", branchCache.getUnknownDoctorQueueId(), visits.size());
+            List<VisitSummary> visits = orderVisitsForProcessing(unknownDoctorQueueVisitProvider.getWaitingVisits(doctorContext, branchCache));
+            int configuredLimit = Math.max(0, assignmentProperties.getMaxVisitsPerCycle());
+            int limit = Math.min(visits.size(), configuredLimit);
+            log.info("Visits in unknown-doctor queue {} count={} sortOrder={} maxVisitsPerCycle={} processingLimit={}",
+                    branchCache.getUnknownDoctorQueueId(),
+                    visits.size(),
+                    resolveVisitProcessingSortOrder(),
+                    configuredLimit,
+                    limit);
 
             int processed = 0;
-            int limit = Math.min(visits.size(), assignmentProperties.getMaxVisitsPerCycle());
             Duration processedTtl = Duration.ofSeconds(assignmentProperties.getProcessedVisitTtlSeconds());
 
             for (int i = 0; i < limit; i++) {
@@ -249,6 +259,112 @@ public class AutonomousMedicalExamAssignmentService {
         }
     }
 
+
+    private List<VisitSummary> orderVisitsForProcessing(List<VisitSummary> visits) {
+        if (visits == null || visits.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        List<VisitSummary> orderedVisits = new ArrayList<VisitSummary>(visits);
+        VisitProcessingSortOrder sortOrder = resolveVisitProcessingSortOrder();
+        switch (sortOrder) {
+            case OLDEST_FIRST:
+                Collections.sort(orderedVisits, oldestFirstComparator());
+                break;
+            case NEWEST_FIRST:
+                Collections.sort(orderedVisits, newestFirstComparator());
+                break;
+            case ID_ASC:
+                Collections.sort(orderedVisits, idAscComparator());
+                break;
+            case ID_DESC:
+                Collections.sort(orderedVisits, idDescComparator());
+                break;
+            case AS_RETURNED:
+            default:
+                break;
+        }
+        return orderedVisits;
+    }
+
+    private VisitProcessingSortOrder resolveVisitProcessingSortOrder() {
+        VisitProcessingSortOrder sortOrder = assignmentProperties.getVisitProcessingSortOrder();
+        return sortOrder != null ? sortOrder : VisitProcessingSortOrder.AS_RETURNED;
+    }
+
+    private Comparator<VisitSummary> oldestFirstComparator() {
+        return new Comparator<VisitSummary>() {
+            @Override
+            public int compare(VisitSummary left, VisitSummary right) {
+                int waitingTimeCompare = compareWaitingTimeDescNullsLast(left, right);
+                if (waitingTimeCompare != 0) {
+                    return waitingTimeCompare;
+                }
+                return Long.compare(left.getId(), right.getId());
+            }
+        };
+    }
+
+    private Comparator<VisitSummary> newestFirstComparator() {
+        return new Comparator<VisitSummary>() {
+            @Override
+            public int compare(VisitSummary left, VisitSummary right) {
+                int waitingTimeCompare = compareWaitingTimeAscNullsLast(left, right);
+                if (waitingTimeCompare != 0) {
+                    return waitingTimeCompare;
+                }
+                return Long.compare(right.getId(), left.getId());
+            }
+        };
+    }
+
+    private Comparator<VisitSummary> idAscComparator() {
+        return new Comparator<VisitSummary>() {
+            @Override
+            public int compare(VisitSummary left, VisitSummary right) {
+                return Long.compare(left.getId(), right.getId());
+            }
+        };
+    }
+
+    private Comparator<VisitSummary> idDescComparator() {
+        return new Comparator<VisitSummary>() {
+            @Override
+            public int compare(VisitSummary left, VisitSummary right) {
+                return Long.compare(right.getId(), left.getId());
+            }
+        };
+    }
+
+    private int compareWaitingTimeDescNullsLast(VisitSummary left, VisitSummary right) {
+        Integer leftWaitingTime = left.getWaitingTime();
+        Integer rightWaitingTime = right.getWaitingTime();
+        if (leftWaitingTime == null && rightWaitingTime == null) {
+            return 0;
+        }
+        if (leftWaitingTime == null) {
+            return 1;
+        }
+        if (rightWaitingTime == null) {
+            return -1;
+        }
+        return rightWaitingTime.compareTo(leftWaitingTime);
+    }
+
+    private int compareWaitingTimeAscNullsLast(VisitSummary left, VisitSummary right) {
+        Integer leftWaitingTime = left.getWaitingTime();
+        Integer rightWaitingTime = right.getWaitingTime();
+        if (leftWaitingTime == null && rightWaitingTime == null) {
+            return 0;
+        }
+        if (leftWaitingTime == null) {
+            return 1;
+        }
+        if (rightWaitingTime == null) {
+            return -1;
+        }
+        return leftWaitingTime.compareTo(rightWaitingTime);
+    }
 
     private String buildProcessingFingerprint(VisitDetails visitDetails) {
         if (visitDetails == null) {

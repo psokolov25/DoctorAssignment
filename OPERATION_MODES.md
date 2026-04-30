@@ -287,10 +287,11 @@ application:
 ```yaml
 application:
   assignment:
-    max-visits-per-cycle: 50
+    max-visits-per-cycle: 3
+    visit-processing-sort-order: OLDEST_FIRST
 ```
 
-Защищает Orchestra от слишком длинной обработки одного цикла.
+Защищает Orchestra от слишком длинной обработки одного цикла. При `OLDEST_FIRST` сервис сначала берет самые старые визиты: максимальный `waitingTime`, затем меньший `visitId`.
 
 ### 7.4. Дедупликация событий и визитов
 

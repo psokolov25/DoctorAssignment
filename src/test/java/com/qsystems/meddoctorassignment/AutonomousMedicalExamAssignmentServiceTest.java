@@ -7,6 +7,7 @@ import com.qsystems.meddoctorassignment.config.AssignmentProperties;
 import com.qsystems.meddoctorassignment.config.MedRobotProperties;
 import com.qsystems.meddoctorassignment.adapter.medrobot.dto.MedRobotOptimalServiceResponse;
 import com.qsystems.meddoctorassignment.config.OrchestraProperties;
+import com.qsystems.meddoctorassignment.config.VisitProcessingSortOrder;
 import com.qsystems.meddoctorassignment.domain.model.VisitDetails;
 import com.qsystems.meddoctorassignment.domain.model.VisitSummary;
 import com.qsystems.meddoctorassignment.domain.model.VisitUnservedService;
@@ -58,6 +59,38 @@ public class AutonomousMedicalExamAssignmentServiceTest {
         Assertions.assertEquals(1, fixture.gateways.transferredOperations.size());
         Assertions.assertTrue(fixture.gateways.assignedOperations.get(0).contains("|301|45|41220000000007"));
         Assertions.assertTrue(fixture.gateways.transferredOperations.get(0).endsWith("|901"));
+    }
+
+    @Test
+    void processesOnlyConfiguredNumberOfOldestVisitsFirst() {
+        Fixture fixture = new Fixture();
+        fixture.prepareBranchTopology();
+        fixture.assignmentProperties.setDryRun(false);
+        fixture.assignmentProperties.setMaxVisitsPerCycle(3);
+        fixture.assignmentProperties.setVisitProcessingSortOrder(VisitProcessingSortOrder.OLDEST_FIRST);
+
+        fixture.gateways.waitingVisitsByQueue.put("7|900", Arrays.asList(
+                visit(7001L, 900, "A-001", 5),
+                visit(7002L, 900, "A-002", 40),
+                visit(7003L, 900, "A-003", 10),
+                visit(7004L, 900, "A-004", 30),
+                visit(7005L, 900, "A-005", 20)
+        ));
+
+        for (long visitId = 7001L; visitId <= 7005L; visitId++) {
+            fixture.gateways.visitDetailsById.put(Long.valueOf(visitId),
+                    new VisitDetails(visitId, 900, Arrays.asList(new VisitUnservedService(301, null, 1))));
+            fixture.gateways.visitById.put(Long.valueOf(visitId),
+                    new VisitSummary(visitId, 900, "WAITING", "A-" + visitId));
+        }
+
+        DoctorContext context = fixture.openDoctor(7, 41220000000007L, 45, 15);
+        fixture.service.process(context);
+
+        Assertions.assertEquals(3, fixture.gateways.assignedOperations.size());
+        Assertions.assertTrue(fixture.gateways.assignedOperations.get(0).contains("|7002|"));
+        Assertions.assertTrue(fixture.gateways.assignedOperations.get(1).contains("|7004|"));
+        Assertions.assertTrue(fixture.gateways.assignedOperations.get(2).contains("|7005|"));
     }
 
 
@@ -260,6 +293,12 @@ public class AutonomousMedicalExamAssignmentServiceTest {
         Assertions.assertTrue(fixture.gateways.assignedOperations.get(0).contains("|301|45|41220000000007"));
         Assertions.assertEquals(1, fixture.gateways.transferredOperations.size());
         Assertions.assertTrue(fixture.gateways.transferredOperations.get(0).endsWith("|901"));
+    }
+
+    private static VisitSummary visit(long id, Integer queueId, String ticketNumber, Integer waitingTime) {
+        VisitSummary visitSummary = new VisitSummary(id, queueId, "WAITING", ticketNumber);
+        visitSummary.setWaitingTime(waitingTime);
+        return visitSummary;
     }
 
     static final class Fixture {

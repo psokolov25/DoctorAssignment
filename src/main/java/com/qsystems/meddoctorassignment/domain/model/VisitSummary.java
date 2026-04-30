@@ -15,6 +15,13 @@ public class VisitSummary {
     private Integer queueId;
     private String state;
 
+    /**
+     * Время ожидания в очереди в формате Orchestra.
+     * Используется только для относительной сортировки: большее значение означает более старый визит.
+     */
+    @JsonAlias({"waitingTime", "waitTime"})
+    private Integer waitingTime;
+
     @JsonAlias({"ticketNumber", "ticketId"})
     private String ticketNumber;
 
@@ -52,6 +59,14 @@ public class VisitSummary {
         this.state = state;
     }
 
+    public Integer getWaitingTime() {
+        return waitingTime;
+    }
+
+    public void setWaitingTime(Integer waitingTime) {
+        this.waitingTime = waitingTime;
+    }
+
     public String getTicketNumber() {
         return ticketNumber;
     }
@@ -66,15 +81,26 @@ public class VisitSummary {
      */
     @JsonSetter("parameterMap")
     public void setParameterMap(Map<String, Object> parameterMap) {
-        if (this.queueId != null || parameterMap == null) {
+        if (parameterMap == null) {
             return;
         }
-        Integer resolvedQueueId = readInteger(parameterMap.get("currentQueueOrigId"));
-        if (resolvedQueueId == null) {
-            resolvedQueueId = readInteger(parameterMap.get("startQueueOrigId"));
+        if (this.queueId == null) {
+            Integer resolvedQueueId = readInteger(parameterMap.get("currentQueueOrigId"));
+            if (resolvedQueueId == null) {
+                resolvedQueueId = readInteger(parameterMap.get("startQueueOrigId"));
+            }
+            if (resolvedQueueId != null) {
+                this.queueId = resolvedQueueId;
+            }
         }
-        if (resolvedQueueId != null) {
-            this.queueId = resolvedQueueId;
+        if (this.waitingTime == null) {
+            Integer resolvedWaitingTime = readInteger(parameterMap.get("waitingTime"));
+            if (resolvedWaitingTime == null) {
+                resolvedWaitingTime = readInteger(parameterMap.get("waitTime"));
+            }
+            if (resolvedWaitingTime != null) {
+                this.waitingTime = resolvedWaitingTime;
+            }
         }
     }
 

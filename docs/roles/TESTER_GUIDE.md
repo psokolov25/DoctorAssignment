@@ -44,6 +44,7 @@ application:
   assignment:
     dry-run: true
     max-visits-per-cycle: 3
+    visit-processing-sort-order: OLDEST_FIRST
     allowed-branches: [1]
   websocket:
     enabled: false
@@ -192,6 +193,7 @@ Schedule Orchestra REST reconnect/cache bootstrap retry
 Для тестового стенда не нужно имитировать production-нагрузку, но нужно убедиться, что сервис не создает лишний шум:
 
 - `max-visits-per-cycle` ограничивает число визитов за цикл;
+- `visit-processing-sort-order=OLDEST_FIRST` задает порядок: сначала самые старые визиты;
 - `polling-cron` не должен запускать цикл слишком часто без необходимости;
 - `stale-cache-duration-seconds` не должен быть слишком маленьким;
 - repeated events блокируются `event-deduplication-ttl-seconds`;

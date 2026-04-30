@@ -29,7 +29,12 @@ public class AssignmentProperties {
     /**
      * Максимум визитов, обрабатываемых за один доменный цикл.
      */
-    private int maxVisitsPerCycle = 50;
+    private int maxVisitsPerCycle = 3;
+
+    /**
+     * Порядок отбора визитов перед применением {@link #maxVisitsPerCycle}.
+     */
+    private VisitProcessingSortOrder visitProcessingSortOrder = VisitProcessingSortOrder.OLDEST_FIRST;
 
     /**
      * Включает периодическую reconciliation-задачу.
@@ -198,6 +203,14 @@ public class AssignmentProperties {
 
     public void setMaxVisitsPerCycle(int maxVisitsPerCycle) {
         this.maxVisitsPerCycle = maxVisitsPerCycle;
+    }
+
+    public VisitProcessingSortOrder getVisitProcessingSortOrder() {
+        return visitProcessingSortOrder;
+    }
+
+    public void setVisitProcessingSortOrder(VisitProcessingSortOrder visitProcessingSortOrder) {
+        this.visitProcessingSortOrder = visitProcessingSortOrder;
     }
 
     public boolean isPollingEnabled() {

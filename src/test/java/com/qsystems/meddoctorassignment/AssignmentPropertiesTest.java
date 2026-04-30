@@ -1,6 +1,7 @@
 package com.qsystems.meddoctorassignment;
 
 import com.qsystems.meddoctorassignment.config.AssignmentProperties;
+import com.qsystems.meddoctorassignment.config.VisitProcessingSortOrder;
 import com.qsystems.meddoctorassignment.model.event.TriggerSource;
 import java.util.HashMap;
 import java.util.Map;
@@ -45,6 +46,8 @@ public class AssignmentPropertiesTest {
         Assertions.assertTrue(properties.isUserServicePointSessionStartTriggerEnabled());
         Assertions.assertTrue(properties.isPollingEnabled());
         Assertions.assertEquals(2000L, properties.getUserSessionSettleWindowMs());
+        Assertions.assertEquals(3, properties.getMaxVisitsPerCycle());
+        Assertions.assertEquals(VisitProcessingSortOrder.OLDEST_FIRST, properties.getVisitProcessingSortOrder());
         Assertions.assertTrue(properties.isAbortCycleOnForbiddenMutation());
         Assertions.assertTrue(properties.isTreatInactiveUserStateAsFailure());
         Assertions.assertTrue(properties.isTreatNoStartedServicePointSessionAsFailure());

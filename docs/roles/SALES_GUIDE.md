@@ -115,7 +115,7 @@ Med Doctor Assignment Service автоматизирует участок раб
 Да. Для этого используется `allowed-branches` и `branches-for-cache`.
 
 **Как контролируется риск массовых ошибок?**  
-Есть `dry-run`, `max-visits-per-cycle`, `allowed-branches`, recheck перед transfer и остановка цикла после первого 403/контекстной ошибки.
+Есть `dry-run`, `max-visits-per-cycle`, `visit-processing-sort-order`, `allowed-branches`, recheck перед transfer и остановка цикла после первого 403/контекстной ошибки.
 
 ## 11. Материалы для передачи заказчику
 

@@ -523,6 +523,7 @@ application:
     dry-run: true
     polling-enabled: true
     max-visits-per-cycle: 3
+    visit-processing-sort-order: OLDEST_FIRST
     allowed-branches: [1]
     unknown-doctor-queue-id: 292
     source-entry-point-id-by-branch:
@@ -533,11 +534,12 @@ application:
 
 1. подтвердить `branchId`, `unknown-doctor-queue-id` и `source entry point id`;
 2. запустить сервис с `dry-run=true`, `websocket.enabled=false`, `med-robot.enabled=false`;
-3. убедиться, что branch cache прогревается и очередь «Врач не назначен» читается;
-4. включить websocket, но оставить `dry-run=true`, проверить корреляцию `USER_SERVICE_POINT_SESSION_START -> SET_WORK_PROFILE`;
-5. включить med-robot на `dry-run=true`, если он участвует в сценарии;
-6. выполнить один реальный цикл только после успешного dry-run: `dry-run=false`, `max-visits-per-cycle=1`, `allowed-branches=[тестовое отделение]`;
-7. сохранить логи успешного сценария и только затем расширять rollout.
+3. проверить в логах `sortOrder=OLDEST_FIRST`, `maxVisitsPerCycle=3` и `processingLimit`;
+4. убедиться, что branch cache прогревается и очередь «Врач не назначен» читается;
+5. включить websocket, но оставить `dry-run=true`, проверить корреляцию `USER_SERVICE_POINT_SESSION_START -> SET_WORK_PROFILE`;
+6. включить med-robot на `dry-run=true`, если он участвует в сценарии;
+7. выполнить один реальный цикл только после успешного dry-run: `dry-run=false`, `max-visits-per-cycle=1`, `allowed-branches=[тестовое отделение]`;
+8. сохранить логи успешного сценария и только затем расширять rollout.
 
 До подтверждения `source-entry-point-id-by-branch` нельзя включать реальные `transfer-visit`: параметр `fromId` в Orchestra зависит от конкретной инсталляции и должен быть сверен на стенде.
 

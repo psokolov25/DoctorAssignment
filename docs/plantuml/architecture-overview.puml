@@ -1,11 +1,18 @@
 @startuml
 !include common-style.puml
 left to right direction
-title Общая архитектура Doctor Assistant и med-robot
+title Общая архитектура Doctor Assistant, Orchestra и med-robot
 
 rectangle "<<external system>>\nQMatic Orchestra 6\n--\nREST API справочников\nREST API рабочих действий\nSockJS / STOMP события" as orchestra #F1F5F9
 rectangle "<<external service>>\nmed-robot\n--\nREST API выбора услуги\nи очереди" as medrobot #F1F5F9
 artifact "Файловые журналы\n--\nmed-robot.log\nhttp.log" as logs
+
+legend right
+|= Обозначение |= Смысл |
+| Сплошная стрелка | Внутренний вызов внутри сервиса |
+| Пунктирная стрелка | Сетевое взаимодействие между системами |
+| Retry policy | Фоновое восстановление подключения и bootstrap |
+endlegend
 
 package "Doctor Assistant service\nmed-doctor-assignment-service" {
   component "WebSocketService\n--\nприем STOMP событий" as websocket
@@ -29,7 +36,7 @@ medrobot -[dashed]-> selection : решение
 assignment --> workflow : мутации
 workflow --> orchestra : REST Orchestra
 workflow --> logs : диагностика
-assignment --> retry : ошибка связи
+assignment --> retry : ошибка связи / таймаут
 retry -[dashed]-> assignment : повтор подключения
 
 note bottom of assignment

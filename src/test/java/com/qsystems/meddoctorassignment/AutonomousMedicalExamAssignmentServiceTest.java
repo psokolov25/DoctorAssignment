@@ -264,6 +264,48 @@ public class AutonomousMedicalExamAssignmentServiceTest {
     }
 
     @Test
+    void medRobotSelectionForNextVisitAccountsForPreviouslyTransferredVisits() {
+        Fixture fixture = new Fixture();
+        fixture.prepareBranchTopology();
+        fixture.assignmentProperties.setDryRun(false);
+        fixture.assignmentProperties.setMaxVisitsPerCycle(2);
+        fixture.assignmentProperties.setVisitProcessingSortOrder(VisitProcessingSortOrder.ID_ASC);
+        fixture.medRobotProperties.setEnabled(true);
+
+        fixture.addDoctorServiceToCachedTopology(302, 902, "кабинет врача 2");
+        fixture.gateways.medRobotSequentialByTransferCount = true;
+        fixture.gateways.medRobotSequentialResponses.add(medRobotResponse(301, 901));
+        fixture.gateways.medRobotSequentialResponses.add(medRobotResponse(302, 902));
+
+        fixture.gateways.waitingVisitsByQueue.put("7|900", Arrays.asList(
+                visit(8201L, 900, "A-8201", 20),
+                visit(8202L, 900, "A-8202", 10)
+        ));
+        fixture.gateways.visitDetailsById.put(8201L, new VisitDetails(8201L, 900, Arrays.asList(
+                new VisitUnservedService(301, null, 1),
+                new VisitUnservedService(302, null, 2)
+        )));
+        fixture.gateways.visitDetailsById.put(8202L, new VisitDetails(8202L, 900, Arrays.asList(
+                new VisitUnservedService(301, null, 1),
+                new VisitUnservedService(302, null, 2)
+        )));
+        fixture.gateways.visitById.put(8201L, visit(8201L, 900, "A-8201", 20));
+        fixture.gateways.visitById.put(8202L, visit(8202L, 900, "A-8202", 10));
+
+        fixture.service.process(fixture.openDoctor(7, 41220000000007L, 45, 15));
+
+        Assertions.assertEquals(2, fixture.gateways.medRobotRequests.size());
+        Assertions.assertEquals(Arrays.asList(
+                "7|8201|301|45|41220000000007",
+                "7|8202|302|45|41220000000007"
+        ), fixture.gateways.assignedOperations);
+        Assertions.assertEquals(Arrays.asList(
+                "7|900|8201|901",
+                "7|900|8202|902"
+        ), fixture.gateways.transferredOperations);
+    }
+
+    @Test
     void readsVisitsOnlyFromConfiguredUnknownDoctorQueue() {
         Fixture fixture = new Fixture();
         fixture.prepareBranchTopology();
@@ -417,10 +459,117 @@ public class AutonomousMedicalExamAssignmentServiceTest {
         ), fixture.gateways.workflowOperations);
     }
 
+    @Test
+    void refreshesBranchSnapshotAfterEachSuccessfulAssignment() {
+        Fixture fixture = new Fixture();
+        fixture.prepareBranchTopology();
+        fixture.assignmentProperties.setDryRun(false);
+        fixture.assignmentProperties.setStaleCacheDurationSeconds(0);
+        fixture.assignmentProperties.setMaxVisitsPerCycle(2);
+        fixture.assignmentProperties.setVisitProcessingSortOrder(VisitProcessingSortOrder.ID_ASC);
+
+        fixture.gateways.waitingVisitsByQueue.put("7|900", Arrays.asList(
+                visit(8101L, 900, "A-8101", 20),
+                visit(8102L, 900, "A-8102", 10)
+        ));
+        fixture.addVisitRoutes(900, 8101L, 8102L);
+
+        fixture.service.process(fixture.openDoctor(7, 41220000000007L, 45, 15));
+
+        Assertions.assertEquals(2, fixture.gateways.assignedOperations.size());
+        Assertions.assertEquals(2, fixture.gateways.transferredOperations.size());
+        Assertions.assertTrue(fixture.gateways.allQueuesReadCount >= 2);
+    }
+
+    @Test
+    void processesOnlyThreeOldestVisitsFromSevenInLocalMode() {
+        Fixture fixture = new Fixture();
+        fixture.prepareBranchTopology();
+        fixture.assignmentProperties.setDryRun(false);
+        fixture.assignmentProperties.setMaxVisitsPerCycle(3);
+        fixture.assignmentProperties.setVisitProcessingSortOrder(VisitProcessingSortOrder.OLDEST_FIRST);
+
+        populateSevenVisitQueue(fixture, 8300L, new int[] {5, 90, 40, 80, 10, 70, 20});
+
+        fixture.service.process(fixture.openDoctor(7, 41220000000007L, 45, 15));
+
+        Assertions.assertEquals(Arrays.asList("7|8302", "7|8304", "7|8306"), fixture.gateways.visitDetailsRequests);
+        Assertions.assertEquals(Arrays.asList(
+                "7|8302|301|45|41220000000007",
+                "7|8304|301|45|41220000000007",
+                "7|8306|301|45|41220000000007"
+        ), fixture.gateways.assignedOperations);
+        Assertions.assertEquals(3, fixture.gateways.transferredOperations.size());
+    }
+
+    @Test
+    void processesOnlyThreeOldestVisitsFromSevenWithMedRobot() {
+        Fixture fixture = new Fixture();
+        fixture.prepareBranchTopology();
+        fixture.assignmentProperties.setDryRun(false);
+        fixture.assignmentProperties.setMaxVisitsPerCycle(3);
+        fixture.assignmentProperties.setVisitProcessingSortOrder(VisitProcessingSortOrder.OLDEST_FIRST);
+        fixture.medRobotProperties.setEnabled(true);
+        fixture.addDoctorServiceToCachedTopology(302, 902, "кабинет врача 2");
+        fixture.gateways.medRobotResponses.put("7|301", medRobotResponse(302, 902));
+
+        populateSevenVisitQueue(fixture, 8400L, new int[] {15, 95, 35, 85, 25, 75, 5});
+        attachMedRobotRouteDataForSevenVisits(fixture, 8400L);
+
+        fixture.service.process(fixture.openDoctor(7, 41220000000007L, 45, 15));
+
+        Assertions.assertEquals(Arrays.asList("7|8402", "7|8404", "7|8406"), fixture.gateways.visitDetailsRequests);
+        Assertions.assertEquals(3, fixture.gateways.medRobotRequests.size());
+        Assertions.assertEquals(Arrays.asList(
+                "7|8402|302|45|41220000000007",
+                "7|8404|302|45|41220000000007",
+                "7|8406|302|45|41220000000007"
+        ), fixture.gateways.assignedOperations);
+        Assertions.assertEquals(Arrays.asList(
+                "7|900|8402|902",
+                "7|900|8404|902",
+                "7|900|8406|902"
+        ), fixture.gateways.transferredOperations);
+    }
+
     private static VisitSummary visit(long id, Integer queueId, String ticketNumber, Integer waitingTime) {
         VisitSummary visitSummary = new VisitSummary(id, queueId, "WAITING", ticketNumber);
         visitSummary.setWaitingTime(waitingTime);
         return visitSummary;
+    }
+
+    private static MedRobotOptimalServiceResponse medRobotResponse(int serviceId, int queueId) {
+        MedRobotOptimalServiceResponse response = new MedRobotOptimalServiceResponse();
+        response.setServiceId(serviceId);
+        response.setQueueId(queueId);
+        return response;
+    }
+
+    private static VisitDetails visitDetailsWithServices(long visitId, int queueId, int firstServiceId, int secondServiceId) {
+        return new VisitDetails(visitId, queueId, Arrays.asList(
+                new VisitUnservedService(firstServiceId, null, 1),
+                new VisitUnservedService(secondServiceId, null, 2)
+        ));
+    }
+
+    private static void populateSevenVisitQueue(Fixture fixture, long idBase, int[] waitingTimes) {
+        fixture.gateways.waitingVisitsByQueue.put("7|900", Arrays.asList(
+                visit(idBase + 1L, 900, "A-" + (idBase + 1L), Integer.valueOf(waitingTimes[0])),
+                visit(idBase + 2L, 900, "A-" + (idBase + 2L), Integer.valueOf(waitingTimes[1])),
+                visit(idBase + 3L, 900, "A-" + (idBase + 3L), Integer.valueOf(waitingTimes[2])),
+                visit(idBase + 4L, 900, "A-" + (idBase + 4L), Integer.valueOf(waitingTimes[3])),
+                visit(idBase + 5L, 900, "A-" + (idBase + 5L), Integer.valueOf(waitingTimes[4])),
+                visit(idBase + 6L, 900, "A-" + (idBase + 6L), Integer.valueOf(waitingTimes[5])),
+                visit(idBase + 7L, 900, "A-" + (idBase + 7L), Integer.valueOf(waitingTimes[6]))
+        ));
+        fixture.addVisitRoutes(900, idBase + 1L, idBase + 2L, idBase + 3L, idBase + 4L, idBase + 5L, idBase + 6L, idBase + 7L);
+    }
+
+    private static void attachMedRobotRouteDataForSevenVisits(Fixture fixture, long idBase) {
+        for (long visitId = idBase + 1L; visitId <= idBase + 7L; visitId++) {
+            fixture.gateways.visitDetailsById.put(Long.valueOf(visitId), visitDetailsWithServices(visitId, 900, 301, 302));
+            fixture.gateways.visitById.put(Long.valueOf(visitId), visit(visitId, 900, "A-" + visitId, 1));
+        }
     }
 
     static final class Fixture {

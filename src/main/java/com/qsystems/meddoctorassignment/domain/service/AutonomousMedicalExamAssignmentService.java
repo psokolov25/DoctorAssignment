@@ -20,7 +20,9 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import org.slf4j.Logger;
@@ -256,6 +258,353 @@ public class AutonomousMedicalExamAssignmentService {
             if (lockAcquired) {
                 branchLockManager.unlock(doctorContext.getBranchId());
             }
+        }
+    }
+
+
+    /**
+     * Запускает polling-цикл на уровне отделения, а не отдельного врача.
+     *
+     * <p>В отличие от {@link #process(DoctorContext)}, этот метод читает очередь "Врач не назначен"
+     * один раз на branch, применяет {@code maxVisitsPerCycle} к общему списку визитов и затем
+     * распределяет выбранные визиты между доступными врачами. Это предотвращает ситуацию, когда
+     * polling последовательно запускает по одному циклу на каждого врача и фактически умножает
+     * лимит на количество открытых service point-ов.</p>
+     */
+    public void processPollingBranch(int branchId, List<DoctorContext> doctorContexts) {
+        if (!assignmentProperties.isEnabled()) {
+            return;
+        }
+        if (!assignmentProperties.isAllowedBranch(branchId)) {
+            log.info("Skip polling branch {} because it is not allowed by configuration", Integer.valueOf(branchId));
+            return;
+        }
+        if (doctorContexts == null || doctorContexts.isEmpty()) {
+            log.info("Skip polling branch {} because there are no open doctor contexts", Integer.valueOf(branchId));
+            return;
+        }
+
+        boolean lockAcquired = false;
+        try {
+            cacheUpdateService.ensureFresh(branchId);
+
+            lockAcquired = branchLockManager.tryLock(branchId, assignmentProperties.getBranchLockTimeoutMs());
+            if (!lockAcquired) {
+                log.warn("Could not acquire polling lock for branch {}", Integer.valueOf(branchId));
+                return;
+            }
+
+            BranchAssignmentCache branchCache = cacheContainer.getOrCreateBranchCache(branchId);
+            if (branchCache.getUnknownDoctorQueueId() == null) {
+                log.warn("Unknown-doctor queue is not resolved for branch {}. Check application.assignment.unknown-doctor-queue-id", Integer.valueOf(branchId));
+                return;
+            }
+
+            List<DoctorSelectionContext> doctorSelectionContexts = resolvePollingDoctorSelectionContexts(branchId, doctorContexts, branchCache);
+            if (doctorSelectionContexts.isEmpty()) {
+                log.info("Polling branch {} has no doctors with available services", Integer.valueOf(branchId));
+                return;
+            }
+
+            DoctorContext queueReadContext = doctorSelectionContexts.get(0).doctorContext;
+            List<VisitSummary> visits = orderVisitsForProcessing(unknownDoctorQueueVisitProvider.getWaitingVisits(queueReadContext, branchCache));
+            int configuredLimit = Math.max(0, assignmentProperties.getMaxVisitsPerCycle());
+            int limit = Math.min(visits.size(), configuredLimit);
+            log.info("Polling branch assignment source=POLLING branchId={} doctors={} unknownDoctorQueue={} count={} sortOrder={} maxVisitsPerCycle={} processingLimit={}",
+                    Integer.valueOf(branchId),
+                    Integer.valueOf(doctorSelectionContexts.size()),
+                    branchCache.getUnknownDoctorQueueId(),
+                    Integer.valueOf(visits.size()),
+                    resolveVisitProcessingSortOrder(),
+                    Integer.valueOf(configuredLimit),
+                    Integer.valueOf(limit));
+
+            int processed = 0;
+            int roundRobinCursor = 0;
+            Duration processedTtl = Duration.ofSeconds(assignmentProperties.getProcessedVisitTtlSeconds());
+            Map<Integer, Integer> targetQueueLoad = new HashMap<Integer, Integer>();
+            Map<Integer, Integer> staffLoad = new HashMap<Integer, Integer>();
+
+            for (int i = 0; i < limit; i++) {
+                VisitSummary visit = visits.get(i);
+                try {
+                    VisitDetails visitDetails = visitRouteAnalyzer.analyze(branchId, visit.getId());
+                    String processingFingerprint = buildProcessingFingerprint(visitDetails);
+
+                    Optional<BalancedSelection> selected = selectBalancedDoctorForVisit(
+                            visit,
+                            visitDetails,
+                            doctorSelectionContexts,
+                            branchCache,
+                            targetQueueLoad,
+                            staffLoad,
+                            roundRobinCursor,
+                            processedTtl,
+                            processingFingerprint);
+
+                    if (!selected.isPresent()) {
+                        log.info("Polling visit {} has no matching doctor among {} candidate doctors",
+                                Long.valueOf(visit.getId()),
+                                Integer.valueOf(doctorSelectionContexts.size()));
+                        continue;
+                    }
+
+                    BalancedSelection decision = selected.get();
+                    try {
+                        operatorContextActivationGateway.activate(decision.doctorSelectionContext.doctorContext);
+                    } catch (Exception activationException) {
+                        log.error("Activation step failed before polling assignment branchId={} visit={} servicePointId={} staffId={} workProfileId={}: {}",
+                                Integer.valueOf(branchId),
+                                Long.valueOf(visit.getId()),
+                                Long.valueOf(decision.doctorSelectionContext.doctorContext.getServicePointId()),
+                                Integer.valueOf(decision.doctorSelectionContext.doctorContext.getStaffId()),
+                                Integer.valueOf(decision.doctorSelectionContext.doctorContext.getWorkProfileId()),
+                                activationException.getMessage(),
+                                activationException);
+                        if (shouldAbortCycle(activationException)) {
+                            log.warn("Abort polling assignment branchId={} before visit {} because activation step did not produce a valid mutating context: {}",
+                                    Integer.valueOf(branchId),
+                                    Long.valueOf(visit.getId()),
+                                    activationException.getMessage());
+                            break;
+                        }
+                        throw activationException;
+                    }
+
+                    boolean success = visitAssignmentExecutor.assign(
+                            decision.doctorSelectionContext.doctorContext,
+                            visit,
+                            visitDetails,
+                            decision.selectedDoctorService,
+                            branchCache.getUnknownDoctorQueueId().intValue());
+
+                    log.info("Polling visit {} matchFound=true selectedService={} targetQueue={} staffId={} servicePointId={} success={} reason={}",
+                            Long.valueOf(visit.getId()),
+                            Integer.valueOf(decision.selectedDoctorService.getServiceId()),
+                            Integer.valueOf(decision.selectedDoctorService.getTargetQueueId()),
+                            Integer.valueOf(decision.doctorSelectionContext.doctorContext.getStaffId()),
+                            Long.valueOf(decision.doctorSelectionContext.doctorContext.getServicePointId()),
+                            Boolean.valueOf(success),
+                            decision.selectedDoctorService.getSelectionReason());
+
+                    if (success) {
+                        if (!assignmentProperties.isDryRun()) {
+                            processedVisitRegistry.markProcessed(
+                                    branchId,
+                                    visit.getId(),
+                                    decision.doctorSelectionContext.doctorContext.getStaffId(),
+                                    processingFingerprint);
+                        }
+                        increment(targetQueueLoad, Integer.valueOf(decision.selectedDoctorService.getTargetQueueId()));
+                        increment(staffLoad, Integer.valueOf(decision.doctorSelectionContext.doctorContext.getStaffId()));
+                        processed++;
+                        roundRobinCursor = (decision.candidateIndex + 1) % doctorSelectionContexts.size();
+                    }
+                } catch (Exception exception) {
+                    log.error("Failed to process polling visit {} in branch {}: {}", Long.valueOf(visit.getId()), Integer.valueOf(branchId), exception.getMessage(), exception);
+                    if (shouldAbortCycle(exception)) {
+                        log.warn("Abort polling assignment branchId={} after visit {} because mutating context is invalid: {}",
+                                Integer.valueOf(branchId),
+                                Long.valueOf(visit.getId()),
+                                exception.getMessage());
+                        break;
+                    }
+                }
+            }
+
+            log.info("Finish polling assignment branchId={} processed={} doctors={}",
+                    Integer.valueOf(branchId),
+                    Integer.valueOf(processed),
+                    Integer.valueOf(doctorSelectionContexts.size()));
+        } catch (InterruptedException interruptedException) {
+            Thread.currentThread().interrupt();
+            log.error("Interrupted while waiting for polling lock on branch {}", Integer.valueOf(branchId), interruptedException);
+        } finally {
+            if (lockAcquired) {
+                branchLockManager.unlock(branchId);
+            }
+        }
+    }
+
+    private List<DoctorSelectionContext> resolvePollingDoctorSelectionContexts(
+            int branchId,
+            List<DoctorContext> doctorContexts,
+            BranchAssignmentCache branchCache) {
+        List<DoctorSelectionContext> result = new ArrayList<DoctorSelectionContext>();
+        for (DoctorContext doctorContext : doctorContexts) {
+            if (doctorContext == null || doctorContext.getBranchId() != branchId) {
+                continue;
+            }
+            if (doctorContext.getStaffId() <= 0 || doctorContext.getWorkProfileId() <= 0 || doctorContext.getServicePointId() <= 0) {
+                continue;
+            }
+            branchCache.getServicePointRuntimeStateMap().put(
+                    Long.valueOf(doctorContext.getServicePointId()),
+                    new ServicePointRuntimeState(
+                            doctorContext.getServicePointId(),
+                            branchId,
+                            doctorContext.getStaffId(),
+                            doctorContext.getWorkProfileId(),
+                            "OPEN"));
+            Set<Integer> availableServices = doctorAvailableServicesResolver.resolve(doctorContext, branchCache);
+            log.info("Polling doctor {} available services={} servicePoint={} workProfile={}",
+                    Integer.valueOf(doctorContext.getStaffId()),
+                    availableServices,
+                    Long.valueOf(doctorContext.getServicePointId()),
+                    Integer.valueOf(doctorContext.getWorkProfileId()));
+            if (!availableServices.isEmpty()) {
+                result.add(new DoctorSelectionContext(doctorContext, availableServices));
+            }
+        }
+        Collections.sort(result, new Comparator<DoctorSelectionContext>() {
+            @Override
+            public int compare(DoctorSelectionContext left, DoctorSelectionContext right) {
+                int servicePointCompare = Long.compare(left.doctorContext.getServicePointId(), right.doctorContext.getServicePointId());
+                if (servicePointCompare != 0) {
+                    return servicePointCompare;
+                }
+                return Integer.compare(left.doctorContext.getStaffId(), right.doctorContext.getStaffId());
+            }
+        });
+        return result;
+    }
+
+    private Optional<BalancedSelection> selectBalancedDoctorForVisit(
+            VisitSummary visit,
+            VisitDetails visitDetails,
+            List<DoctorSelectionContext> doctorSelectionContexts,
+            BranchAssignmentCache branchCache,
+            Map<Integer, Integer> targetQueueLoad,
+            Map<Integer, Integer> staffLoad,
+            int roundRobinCursor,
+            Duration processedTtl,
+            String processingFingerprint) {
+        List<BalancedSelection> selections = new ArrayList<BalancedSelection>();
+        for (int candidateIndex = 0; candidateIndex < doctorSelectionContexts.size(); candidateIndex++) {
+            DoctorSelectionContext candidate = doctorSelectionContexts.get(candidateIndex);
+            if (processedVisitRegistry.alreadyProcessed(
+                    candidate.doctorContext.getBranchId(),
+                    visit.getId(),
+                    candidate.doctorContext.getStaffId(),
+                    processingFingerprint,
+                    processedTtl)) {
+                log.info("Polling visit {} already processed recently for doctor {} processingFingerprint={}",
+                        Long.valueOf(visit.getId()),
+                        Integer.valueOf(candidate.doctorContext.getStaffId()),
+                        processingFingerprint);
+                continue;
+            }
+
+            Optional<SelectedDoctorService> selected = doctorServiceSelectionService.select(
+                    visitDetails,
+                    candidate.availableServices,
+                    branchCache);
+            if (selected.isPresent()) {
+                selections.add(new BalancedSelection(candidateIndex, candidate, selected.get()));
+            }
+        }
+        if (selections.isEmpty()) {
+            return Optional.empty();
+        }
+
+        final int doctorCount = doctorSelectionContexts.size();
+        final int cursor = normalizeRoundRobinCursor(roundRobinCursor, doctorCount);
+        Collections.sort(selections, new Comparator<BalancedSelection>() {
+            @Override
+            public int compare(BalancedSelection left, BalancedSelection right) {
+                int queueLoadCompare = Integer.compare(
+                        getCount(targetQueueLoad, Integer.valueOf(left.selectedDoctorService.getTargetQueueId())),
+                        getCount(targetQueueLoad, Integer.valueOf(right.selectedDoctorService.getTargetQueueId())));
+                if (queueLoadCompare != 0) {
+                    return queueLoadCompare;
+                }
+                int staffLoadCompare = Integer.compare(
+                        getCount(staffLoad, Integer.valueOf(left.doctorSelectionContext.doctorContext.getStaffId())),
+                        getCount(staffLoad, Integer.valueOf(right.doctorSelectionContext.doctorContext.getStaffId())));
+                if (staffLoadCompare != 0) {
+                    return staffLoadCompare;
+                }
+                int cursorCompare = Integer.compare(
+                        roundRobinDistance(left.candidateIndex, cursor, doctorCount),
+                        roundRobinDistance(right.candidateIndex, cursor, doctorCount));
+                if (cursorCompare != 0) {
+                    return cursorCompare;
+                }
+                int routeCompare = compareNullableRouteOrder(left.selectedDoctorService.getRouteOrder(), right.selectedDoctorService.getRouteOrder());
+                if (routeCompare != 0) {
+                    return routeCompare;
+                }
+                int serviceCompare = Integer.compare(left.selectedDoctorService.getServiceId(), right.selectedDoctorService.getServiceId());
+                if (serviceCompare != 0) {
+                    return serviceCompare;
+                }
+                return Integer.compare(
+                        left.doctorSelectionContext.doctorContext.getStaffId(),
+                        right.doctorSelectionContext.doctorContext.getStaffId());
+            }
+        });
+        return Optional.of(selections.get(0));
+    }
+
+    private void increment(Map<Integer, Integer> load, Integer key) {
+        Integer current = load.get(key);
+        load.put(key, Integer.valueOf(current == null ? 1 : current.intValue() + 1));
+    }
+
+    private static int getCount(Map<Integer, Integer> load, Integer key) {
+        Integer current = load.get(key);
+        return current != null ? current.intValue() : 0;
+    }
+
+    private static int normalizeRoundRobinCursor(int cursor, int size) {
+        if (size <= 0) {
+            return 0;
+        }
+        int normalized = cursor % size;
+        return normalized >= 0 ? normalized : normalized + size;
+    }
+
+    private static int roundRobinDistance(int index, int cursor, int size) {
+        if (size <= 0) {
+            return 0;
+        }
+        return (index - cursor + size) % size;
+    }
+
+    private static int compareNullableRouteOrder(Integer left, Integer right) {
+        if (left == null && right == null) {
+            return 0;
+        }
+        if (left == null) {
+            return 1;
+        }
+        if (right == null) {
+            return -1;
+        }
+        return left.compareTo(right);
+    }
+
+    private static final class DoctorSelectionContext {
+        private final DoctorContext doctorContext;
+        private final Set<Integer> availableServices;
+
+        private DoctorSelectionContext(DoctorContext doctorContext, Set<Integer> availableServices) {
+            this.doctorContext = doctorContext;
+            this.availableServices = availableServices;
+        }
+    }
+
+    private static final class BalancedSelection {
+        private final int candidateIndex;
+        private final DoctorSelectionContext doctorSelectionContext;
+        private final SelectedDoctorService selectedDoctorService;
+
+        private BalancedSelection(int candidateIndex,
+                                  DoctorSelectionContext doctorSelectionContext,
+                                  SelectedDoctorService selectedDoctorService) {
+            this.candidateIndex = candidateIndex;
+            this.doctorSelectionContext = doctorSelectionContext;
+            this.selectedDoctorService = selectedDoctorService;
         }
     }
 

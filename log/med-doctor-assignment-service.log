@@ -1,0 +1,80 @@
+04 мая 2026;14:30:12.485 [main] DEBUG i.n.u.i.l.InternalLoggerFactory - Using SLF4J as the default logging framework
+04 мая 2026;14:30:12.490 [main] DEBUG i.n.u.i.InternalThreadLocalMap - -Dio.netty.threadLocalMap.stringBuilder.initialSize: 1024
+04 мая 2026;14:30:12.490 [main] DEBUG i.n.u.i.InternalThreadLocalMap - -Dio.netty.threadLocalMap.stringBuilder.maxSize: 4096
+04 мая 2026;14:30:12.508 [main] DEBUG i.n.util.internal.PlatformDependent0 - -Dio.netty.noUnsafe: false
+04 мая 2026;14:30:12.508 [main] DEBUG i.n.util.internal.PlatformDependent0 - Java version: 8
+04 мая 2026;14:30:12.509 [main] DEBUG i.n.util.internal.PlatformDependent0 - sun.misc.Unsafe.theUnsafe: available
+04 мая 2026;14:30:12.510 [main] DEBUG i.n.util.internal.PlatformDependent0 - sun.misc.Unsafe.copyMemory: available
+04 мая 2026;14:30:12.511 [main] DEBUG i.n.util.internal.PlatformDependent0 - sun.misc.Unsafe.storeFence: available
+04 мая 2026;14:30:12.512 [main] DEBUG i.n.util.internal.PlatformDependent0 - java.nio.Buffer.address: available
+04 мая 2026;14:30:12.512 [main] DEBUG i.n.util.internal.PlatformDependent0 - direct buffer constructor: available
+04 мая 2026;14:30:12.513 [main] DEBUG i.n.util.internal.PlatformDependent0 - java.nio.Bits.unaligned: available, true
+04 мая 2026;14:30:12.513 [main] DEBUG i.n.util.internal.PlatformDependent0 - jdk.internal.misc.Unsafe.allocateUninitializedArray(int): unavailable prior to Java9
+04 мая 2026;14:30:12.513 [main] DEBUG i.n.util.internal.PlatformDependent0 - java.nio.DirectByteBuffer.<init>(long, int): available
+04 мая 2026;14:30:12.513 [main] DEBUG i.n.util.internal.PlatformDependent - sun.misc.Unsafe: available
+04 мая 2026;14:30:12.514 [main] DEBUG i.n.util.internal.PlatformDependent - -Dio.netty.tmpdir: C:\Users\psoko\AppData\Local\Temp (java.io.tmpdir)
+04 мая 2026;14:30:12.514 [main] DEBUG i.n.util.internal.PlatformDependent - -Dio.netty.bitMode: 64 (sun.arch.data.model)
+04 мая 2026;14:30:12.514 [main] DEBUG i.n.util.internal.PlatformDependent - Platform: Windows
+04 мая 2026;14:30:12.515 [main] DEBUG i.n.util.internal.PlatformDependent - -Dio.netty.maxDirectMemory: 7628390400 bytes
+04 мая 2026;14:30:12.515 [main] DEBUG i.n.util.internal.PlatformDependent - -Dio.netty.uninitializedArrayAllocationThreshold: -1
+04 мая 2026;14:30:12.516 [main] DEBUG io.netty.util.internal.CleanerJava6 - java.nio.ByteBuffer.cleaner(): available
+04 мая 2026;14:30:12.516 [main] DEBUG i.n.util.internal.PlatformDependent - -Dio.netty.noPreferDirect: false
+04 мая 2026;14:30:12.527 [main] DEBUG io.netty.util.ResourceLeakDetector - -Dio.netty.leakDetection.level: simple
+04 мая 2026;14:30:12.527 [main] DEBUG io.netty.util.ResourceLeakDetector - -Dio.netty.leakDetection.targetRecords: 4
+04 мая 2026;14:30:12.530 [main] DEBUG i.n.buffer.PooledByteBufAllocator - -Dio.netty.allocator.numHeapArenas: 16
+04 мая 2026;14:30:12.530 [main] DEBUG i.n.buffer.PooledByteBufAllocator - -Dio.netty.allocator.numDirectArenas: 16
+04 мая 2026;14:30:12.530 [main] DEBUG i.n.buffer.PooledByteBufAllocator - -Dio.netty.allocator.pageSize: 8192
+04 мая 2026;14:30:12.530 [main] DEBUG i.n.buffer.PooledByteBufAllocator - -Dio.netty.allocator.maxOrder: 9
+04 мая 2026;14:30:12.530 [main] DEBUG i.n.buffer.PooledByteBufAllocator - -Dio.netty.allocator.chunkSize: 4194304
+04 мая 2026;14:30:12.530 [main] DEBUG i.n.buffer.PooledByteBufAllocator - -Dio.netty.allocator.smallCacheSize: 256
+04 мая 2026;14:30:12.530 [main] DEBUG i.n.buffer.PooledByteBufAllocator - -Dio.netty.allocator.normalCacheSize: 64
+04 мая 2026;14:30:12.530 [main] DEBUG i.n.buffer.PooledByteBufAllocator - -Dio.netty.allocator.maxCachedBufferCapacity: 32768
+04 мая 2026;14:30:12.530 [main] DEBUG i.n.buffer.PooledByteBufAllocator - -Dio.netty.allocator.cacheTrimInterval: 8192
+04 мая 2026;14:30:12.531 [main] DEBUG i.n.buffer.PooledByteBufAllocator - -Dio.netty.allocator.cacheTrimIntervalMillis: 0
+04 мая 2026;14:30:12.531 [main] DEBUG i.n.buffer.PooledByteBufAllocator - -Dio.netty.allocator.useCacheForAllThreads: false
+04 мая 2026;14:30:12.531 [main] DEBUG i.n.buffer.PooledByteBufAllocator - -Dio.netty.allocator.maxCachedByteBuffersPerChunk: 1023
+04 мая 2026;14:30:12.542 [main] DEBUG io.netty.buffer.ByteBufUtil - -Dio.netty.allocator.type: pooled
+04 мая 2026;14:30:12.543 [main] DEBUG io.netty.buffer.ByteBufUtil - -Dio.netty.threadLocalDirectBufferSize: 0
+04 мая 2026;14:30:12.543 [main] DEBUG io.netty.buffer.ByteBufUtil - -Dio.netty.maxThreadLocalCharBufferSize: 16384
+04 мая 2026;14:30:12.932 [main] DEBUG i.n.c.MultithreadEventLoopGroup - -Dio.netty.eventLoopThreads: 16
+04 мая 2026;14:30:12.951 [main] DEBUG io.netty.channel.nio.NioEventLoop - -Dio.netty.noKeySetOptimization: false
+04 мая 2026;14:30:12.952 [main] DEBUG io.netty.channel.nio.NioEventLoop - -Dio.netty.selectorAutoRebuildThreshold: 512
+04 мая 2026;14:30:12.959 [main] DEBUG i.n.util.internal.PlatformDependent - org.jctools-core.MpscChunkedArrayQueue: available
+04 мая 2026;14:30:13.436 [main] DEBUG io.netty.handler.ssl.OpenSsl - netty-tcnative not in the classpath; OpenSslEngine will be unavailable.
+04 мая 2026;14:30:13.546 [main] DEBUG io.netty.handler.ssl.JdkSslContext - Default protocols (JDK): [TLSv1.3, TLSv1.2] 
+04 мая 2026;14:30:13.546 [main] DEBUG io.netty.handler.ssl.JdkSslContext - Default cipher suites (JDK): [TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384, TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256, TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256, TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384, TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA, TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA, TLS_RSA_WITH_AES_128_GCM_SHA256, TLS_RSA_WITH_AES_128_CBC_SHA, TLS_RSA_WITH_AES_256_CBC_SHA, TLS_AES_128_GCM_SHA256, TLS_AES_256_GCM_SHA384]
+04 мая 2026;14:30:13.553 [main] DEBUG reactor.util.Loggers - Using Slf4j logging framework
+04 мая 2026;14:30:13.617 [main] DEBUG reactor.core.publisher.Hooks - Hooking onEachOperator: micronaut
+04 мая 2026;14:30:13.718 [main] DEBUG io.netty.channel.DefaultChannelId - -Dio.netty.processId: 17220 (auto-detected)
+04 мая 2026;14:30:13.720 [main] DEBUG io.netty.util.NetUtil - -Djava.net.preferIPv4Stack: false
+04 мая 2026;14:30:13.720 [main] DEBUG io.netty.util.NetUtil - -Djava.net.preferIPv6Addresses: false
+04 мая 2026;14:30:14.032 [main] DEBUG io.netty.util.NetUtilInitializations - Loopback interface: lo (Software Loopback Interface 1, 127.0.0.1)
+04 мая 2026;14:30:14.033 [main] DEBUG io.netty.util.NetUtil - Failed to get SOMAXCONN from sysctl and file \proc\sys\net\core\somaxconn. Default: 200
+04 мая 2026;14:30:14.384 [main] DEBUG io.netty.channel.DefaultChannelId - -Dio.netty.machineId: 00:ff:8a:ff:fe:22:0c:52 (auto-detected)
+04 мая 2026;14:30:14.463 [default-nioEventLoopGroup-1-1] DEBUG io.netty.buffer.AbstractByteBuf - -Dio.netty.buffer.checkAccessible: true
+04 мая 2026;14:30:14.463 [default-nioEventLoopGroup-1-1] DEBUG io.netty.buffer.AbstractByteBuf - -Dio.netty.buffer.checkBounds: true
+04 мая 2026;14:30:14.464 [default-nioEventLoopGroup-1-1] DEBUG i.n.util.ResourceLeakDetectorFactory - Loaded default ResourceLeakDetector: io.netty.util.ResourceLeakDetector@55b5c9d4
+04 мая 2026;14:30:14.509 [default-nioEventLoopGroup-1-1] DEBUG io.netty.util.Recycler - -Dio.netty.recycler.maxCapacityPerThread: 4096
+04 мая 2026;14:30:14.509 [default-nioEventLoopGroup-1-1] DEBUG io.netty.util.Recycler - -Dio.netty.recycler.ratio: 8
+04 мая 2026;14:30:14.509 [default-nioEventLoopGroup-1-1] DEBUG io.netty.util.Recycler - -Dio.netty.recycler.chunkSize: 32
+04 мая 2026;14:30:14.510 [default-nioEventLoopGroup-1-1] DEBUG io.netty.util.Recycler - -Dio.netty.recycler.blocking: false
+04 мая 2026;14:30:14.582 [default-nioEventLoopGroup-1-1] DEBUG i.n.handler.codec.compression.Brotli - brotli4j not in the classpath; Brotli support will be unavailable.
+04 мая 2026;14:30:18.983 [main] INFO  io.micronaut.runtime.Micronaut - Startup completed in 8142ms. Server Running: http://localhost:8085
+04 мая 2026;14:30:26.478 [Thread-1] INFO  io.micronaut.runtime.Micronaut - Embedded Application shutting down
+04 мая 2026;14:30:26.498 [default-nioEventLoopGroup-1-6] DEBUG io.netty.buffer.PoolThreadCache - Freed 3 thread-local buffer(s) from thread: default-nioEventLoopGroup-1-6
+04 мая 2026;14:30:26.498 [default-nioEventLoopGroup-1-10] DEBUG io.netty.buffer.PoolThreadCache - Freed 3 thread-local buffer(s) from thread: default-nioEventLoopGroup-1-10
+04 мая 2026;14:30:26.498 [default-nioEventLoopGroup-1-7] DEBUG io.netty.buffer.PoolThreadCache - Freed 3 thread-local buffer(s) from thread: default-nioEventLoopGroup-1-7
+04 мая 2026;14:30:26.499 [default-nioEventLoopGroup-1-15] DEBUG io.netty.buffer.PoolThreadCache - Freed 3 thread-local buffer(s) from thread: default-nioEventLoopGroup-1-15
+04 мая 2026;14:30:26.499 [default-nioEventLoopGroup-1-12] DEBUG io.netty.buffer.PoolThreadCache - Freed 3 thread-local buffer(s) from thread: default-nioEventLoopGroup-1-12
+04 мая 2026;14:30:26.498 [default-nioEventLoopGroup-1-8] DEBUG io.netty.buffer.PoolThreadCache - Freed 3 thread-local buffer(s) from thread: default-nioEventLoopGroup-1-8
+04 мая 2026;14:30:26.498 [default-nioEventLoopGroup-1-14] DEBUG io.netty.buffer.PoolThreadCache - Freed 3 thread-local buffer(s) from thread: default-nioEventLoopGroup-1-14
+04 мая 2026;14:30:26.499 [default-nioEventLoopGroup-1-9] DEBUG io.netty.buffer.PoolThreadCache - Freed 3 thread-local buffer(s) from thread: default-nioEventLoopGroup-1-9
+04 мая 2026;14:30:26.500 [default-nioEventLoopGroup-1-5] DEBUG io.netty.buffer.PoolThreadCache - Freed 3 thread-local buffer(s) from thread: default-nioEventLoopGroup-1-5
+04 мая 2026;14:30:26.498 [default-nioEventLoopGroup-1-11] DEBUG io.netty.buffer.PoolThreadCache - Freed 3 thread-local buffer(s) from thread: default-nioEventLoopGroup-1-11
+04 мая 2026;14:30:26.500 [default-nioEventLoopGroup-1-3] DEBUG io.netty.buffer.PoolThreadCache - Freed 3 thread-local buffer(s) from thread: default-nioEventLoopGroup-1-3
+04 мая 2026;14:30:26.498 [default-nioEventLoopGroup-1-1] DEBUG io.netty.buffer.PoolThreadCache - Freed 26 thread-local buffer(s) from thread: default-nioEventLoopGroup-1-1
+04 мая 2026;14:30:26.500 [default-nioEventLoopGroup-1-13] DEBUG io.netty.buffer.PoolThreadCache - Freed 5 thread-local buffer(s) from thread: default-nioEventLoopGroup-1-13
+04 мая 2026;14:30:26.500 [default-nioEventLoopGroup-1-4] DEBUG io.netty.buffer.PoolThreadCache - Freed 3 thread-local buffer(s) from thread: default-nioEventLoopGroup-1-4
+04 мая 2026;14:30:26.500 [default-nioEventLoopGroup-1-16] DEBUG io.netty.buffer.PoolThreadCache - Freed 3 thread-local buffer(s) from thread: default-nioEventLoopGroup-1-16
+04 мая 2026;14:30:26.500 [default-nioEventLoopGroup-1-2] DEBUG io.netty.buffer.PoolThreadCache - Freed 36 thread-local buffer(s) from thread: default-nioEventLoopGroup-1-2
+04 мая 2026;14:30:26.506 [Thread-1] DEBUG reactor.core.publisher.Hooks - Reset onEachOperator: micronaut

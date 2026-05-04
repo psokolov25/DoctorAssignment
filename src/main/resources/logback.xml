@@ -9,7 +9,7 @@
     </appender>
 
     <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>${LOG-PATH}/med-robot.log</file>
+        <file>${LOG-PATH}/med-doctor-assignment-service.log</file>
         <encoder>
             <pattern>%date{dd MMM yyyy;HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
         </encoder>
@@ -23,7 +23,7 @@
         </rollingPolicy>
     </appender>
     <appender name="FILE-HTTP" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>${LOG-PATH}/med-robot-http.log</file>
+        <file>${LOG-PATH}/med-doctor-assignment-service-http.log</file>
         <encoder>
             <pattern>%date{dd MMM yyyy;HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
         </encoder>
@@ -37,7 +37,7 @@
         </rollingPolicy>
     </appender>
     <appender name="FILE-BUSINES" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>${LOG-PATH}/med-robot-busines.log</file>
+        <file>${LOG-PATH}/med-doctor-assignment-service-busines.log</file>
         <encoder>
             <pattern>%date{dd MMM yyyy;HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
         </encoder>

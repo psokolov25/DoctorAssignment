@@ -11,7 +11,7 @@ public class RuntimeConfigurationLoggerTest {
     AssignmentProperties properties = new AssignmentProperties();
 
     Assertions.assertFalse(properties.isSetWorkProfileTriggerEnabled());
-    Assertions.assertTrue(properties.isWorkProfileExpandedTriggerEnabled());
+    Assertions.assertFalse(properties.isWorkProfileExpandedTriggerEnabled());
     Assertions.assertTrue(properties.isUserServicePointSessionStartTriggerEnabled());
     Assertions.assertEquals(2000L, properties.getUserSessionSettleWindowMs());
     Assertions.assertFalse(properties.isServicePointOpenTriggerEnabled());

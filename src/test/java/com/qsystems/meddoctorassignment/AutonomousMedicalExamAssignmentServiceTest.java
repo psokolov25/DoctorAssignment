@@ -207,6 +207,48 @@ public class AutonomousMedicalExamAssignmentServiceTest {
         Assertions.assertTrue(fixture.gateways.transferredOperations.isEmpty());
     }
 
+
+    @Test
+    void appliesLimiterWindowFromPollingCronMinutesStep() {
+        Fixture fixture = new Fixture();
+        fixture.prepareBranchTopology();
+        fixture.assignmentProperties.setDryRun(false);
+        fixture.assignmentProperties.setMaxVisitsPerCycle(3);
+        fixture.assignmentProperties.setPollingCron("0 */2 * * * ?");
+
+        fixture.gateways.waitingVisitsByQueue.put("7|900", Arrays.asList(
+                new VisitSummary(6101L, 900, "WAITING", "A-6101"),
+                new VisitSummary(6102L, 900, "WAITING", "A-6102"),
+                new VisitSummary(6103L, 900, "WAITING", "A-6103")
+        ));
+        fixture.gateways.visitDetailsById.put(6101L, new VisitDetails(6101L, 900, Arrays.asList(new VisitUnservedService(301, null, 1))));
+        fixture.gateways.visitDetailsById.put(6102L, new VisitDetails(6102L, 900, Arrays.asList(new VisitUnservedService(301, null, 1))));
+        fixture.gateways.visitDetailsById.put(6103L, new VisitDetails(6103L, 900, Arrays.asList(new VisitUnservedService(301, null, 1))));
+        fixture.gateways.visitById.put(6101L, new VisitSummary(6101L, 900, "WAITING", "A-6101"));
+        fixture.gateways.visitById.put(6102L, new VisitSummary(6102L, 900, "WAITING", "A-6102"));
+        fixture.gateways.visitById.put(6103L, new VisitSummary(6103L, 900, "WAITING", "A-6103"));
+
+        DoctorContext context = fixture.openDoctor(7, 41220000000007L, 45, 15);
+        fixture.service.process(context);
+
+        fixture.gateways.waitingVisitsByQueue.put("7|900", Arrays.asList(
+                new VisitSummary(6201L, 900, "WAITING", "A-6201"),
+                new VisitSummary(6202L, 900, "WAITING", "A-6202"),
+                new VisitSummary(6203L, 900, "WAITING", "A-6203")
+        ));
+        fixture.gateways.visitDetailsById.put(6201L, new VisitDetails(6201L, 900, Arrays.asList(new VisitUnservedService(301, null, 1))));
+        fixture.gateways.visitDetailsById.put(6202L, new VisitDetails(6202L, 900, Arrays.asList(new VisitUnservedService(301, null, 1))));
+        fixture.gateways.visitDetailsById.put(6203L, new VisitDetails(6203L, 900, Arrays.asList(new VisitUnservedService(301, null, 1))));
+        fixture.gateways.visitById.put(6201L, new VisitSummary(6201L, 900, "WAITING", "A-6201"));
+        fixture.gateways.visitById.put(6202L, new VisitSummary(6202L, 900, "WAITING", "A-6202"));
+        fixture.gateways.visitById.put(6203L, new VisitSummary(6203L, 900, "WAITING", "A-6203"));
+
+        fixture.service.process(context);
+
+        Assertions.assertEquals(3, fixture.gateways.assignedOperations.size());
+        Assertions.assertEquals(3, fixture.gateways.transferredOperations.size());
+    }
+
     @Test
     void usesMedRobotSelectionWhenEnabled() {
         Fixture fixture = new Fixture();

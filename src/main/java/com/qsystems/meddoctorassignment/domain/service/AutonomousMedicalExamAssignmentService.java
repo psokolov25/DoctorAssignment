@@ -25,6 +25,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedDeque;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -49,6 +51,7 @@ public class AutonomousMedicalExamAssignmentService {
     private final OperatorContextActivationGateway operatorContextActivationGateway;
     private final BranchLockManager branchLockManager;
     private final ProcessedVisitRegistry processedVisitRegistry;
+    private final Map<Integer, ConcurrentLinkedDeque<Long>> perBranchProcessingTimestamps = new ConcurrentHashMap<Integer, ConcurrentLinkedDeque<Long>>();
     private final AssignmentProperties assignmentProperties;
 
     public AutonomousMedicalExamAssignmentService(OrchestraDataCacheUpdateService cacheUpdateService,
@@ -167,20 +170,24 @@ public class AutonomousMedicalExamAssignmentService {
             }
 
             List<VisitSummary> visits = orderVisitsForProcessing(unknownDoctorQueueVisitProvider.getWaitingVisits(doctorContext, branchCache));
-            int configuredLimit = Math.max(0, assignmentProperties.getMaxVisitsPerCycle());
-            int limit = Math.min(visits.size(), configuredLimit);
-            log.info("Visits in unknown-doctor queue {} count={} sortOrder={} maxVisitsPerCycle={} processingLimit={}",
+int configuredLimit = Math.max(0, assignmentProperties.getMaxVisitsPerCycle());
+            int effectiveLimit = resolveEffectiveLimitForBranch(doctorContext.getBranchId(), configuredLimit);
+            List<VisitSummary> visitsForCycle = limitVisitsForCycle(visits, effectiveLimit);
+            int limit = visitsForCycle.size();
+            log.info("Visits in unknown-doctor queue {} count={} sortOrder={} maxVisitsPerCycle={} effectiveLimit={} processingLimit={} selectedVisitIds={}",
                     branchCache.getUnknownDoctorQueueId(),
                     Integer.valueOf(visits.size()),
                     resolveVisitProcessingSortOrder(),
                     Integer.valueOf(configuredLimit),
-                    Integer.valueOf(limit));
+                    Integer.valueOf(effectiveLimit),
+                    Integer.valueOf(limit),
+                    extractVisitIdsForLog(visitsForCycle));
 
             int processed = 0;
             Duration processedTtl = Duration.ofSeconds(assignmentProperties.getProcessedVisitTtlSeconds());
 
             for (int i = 0; i < limit; i++) {
-                VisitSummary visit = visits.get(i);
+                VisitSummary visit = visitsForCycle.get(i);
 
                 try {
                     VisitDetails visitDetails = visitRouteAnalyzer.analyze(doctorContext.getBranchId(), visit.getId());
@@ -236,6 +243,7 @@ public class AutonomousMedicalExamAssignmentService {
                             }
                         }
                         processed++;
+                        markVisitProcessedInCurrentMinute(doctorContext.getBranchId());
                     }
                 } catch (Exception exception) {
                     log.error("Failed to process visit {} in branch {}: {}", visit.getId(), doctorContext.getBranchId(), exception.getMessage(), exception);
@@ -312,15 +320,19 @@ public class AutonomousMedicalExamAssignmentService {
             DoctorContext queueReadContext = doctorSelectionContexts.get(0).doctorContext;
             List<VisitSummary> visits = orderVisitsForProcessing(unknownDoctorQueueVisitProvider.getWaitingVisits(queueReadContext, branchCache));
             int configuredLimit = Math.max(0, assignmentProperties.getMaxVisitsPerCycle());
-            int limit = Math.min(visits.size(), configuredLimit);
-            log.info("Polling branch assignment source=POLLING branchId={} doctors={} unknownDoctorQueue={} count={} sortOrder={} maxVisitsPerCycle={} processingLimit={}",
+            int effectiveLimit = resolveEffectiveLimitForBranch(branchId, configuredLimit);
+            List<VisitSummary> visitsForCycle = limitVisitsForCycle(visits, effectiveLimit);
+            int limit = visitsForCycle.size();
+            log.info("Polling branch assignment source=POLLING branchId={} doctors={} unknownDoctorQueue={} count={} sortOrder={} maxVisitsPerCycle={} effectiveLimit={} processingLimit={} selectedVisitIds={}",
                     Integer.valueOf(branchId),
                     Integer.valueOf(doctorSelectionContexts.size()),
                     branchCache.getUnknownDoctorQueueId(),
                     Integer.valueOf(visits.size()),
                     resolveVisitProcessingSortOrder(),
                     Integer.valueOf(configuredLimit),
-                    Integer.valueOf(limit));
+                    Integer.valueOf(effectiveLimit),
+                    Integer.valueOf(limit),
+                    extractVisitIdsForLog(visitsForCycle));
 
             int processed = 0;
             int roundRobinCursor = 0;
@@ -329,7 +341,7 @@ public class AutonomousMedicalExamAssignmentService {
             Map<Integer, Integer> staffLoad = new HashMap<Integer, Integer>();
 
             for (int i = 0; i < limit; i++) {
-                VisitSummary visit = visits.get(i);
+                VisitSummary visit = visitsForCycle.get(i);
                 try {
                     VisitDetails visitDetails = visitRouteAnalyzer.analyze(branchId, visit.getId());
                     String processingFingerprint = buildProcessingFingerprint(visitDetails);
@@ -404,6 +416,7 @@ public class AutonomousMedicalExamAssignmentService {
                         increment(targetQueueLoad, Integer.valueOf(decision.selectedDoctorService.getTargetQueueId()));
                         increment(staffLoad, Integer.valueOf(decision.doctorSelectionContext.doctorContext.getStaffId()));
                         processed++;
+                        markVisitProcessedInCurrentMinute(branchId);
                         roundRobinCursor = (decision.candidateIndex + 1) % doctorSelectionContexts.size();
                     }
                 } catch (Exception exception) {
@@ -765,6 +778,94 @@ public class AutonomousMedicalExamAssignmentService {
         }
     }
 
+
+    private List<VisitSummary> limitVisitsForCycle(List<VisitSummary> visits, int configuredLimit) {
+        if (visits == null || visits.isEmpty() || configuredLimit <= 0) {
+            return Collections.emptyList();
+        }
+        int limit = Math.min(visits.size(), configuredLimit);
+        return new ArrayList<VisitSummary>(visits.subList(0, limit));
+    }
+
+    private List<Long> extractVisitIdsForLog(List<VisitSummary> visits) {
+        List<Long> ids = new ArrayList<Long>();
+        for (VisitSummary visit : visits) {
+            ids.add(Long.valueOf(visit.getId()));
+        }
+        return ids;
+    }
+
+    private int resolveEffectiveLimitForBranch(int branchId, int configuredLimit) {
+        if (configuredLimit <= 0) {
+            return 0;
+        }
+        ConcurrentLinkedDeque<Long> timestamps = perBranchProcessingTimestamps.computeIfAbsent(Integer.valueOf(branchId), key -> new ConcurrentLinkedDeque<Long>());
+        long now = System.currentTimeMillis();
+        long limiterWindowMs = resolveLimiterWindowMs();
+        pruneOldTimestamps(timestamps, now, limiterWindowMs);
+        int alreadyProcessedInWindow = timestamps.size();
+        return Math.max(0, configuredLimit - alreadyProcessedInWindow);
+    }
+
+    private void markVisitProcessedInCurrentMinute(int branchId) {
+        ConcurrentLinkedDeque<Long> timestamps = perBranchProcessingTimestamps.computeIfAbsent(Integer.valueOf(branchId), key -> new ConcurrentLinkedDeque<Long>());
+        long now = System.currentTimeMillis();
+        timestamps.addLast(Long.valueOf(now));
+        pruneOldTimestamps(timestamps, now, resolveLimiterWindowMs());
+    }
+
+    private void pruneOldTimestamps(ConcurrentLinkedDeque<Long> timestamps, long now, long limiterWindowMs) {
+        long threshold = now - limiterWindowMs;
+        while (true) {
+            Long head = timestamps.peekFirst();
+            if (head == null || head.longValue() >= threshold) {
+                return;
+            }
+            timestamps.pollFirst();
+        }
+    }
+
+
+
+    private long resolveLimiterWindowMs() {
+        String pollingCron = assignmentProperties.getPollingCron();
+        if (pollingCron == null) {
+            return 60_000L;
+        }
+        String[] tokens = pollingCron.trim().split("\\s+");
+        if (tokens.length < 2) {
+            return 60_000L;
+        }
+        long fromSeconds = resolveStepMillis(tokens[0], 1_000L);
+        if (fromSeconds > 0) {
+            return fromSeconds;
+        }
+        long fromMinutes = resolveStepMillis(tokens[1], 60_000L);
+        if (fromMinutes > 0) {
+            return fromMinutes;
+        }
+        return 60_000L;
+    }
+
+    private long resolveStepMillis(String token, long unitMs) {
+        if (token == null) {
+            return -1L;
+        }
+        String normalized = token.trim();
+        int slash = normalized.indexOf('/');
+        if (slash < 0 || slash + 1 >= normalized.length()) {
+            return -1L;
+        }
+        try {
+            int step = Integer.parseInt(normalized.substring(slash + 1));
+            if (step <= 0) {
+                return -1L;
+            }
+            return step * unitMs;
+        } catch (NumberFormatException ignored) {
+            return -1L;
+        }
+    }
     private boolean shouldAbortCycle(Exception exception) {
         if (exception instanceof MutationContextException) {
             return true;

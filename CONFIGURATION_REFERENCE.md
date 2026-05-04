@@ -98,7 +98,7 @@
 |---|---:|---|
 | `service-point-open-trigger-enabled` | `false` | не запускать мутации по преждевременному `SERVICE_POINT_OPEN` |
 | `set-work-profile-trigger-enabled` | `false` | не запускать мутации по сырому `SET_WORK_PROFILE` |
-| `work-profile-expanded-trigger-enabled` | `true` | повторно запускать цикл, если новый профиль расширил услуги врача |
+| `work-profile-expanded-trigger-enabled` | `false` | повторно запускать цикл, если новый профиль расширил услуги врача |
 | `user-service-point-session-start-trigger-enabled` | `true` | основной event trigger через корреляцию `USER_SERVICE_POINT_SESSION_START -> SET_WORK_PROFILE` |
 | `user-session-settle-window-ms` | `2000` | окно ожидания стабилизации профиля |
 
@@ -302,7 +302,7 @@ application:
     service-point-open-trigger-enabled: false
     set-work-profile-trigger-enabled: false
     user-service-point-session-start-trigger-enabled: true
-    work-profile-expanded-trigger-enabled: true
+    work-profile-expanded-trigger-enabled: false
     user-session-settle-window-ms: 2000
 ```
 

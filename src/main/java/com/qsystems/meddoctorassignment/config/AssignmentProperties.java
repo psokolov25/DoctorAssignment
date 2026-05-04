@@ -90,7 +90,7 @@ public class AssignmentProperties {
      * Разрешает ли изменение рабочего профиля внутри уже активной пользовательской сессии
      * запускать повторный assignment cycle, если новый профиль расширяет доступный набор услуг.
      */
-    private boolean workProfileExpandedTriggerEnabled = true;
+    private boolean workProfileExpandedTriggerEnabled = false;
 
     /**
      * Окно ожидания финального SET_WORK_PROFILE после USER_SERVICE_POINT_SESSION_START.

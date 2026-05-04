@@ -146,7 +146,7 @@ application:
 
     # Разрешает ли SET_WORK_PROFILE внутри уже активной сессии врача запускать повторный цикл,
     # если новый рабочий профиль расширяет доступный набор услуг.
-    work-profile-expanded-trigger-enabled: true
+    work-profile-expanded-trigger-enabled: false
 
     # Разрешает ли цепочке USER_SERVICE_POINT_SESSION_START -> SET_WORK_PROFILE запускать mutating workflow.
     # Это основной рекомендуемый trigger для реального назначения и перевода визитов.

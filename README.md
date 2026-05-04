@@ -62,6 +62,16 @@ src/main/java/com/qsystems/meddoctorassignment
 └── websocket              # SockJS/STOMP клиент и разбор фреймов
 ```
 
+### 2.3. JavaDoc-покрытие доменного контура
+
+Для ключевых точек алгоритма назначения поддерживается расширенный JavaDoc на уровне интерфейсов и реализаций:
+
+- `domain/service/DoctorServiceSelectionService` — контракт выбора услуги врача с локальным и med-robot сценарием;
+- `domain/service/VisitAssignmentExecutor` — контракт mutation-этапа (`assign-service` + `transfer-visit`);
+- `domain/service/impl/DefaultVisitAssignmentExecutor` — детализация `transfer-only`, recheck и post-check поведения.
+
+Это помогает быстрее разбирать код при сопровождении и снижает порог входа для новых разработчиков без чтения всех интеграционных классов.
+
 ## 3. Архитектура решения
 
 ### 3.0. Диаграммы проекта

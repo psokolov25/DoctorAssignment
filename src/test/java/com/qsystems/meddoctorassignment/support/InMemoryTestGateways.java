@@ -38,6 +38,8 @@ public class InMemoryTestGateways implements OrchestraMetadataGateway, ServicePo
     public final Map<Long, VisitSummary> visitById = new HashMap<Long, VisitSummary>();
     public final Map<String, MedRobotOptimalServiceResponse> medRobotResponses = new HashMap<String, MedRobotOptimalServiceResponse>();
     public final List<String> medRobotRequests = new ArrayList<String>();
+    public final List<MedRobotOptimalServiceResponse> medRobotSequentialResponses = new ArrayList<MedRobotOptimalServiceResponse>();
+    public boolean medRobotSequentialByTransferCount;
 
     /**
      * Журнал чтения очереди. Формат: branchId|queueId.
@@ -64,6 +66,7 @@ public class InMemoryTestGateways implements OrchestraMetadataGateway, ServicePo
     public final List<String> activationOperations = new ArrayList<String>();
     public final List<String> assignedOperations = new ArrayList<String>();
     public final List<String> transferredOperations = new ArrayList<String>();
+    public int allQueuesReadCount;
 
     public boolean activationEnabled;
     public boolean activationFail;
@@ -106,6 +109,7 @@ public class InMemoryTestGateways implements OrchestraMetadataGateway, ServicePo
 
     @Override
     public List<TinyQueue> getAllQueuesInBranch(int branchId) {
+        allQueuesReadCount++;
         return getOrEmpty(allQueuesByBranch.get(branchId));
     }
 
@@ -193,6 +197,16 @@ public class InMemoryTestGateways implements OrchestraMetadataGateway, ServicePo
         medRobotRequests.add(branchId + "|" + currentServiceId + "|" + new java.util.TreeSet<Integer>(unservedServiceIds));
         if (medRobotFail) {
             throw new IllegalStateException("simulated med-robot failure");
+        }
+        if (medRobotSequentialByTransferCount && !medRobotSequentialResponses.isEmpty()) {
+            int index = transferredOperations.size();
+            if (index < 0) {
+                index = 0;
+            }
+            if (index >= medRobotSequentialResponses.size()) {
+                index = medRobotSequentialResponses.size() - 1;
+            }
+            return medRobotSequentialResponses.get(index);
         }
         return medRobotResponses.get(branchId + "|" + currentServiceId);
     }

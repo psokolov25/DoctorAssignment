@@ -231,6 +231,9 @@ public class AutonomousMedicalExamAssignmentService {
                                     visit.getId(),
                                     doctorContext.getStaffId(),
                                     processingFingerprint);
+                            if (i + 1 < limit) {
+                                refreshBranchSnapshotAfterSuccessfulAssignment(doctorContext.getBranchId(), "event");
+                            }
                         }
                         processed++;
                     }
@@ -394,6 +397,9 @@ public class AutonomousMedicalExamAssignmentService {
                                     visit.getId(),
                                     decision.doctorSelectionContext.doctorContext.getStaffId(),
                                     processingFingerprint);
+                            if (i + 1 < limit) {
+                                refreshBranchSnapshotAfterSuccessfulAssignment(branchId, "polling");
+                            }
                         }
                         increment(targetQueueLoad, Integer.valueOf(decision.selectedDoctorService.getTargetQueueId()));
                         increment(staffLoad, Integer.valueOf(decision.doctorSelectionContext.doctorContext.getStaffId()));
@@ -745,6 +751,18 @@ public class AutonomousMedicalExamAssignmentService {
             }
         }
         return builder.toString();
+    }
+
+    private void refreshBranchSnapshotAfterSuccessfulAssignment(int branchId, String source) {
+        try {
+            cacheUpdateService.ensureFresh(branchId);
+            log.debug("Refreshed branch snapshot after successful {} assignment branchId={}", source, Integer.valueOf(branchId));
+        } catch (Exception refreshException) {
+            log.warn("Could not refresh branch snapshot after successful {} assignment branchId={}: {}",
+                    source,
+                    Integer.valueOf(branchId),
+                    refreshException.getMessage());
+        }
     }
 
     private boolean shouldAbortCycle(Exception exception) {

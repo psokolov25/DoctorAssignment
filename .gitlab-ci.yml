@@ -23,14 +23,15 @@ build_jar:
         mkdir -p .ci-tools
         JDK_ARCHIVE=".ci-tools/jdk8.tar.gz"
         JDK_DIR=".ci-tools/jdk8"
-        JDK_URLS="\
-https://download.bell-sw.com/java/8u462+11/bellsoft-jdk8u462+11-linux-amd64.tar.gz \
-https://api.adoptium.net/v3/binary/latest/8/ga/linux/x64/jdk/hotspot/normal/eclipse \
-https://cdn.azul.com/zulu/bin/zulu8.86.0.25-ca-jdk8.0.452-linux_x64.tar.gz\
-"
+
+        JDK_URLS=(
+          "https://download.bell-sw.com/java/8u462+11/bellsoft-jdk8u462+11-linux-amd64.tar.gz"
+          "https://api.adoptium.net/v3/binary/latest/8/ga/linux/x64/jdk/hotspot/normal/eclipse"
+          "https://cdn.azul.com/zulu/bin/zulu8.86.0.25-ca-jdk8.0.452-linux_x64.tar.gz"
+        )
 
         if [ ! -f "$JDK_ARCHIVE" ]; then
-          for JDK_URL in $JDK_URLS; do
+          for JDK_URL in "${JDK_URLS[@]}"; do
             if curl -fL --retry 3 --retry-delay 2 "$JDK_URL" -o "$JDK_ARCHIVE"; then
               break
             fi

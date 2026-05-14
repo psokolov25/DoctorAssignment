@@ -13,7 +13,46 @@ cache:
 build_jar:
   stage: build
   image: maven:3.9.9-eclipse-temurin-8
+  before_script:
+    - |
+      ensure_java8() {
+        if java -version 2>&1 | head -n 1 | grep -q '"1\.8\.'; then
+          return 0
+        fi
+
+        mkdir -p .ci-tools
+        JDK_ARCHIVE=".ci-tools/jdk8.tar.gz"
+        JDK_DIR=".ci-tools/jdk8"
+        JDK_URLS="\
+https://download.bell-sw.com/java/8u462+11/bellsoft-jdk8u462+11-linux-amd64.tar.gz \
+https://api.adoptium.net/v3/binary/latest/8/ga/linux/x64/jdk/hotspot/normal/eclipse \
+https://cdn.azul.com/zulu/bin/zulu8.86.0.25-ca-jdk8.0.452-linux_x64.tar.gz\
+"
+
+        if [ ! -f "$JDK_ARCHIVE" ]; then
+          for JDK_URL in $JDK_URLS; do
+            if curl -fL --retry 3 --retry-delay 2 "$JDK_URL" -o "$JDK_ARCHIVE"; then
+              break
+            fi
+          done
+        fi
+
+        if [ ! -s "$JDK_ARCHIVE" ]; then
+          echo "Unable to download JDK 8 from configured mirrors" >&2
+          exit 1
+        fi
+
+        rm -rf "$JDK_DIR"
+        mkdir -p "$JDK_DIR"
+        tar -xzf "$JDK_ARCHIVE" -C "$JDK_DIR" --strip-components=1
+        export JAVA_HOME="$PWD/$JDK_DIR"
+        export PATH="$JAVA_HOME/bin:$PATH"
+      }
+
+      ensure_java8
+    - java -version
   script:
+    - chmod +x ./mvnw
     - ./mvnw $MAVEN_CLI_OPTS clean package
   artifacts:
     name: "${CI_PROJECT_NAME}-${CI_COMMIT_SHORT_SHA}"

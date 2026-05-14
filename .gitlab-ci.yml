@@ -1,0 +1,26 @@
+stages:
+  - build
+
+variables:
+  MAVEN_OPTS: "-Dmaven.repo.local=.m2/repository"
+  MAVEN_CLI_OPTS: "--batch-mode --errors --fail-at-end --show-version"
+
+cache:
+  key: "$CI_COMMIT_REF_SLUG"
+  paths:
+    - .m2/repository
+
+build_jar:
+  stage: build
+  image: maven:3.9.9-eclipse-temurin-8
+  script:
+    - ./mvnw $MAVEN_CLI_OPTS clean package
+  artifacts:
+    name: "${CI_PROJECT_NAME}-${CI_COMMIT_SHORT_SHA}"
+    expire_in: 7 days
+    paths:
+      - target/*.jar
+    when: on_success
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    - if: '$CI_COMMIT_BRANCH'

@@ -38,6 +38,15 @@ QMatic Orchestra 6, и переводит такие визиты в очере�
 - Spring SockJS/STOMP client для подписки на события Orchestra
 - Jackson для сериализации JSON
 
+### 2.4. CI/CD (GitLab) и формирование JAR-артефакта
+
+В репозиторий добавлен `.gitlab-ci.yml` с build-stage `build_jar`, который:
+
+- запускается для branch-pipeline и merge request pipeline;
+- собирает проект командой `./mvnw clean package`;
+- публикует JAR как pipeline artifact из `target/*.jar`;
+- кэширует локальный Maven-репозиторий (`.m2/repository`) для ускорения последующих сборок.
+
 ### 2.2. Структура пакетов
 
 ```text

@@ -13,7 +13,21 @@ cache:
 build_jar:
   stage: build
   image: maven:3.9.9-eclipse-temurin-8
+  before_script:
+    - |
+      if [ -n "${JAVA_HOME_8_X64:-}" ]; then
+        export JAVA_HOME="$JAVA_HOME_8_X64"
+        export PATH="$JAVA_HOME/bin:$PATH"
+      elif [ -d "/usr/lib/jvm/java-8-openjdk-amd64" ]; then
+        export JAVA_HOME="/usr/lib/jvm/java-8-openjdk-amd64"
+        export PATH="$JAVA_HOME/bin:$PATH"
+      elif [ -d "/usr/lib/jvm/java-1.8.0" ]; then
+        export JAVA_HOME="/usr/lib/jvm/java-1.8.0"
+        export PATH="$JAVA_HOME/bin:$PATH"
+      fi
+    - java -version
   script:
+    - chmod +x ./mvnw
     - ./mvnw $MAVEN_CLI_OPTS clean package
   artifacts:
     name: "${CI_PROJECT_NAME}-${CI_COMMIT_SHORT_SHA}"

@@ -477,6 +477,8 @@ Visit 30354 already processed recently for doctor 1 processingFingerprint=curren
 - `enabled=true` — Doctor Assistant вызывает `POST /prorobot/optimalqueue/{branchId}/service/{serviceId}` и получает от med-robot пару `serviceId`/`queueId`;
 - `request-body-mode=UNSERVED_SERVICE_IDS_JSON_ARRAY` — в тело передается JSON-массив непройденных услуг, режим требует локального предварительного выбора;
 - `request-body-mode=TICKET_NUMBER_PLAIN_TEXT` — в тело передается номер талона, режим позволяет вызывать med-robot даже при пустом `unservedVisitServices`, если у визита есть `ticketId` и `currentVisitService.serviceId`;
+- `plain-text-identificator-mode=TICKET_NUMBER` — в `request-body-mode=TICKET_NUMBER_PLAIN_TEXT` передается номер талона;
+- `plain-text-identificator-mode=VISIT_JSON`/`VISIT_DETAILS_JSON_OBJECT` — в `request-body-mode=TICKET_NUMBER_PLAIN_TEXT` передается JSON-строка объекта `VisitDetails`;
 - `plain-text-policy=default` — query-параметр `policy` для plain text endpoint-а;
 - `error-handling-mode=FALLBACK_TO_LOCAL` — при сетевой/HTTP-ошибке med-robot использовать локальный выбор, если он есть;
 - `error-handling-mode=SKIP_VISIT` — при ошибке med-robot пропустить визит в текущем цикле;
@@ -493,6 +495,7 @@ application:
     url: http://med-robot:8082
     optimal-service-path: /prorobot/optimalqueue/{branchId}/service/{serviceId}
     request-body-mode: TICKET_NUMBER_PLAIN_TEXT
+    plain-text-identificator-mode: TICKET_NUMBER
     plain-text-policy: default
     error-handling-mode: FALLBACK_TO_LOCAL
     fallback-to-local-on-empty-response: true

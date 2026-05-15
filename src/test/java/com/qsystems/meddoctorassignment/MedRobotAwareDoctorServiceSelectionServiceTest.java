@@ -210,6 +210,26 @@ public class MedRobotAwareDoctorServiceSelectionServiceTest {
     Assertions.assertTrue(fixture.gateway.lastVisitJsonIdentificator.contains("\"id\":1003"));
   }
 
+
+  @Test
+  void callsMedRobotByVisitDetailsJsonObjectIdentificatorWhenConfigured() {
+    Fixture fixture = new Fixture();
+    fixture.properties.setEnabled(true);
+    fixture.properties.setRequestBodyMode(MedRobotRequestBodyMode.TICKET_NUMBER_PLAIN_TEXT);
+    fixture.properties.setPlainTextIdentificatorMode(
+        com.qsystems.meddoctorassignment.config.MedRobotPlainTextIdentificatorMode.VISIT_DETAILS_JSON_OBJECT);
+    fixture.gateway.response = response(302, 902);
+    VisitDetails visit = new VisitDetails(1004L, 900, new ArrayList<VisitUnservedService>());
+    visit.setCurrentServiceId(Integer.valueOf(117));
+
+    Optional<SelectedDoctorService> selected = fixture.select(visit);
+
+    Assertions.assertTrue(selected.isPresent());
+    Assertions.assertEquals(1, fixture.gateway.callCount);
+    Assertions.assertNotNull(fixture.gateway.lastVisitJsonIdentificator);
+    Assertions.assertTrue(fixture.gateway.lastVisitJsonIdentificator.contains("\"id\":1004"));
+  }
+
   private static VisitDetails defaultVisit() {
     return
         new VisitDetails(

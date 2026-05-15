@@ -190,6 +190,26 @@ public class MedRobotAwareDoctorServiceSelectionServiceTest {
     Assertions.assertEquals("Р001", fixture.gateway.lastTicketNumber);
   }
 
+
+  @Test
+  void callsMedRobotByVisitJsonIdentificatorWhenConfigured() {
+    Fixture fixture = new Fixture();
+    fixture.properties.setEnabled(true);
+    fixture.properties.setRequestBodyMode(MedRobotRequestBodyMode.TICKET_NUMBER_PLAIN_TEXT);
+    fixture.properties.setPlainTextIdentificatorMode(
+        com.qsystems.meddoctorassignment.config.MedRobotPlainTextIdentificatorMode.VISIT_JSON);
+    fixture.gateway.response = response(302, 902);
+    VisitDetails visit = new VisitDetails(1003L, 900, new ArrayList<VisitUnservedService>());
+    visit.setCurrentServiceId(Integer.valueOf(117));
+
+    Optional<SelectedDoctorService> selected = fixture.select(visit);
+
+    Assertions.assertTrue(selected.isPresent());
+    Assertions.assertEquals(1, fixture.gateway.callCount);
+    Assertions.assertNotNull(fixture.gateway.lastVisitJsonIdentificator);
+    Assertions.assertTrue(fixture.gateway.lastVisitJsonIdentificator.contains("\"id\":1003"));
+  }
+
   private static VisitDetails defaultVisit() {
     return
         new VisitDetails(
@@ -225,7 +245,7 @@ public class MedRobotAwareDoctorServiceSelectionServiceTest {
       AssignmentProperties assignmentProperties = new AssignmentProperties();
       selectionService =
           new MedRobotAwareDoctorServiceSelectionService(
-              new DefaultDoctorServiceMatcher(assignmentProperties), gateway, properties);
+              new DefaultDoctorServiceMatcher(assignmentProperties), gateway, properties, new com.fasterxml.jackson.databind.ObjectMapper());
       cache.getQueueMap().put(Integer.valueOf(901), queue(901, "local-doctor-queue"));
       cache.getQueueMap().put(Integer.valueOf(902), queue(902, "robot-queue"));
       cache.getServiceIdToQueueId().put(Integer.valueOf(301), Integer.valueOf(901));
@@ -247,15 +267,17 @@ public class MedRobotAwareDoctorServiceSelectionServiceTest {
     private int lastCurrentServiceId;
     private List<Integer> lastUnservedServiceIds = new ArrayList<Integer>();
     private String lastTicketNumber;
+    private String lastVisitJsonIdentificator;
 
     @Override
     public MedRobotOptimalServiceResponse selectOptimalService(
-        int branchId, int currentServiceId, Set<Integer> unservedServiceIds, String ticketNumber) {
+        int branchId, int currentServiceId, Set<Integer> unservedServiceIds, String ticketNumber, String visitJsonIdentificator) {
       callCount++;
       lastBranchId = branchId;
       lastCurrentServiceId = currentServiceId;
       lastUnservedServiceIds = new ArrayList<Integer>(unservedServiceIds);
       lastTicketNumber = ticketNumber;
+      lastVisitJsonIdentificator = visitJsonIdentificator;
       if (failure != null) {
         throw failure;
       }

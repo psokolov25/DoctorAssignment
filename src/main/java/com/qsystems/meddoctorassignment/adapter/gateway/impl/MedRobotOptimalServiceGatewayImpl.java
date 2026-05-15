@@ -4,6 +4,7 @@ import com.qsystems.meddoctorassignment.adapter.gateway.MedRobotOptimalServiceGa
 import com.qsystems.meddoctorassignment.adapter.medrobot.MedRobotRestClient;
 import com.qsystems.meddoctorassignment.adapter.medrobot.dto.MedRobotOptimalServiceResponse;
 import com.qsystems.meddoctorassignment.adapter.orchestra.RestUtils;
+import com.qsystems.meddoctorassignment.config.MedRobotPlainTextIdentificatorMode;
 import com.qsystems.meddoctorassignment.config.MedRobotProperties;
 import com.qsystems.meddoctorassignment.config.MedRobotRequestBodyMode;
 import jakarta.inject.Singleton;
@@ -32,22 +33,37 @@ public class MedRobotOptimalServiceGatewayImpl implements MedRobotOptimalService
 
   @Override
   public MedRobotOptimalServiceResponse selectOptimalService(
-      int branchId, int currentServiceId, Set<Integer> unservedServiceIds, String ticketNumber) {
+      int branchId,
+      int currentServiceId,
+      Set<Integer> unservedServiceIds,
+      String ticketNumber,
+      String visitJsonIdentificator) {
     if (medRobotProperties.getRequestBodyMode() == MedRobotRequestBodyMode.TICKET_NUMBER_PLAIN_TEXT) {
-      String normalizedTicket = ticketNumber != null ? ticketNumber.trim() : null;
-      if (normalizedTicket == null || normalizedTicket.isEmpty()) {
-        throw new IllegalArgumentException("Ticket number is required for med-robot plain text mode");
+      MedRobotPlainTextIdentificatorMode identificatorMode =
+          medRobotProperties.getPlainTextIdentificatorMode();
+      String requestBody;
+      if (identificatorMode == MedRobotPlainTextIdentificatorMode.VISIT_JSON) {
+        requestBody = visitJsonIdentificator != null ? visitJsonIdentificator.trim() : null;
+        if (requestBody == null || requestBody.isEmpty()) {
+          throw new IllegalArgumentException("Visit JSON identificator is required for VISIT_JSON mode");
+        }
+      } else {
+        requestBody = ticketNumber != null ? ticketNumber.trim() : null;
+        if (requestBody == null || requestBody.isEmpty()) {
+          throw new IllegalArgumentException("Ticket number is required for med-robot plain text mode");
+        }
       }
       log.info(
-          "Request med-robot optimal service branch={} currentService={} bodyMode={} contentType=text/plain accept=application/json ticketNumber={} policy={}",
+          "Request med-robot optimal service branch={} currentService={} bodyMode={} contentType=text/plain accept=application/json identificatorMode={} identificator={} policy={}",
           Integer.valueOf(branchId),
           Integer.valueOf(currentServiceId),
           medRobotProperties.getRequestBodyMode(),
-          normalizedTicket,
+          identificatorMode,
+          requestBody,
           medRobotProperties.getPlainTextPolicy());
       return restUtils.handleReactiveResponseWithBlock(
           medRobotRestClient.selectOptimalServicePlainText(
-              branchId, currentServiceId, medRobotProperties.getPlainTextPolicy(), normalizedTicket));
+              branchId, currentServiceId, medRobotProperties.getPlainTextPolicy(), requestBody));
     }
 
     log.info(

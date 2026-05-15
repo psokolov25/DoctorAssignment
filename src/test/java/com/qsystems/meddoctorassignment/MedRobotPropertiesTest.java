@@ -1,5 +1,6 @@
 package com.qsystems.meddoctorassignment;
 
+import com.qsystems.meddoctorassignment.config.MedRobotPlainTextIdentificatorMode;
 import com.qsystems.meddoctorassignment.config.MedRobotProperties;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -20,5 +21,6 @@ public class MedRobotPropertiesTest {
     Assertions.assertTrue(properties.isFallbackToLocalOnEmptyResponse());
     Assertions.assertFalse(properties.isRequireDoctorAvailableService());
     Assertions.assertTrue(properties.isRequireKnownQueue());
+    Assertions.assertEquals(MedRobotPlainTextIdentificatorMode.TICKET_NUMBER, properties.getPlainTextIdentificatorMode());
   }
 }

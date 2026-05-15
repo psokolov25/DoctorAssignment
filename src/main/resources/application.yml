@@ -58,6 +58,13 @@ application:
     # Для текущего Orchestra в очереди "Врач не назначен" unservedVisitServices часто пустой.
     # Поэтому med-robot должен вызываться по номеру талона в text/plain, а не по JSON-массиву услуг.
     request-body-mode: TICKET_NUMBER_PLAIN_TEXT
+
+    # Идентификатор для text/plain body:
+    # TICKET_NUMBER — отправлять ticketId/номер талона (пример: Р002);
+    # VISIT_JSON / VISIT_DETAILS_JSON_OBJECT — отправлять JSON объекта VisitDetails одной строкой.
+    plain-text-identificator-mode: TICKET_NUMBER
+
+    # Query-параметр policy для med-robot plain text endpoint-а.
     plain-text-policy: default
     error-handling-mode: FALLBACK_TO_LOCAL
 

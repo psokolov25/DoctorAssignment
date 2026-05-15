@@ -42,7 +42,8 @@ public class MedRobotOptimalServiceGatewayImpl implements MedRobotOptimalService
       MedRobotPlainTextIdentificatorMode identificatorMode =
           medRobotProperties.getPlainTextIdentificatorMode();
       String requestBody;
-      if (identificatorMode == MedRobotPlainTextIdentificatorMode.VISIT_JSON) {
+      if (identificatorMode == MedRobotPlainTextIdentificatorMode.VISIT_JSON
+          || identificatorMode == MedRobotPlainTextIdentificatorMode.VISIT_DETAILS_JSON_OBJECT) {
         requestBody = visitJsonIdentificator != null ? visitJsonIdentificator.trim() : null;
         if (requestBody == null || requestBody.isEmpty()) {
           throw new IllegalArgumentException("Visit JSON identificator is required for VISIT_JSON mode");

@@ -35,6 +35,7 @@
 | `url` | URL | `http://192.168.7.135:8082` | базовый URL med-robot |
 | `optimal-service-path` | path template | `/prorobot/optimalqueue/{branchId}/service/{serviceId}` | endpoint выбора услуги |
 | `request-body-mode` | enum | `UNSERVED_SERVICE_IDS_JSON_ARRAY`, `TICKET_NUMBER_PLAIN_TEXT` | формат тела запроса |
+| `plain-text-identificator-mode` | enum | `TICKET_NUMBER`, `VISIT_JSON`, `VISIT_DETAILS_JSON_OBJECT` | что передавать в body в plain text режиме |
 | `plain-text-policy` | string | `default` | query-параметр `policy` для plain text endpoint-а |
 | `username` | string | optional | Basic Auth user для med-robot |
 | `password` | string | optional | Basic Auth password для med-robot |
@@ -50,6 +51,16 @@
 |---|---|---|---|
 | `UNSERVED_SERVICE_IDS_JSON_ARRAY` | `Content-Type: application/json`, `Accept: application/json` | `[147,148]` | требует локальный предварительный выбор услуги |
 | `TICKET_NUMBER_PLAIN_TEXT` | `Content-Type: text/plain`, `Accept: application/json` | `Щ028` | вызывает med-robot по номеру талона даже без локального совпадения |
+
+### `plain-text-identificator-mode`
+
+Используется только вместе с `request-body-mode=TICKET_NUMBER_PLAIN_TEXT`.
+
+| Значение | Body (`text/plain`) | Когда использовать |
+|---|---|---|
+| `TICKET_NUMBER` | `Щ028` | основной режим, если med-robot ожидает номер талона |
+| `VISIT_JSON` | `{"id":30283,"queueId":117,...}` | когда med-robot принимает JSON представление визита как строку |
+| `VISIT_DETAILS_JSON_OBJECT` | `{"id":30283,"queueId":117,...}` | явный режим JSON-объекта `VisitDetails` для обратной совместимости/читаемости конфигурации |
 
 ### `error-handling-mode`
 

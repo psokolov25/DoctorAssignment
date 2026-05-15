@@ -8,5 +8,8 @@ public enum MedRobotPlainTextIdentificatorMode {
   TICKET_NUMBER,
 
   /** JSON-строка с телом визита. */
-  VISIT_JSON
+  VISIT_JSON,
+
+  /** JSON-строка с объектом VisitDetails текущего визита. */
+  VISIT_DETAILS_JSON_OBJECT
 }

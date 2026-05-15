@@ -265,8 +265,10 @@ public class MedRobotAwareDoctorServiceSelectionService implements DoctorService
 
 
   private boolean requiresTicketNumberIdentificator() {
-    return medRobotProperties.getPlainTextIdentificatorMode()
-        != MedRobotPlainTextIdentificatorMode.VISIT_JSON;
+    MedRobotPlainTextIdentificatorMode identificatorMode =
+        medRobotProperties.getPlainTextIdentificatorMode();
+    return identificatorMode != MedRobotPlainTextIdentificatorMode.VISIT_JSON
+        && identificatorMode != MedRobotPlainTextIdentificatorMode.VISIT_DETAILS_JSON_OBJECT;
   }
 
   private String toVisitJsonIdentificator(VisitDetails visitDetails) {

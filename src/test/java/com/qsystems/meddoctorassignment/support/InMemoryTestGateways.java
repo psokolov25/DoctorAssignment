@@ -193,7 +193,7 @@ public class InMemoryTestGateways implements OrchestraMetadataGateway, ServicePo
     }
 
     @Override
-    public MedRobotOptimalServiceResponse selectOptimalService(int branchId, int currentServiceId, java.util.Set<Integer> unservedServiceIds, String ticketNumber) {
+    public MedRobotOptimalServiceResponse selectOptimalService(int branchId, int currentServiceId, java.util.Set<Integer> unservedServiceIds, String ticketNumber, String visitJsonIdentificator) {
         medRobotRequests.add(branchId + "|" + currentServiceId + "|" + new java.util.TreeSet<Integer>(unservedServiceIds));
         if (medRobotFail) {
             throw new IllegalStateException("simulated med-robot failure");

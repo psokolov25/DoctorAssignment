@@ -638,7 +638,8 @@ public class AutonomousMedicalExamAssignmentServiceTest {
                 new MedRobotAwareDoctorServiceSelectionService(
                         new DefaultDoctorServiceMatcher(assignmentProperties),
                         gateways,
-                        medRobotProperties),
+                        medRobotProperties,
+                        new com.fasterxml.jackson.databind.ObjectMapper()),
                 new DefaultVisitAssignmentExecutor(gateways, assignmentProperties),
                 gateways,
                 new BranchLockManager(),

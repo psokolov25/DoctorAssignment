@@ -38,6 +38,11 @@ public class MedRobotProperties {
   private String plainTextPolicy = "default";
 
   /**
+   * Идентификатор визита, передаваемый в text/plain режиме med-robot.
+   */
+  private MedRobotPlainTextIdentificatorMode plainTextIdentificatorMode = MedRobotPlainTextIdentificatorMode.TICKET_NUMBER;
+
+  /**
    * Имя пользователя для Basic Auth, если REST API med-robot закрыт авторизацией.
    */
   private String username;
@@ -118,6 +123,18 @@ public class MedRobotProperties {
 
   public void setPlainTextPolicy(String plainTextPolicy) {
     this.plainTextPolicy = plainTextPolicy;
+  }
+
+
+  public MedRobotPlainTextIdentificatorMode getPlainTextIdentificatorMode() {
+    return plainTextIdentificatorMode;
+  }
+
+  public void setPlainTextIdentificatorMode(
+      MedRobotPlainTextIdentificatorMode plainTextIdentificatorMode) {
+    this.plainTextIdentificatorMode = plainTextIdentificatorMode != null
+        ? plainTextIdentificatorMode
+        : MedRobotPlainTextIdentificatorMode.TICKET_NUMBER;
   }
 
   public String getUsername() {

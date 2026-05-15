@@ -149,7 +149,8 @@ public class DoctorAssignmentEventHandlerTriggerTest {
                 new MedRobotAwareDoctorServiceSelectionService(
                         new DefaultDoctorServiceMatcher(assignmentProperties),
                         gateways,
-                        new MedRobotProperties()),
+                        new MedRobotProperties(),
+                        new com.fasterxml.jackson.databind.ObjectMapper()),
                 new DefaultVisitAssignmentExecutor(gateways, assignmentProperties),
                 gateways,
                 new BranchLockManager(),

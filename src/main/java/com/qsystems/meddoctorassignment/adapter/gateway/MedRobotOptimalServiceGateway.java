@@ -16,5 +16,9 @@ public interface MedRobotOptimalServiceGateway {
    * @return ответ med-robot
    */
   MedRobotOptimalServiceResponse selectOptimalService(
-      int branchId, int currentServiceId, Set<Integer> unservedServiceIds, String ticketNumber);
+      int branchId,
+      int currentServiceId,
+      Set<Integer> unservedServiceIds,
+      String ticketNumber,
+      String visitJsonIdentificator);
 }

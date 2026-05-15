@@ -106,7 +106,8 @@ public class PollingReconciliationJobTest {
             new DefaultUnknownDoctorQueueVisitProvider(gateways),
             new DefaultVisitRouteAnalyzer(gateways),
             new MedRobotAwareDoctorServiceSelectionService(
-                new DefaultDoctorServiceMatcher(assignmentProperties), gateways, medRobotProperties),
+                new DefaultDoctorServiceMatcher(assignmentProperties), gateways, medRobotProperties,
+                        new com.fasterxml.jackson.databind.ObjectMapper()),
             new DefaultVisitAssignmentExecutor(gateways, assignmentProperties),
             gateways,
             new BranchLockManager(),

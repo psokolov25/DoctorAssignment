@@ -2,7 +2,10 @@ package com.qsystems.meddoctorassignment.domain.service.impl;
 
 import com.qsystems.meddoctorassignment.adapter.gateway.MedRobotOptimalServiceGateway;
 import com.qsystems.meddoctorassignment.adapter.medrobot.dto.MedRobotOptimalServiceResponse;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.qsystems.meddoctorassignment.cache.model.BranchAssignmentCache;
+import com.qsystems.meddoctorassignment.config.MedRobotPlainTextIdentificatorMode;
 import com.qsystems.meddoctorassignment.config.MedRobotProperties;
 import com.qsystems.meddoctorassignment.config.MedRobotRequestBodyMode;
 import com.qsystems.meddoctorassignment.domain.model.SelectedDoctorService;
@@ -30,14 +33,17 @@ public class MedRobotAwareDoctorServiceSelectionService implements DoctorService
   private final DoctorServiceMatcher localMatcher;
   private final MedRobotOptimalServiceGateway medRobotGateway;
   private final MedRobotProperties medRobotProperties;
+  private final ObjectMapper objectMapper;
 
   public MedRobotAwareDoctorServiceSelectionService(
       DoctorServiceMatcher localMatcher,
       MedRobotOptimalServiceGateway medRobotGateway,
-      MedRobotProperties medRobotProperties) {
+      MedRobotProperties medRobotProperties,
+      ObjectMapper objectMapper) {
     this.localMatcher = localMatcher;
     this.medRobotGateway = medRobotGateway;
     this.medRobotProperties = medRobotProperties;
+    this.objectMapper = objectMapper;
   }
 
   @Override
@@ -76,7 +82,7 @@ public class MedRobotAwareDoctorServiceSelectionService implements DoctorService
             Long.valueOf(visitDetails.getId()));
         return localSelection;
       }
-      if (isBlank(visitDetails.getTicketNumber())) {
+      if (requiresTicketNumberIdentificator() && isBlank(visitDetails.getTicketNumber())) {
         log.warn(
             "Med-robot plain text selection is skipped because visit {} has no ticket number",
             Long.valueOf(visitDetails.getId()));
@@ -95,7 +101,8 @@ public class MedRobotAwareDoctorServiceSelectionService implements DoctorService
               branchCache.getBranchId(),
               currentServiceForRobot.intValue(),
               unservedServiceIds,
-              visitDetails != null ? visitDetails.getTicketNumber() : null);
+              visitDetails != null ? visitDetails.getTicketNumber() : null,
+              toVisitJsonIdentificator(visitDetails));
       return toSelection(
           response,
           visitDetails,
@@ -254,6 +261,23 @@ public class MedRobotAwareDoctorServiceSelectionService implements DoctorService
       }
     }
     return null;
+  }
+
+
+  private boolean requiresTicketNumberIdentificator() {
+    return medRobotProperties.getPlainTextIdentificatorMode()
+        != MedRobotPlainTextIdentificatorMode.VISIT_JSON;
+  }
+
+  private String toVisitJsonIdentificator(VisitDetails visitDetails) {
+    if (visitDetails == null) {
+      return null;
+    }
+    try {
+      return objectMapper.writeValueAsString(visitDetails);
+    } catch (JsonProcessingException exception) {
+      throw new IllegalStateException("Cannot serialize visit details for med-robot identificator", exception);
+    }
   }
 
   private boolean isBlank(String value) {
